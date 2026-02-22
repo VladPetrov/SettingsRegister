@@ -5,12 +5,14 @@ using BackOfficeSmall.Domain.Repositories;
 using BackOfficeSmall.Domain.Services;
 using BackOfficeSmall.Infrastructure.Monitoring;
 using BackOfficeSmall.Infrastructure.Repositories;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddOpenApi();
+builder.Services.AddSwaggerGen();
 builder.Services.AddHealthChecks();
 
 builder.Services.AddSingleton<IManifestRepository, InMemoryManifestRepository>();
@@ -28,12 +30,27 @@ WebApplication app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
 
 app.UseMiddleware<ProblemDetailsExceptionHandlingMiddleware>();
 
 app.MapControllers();
-app.MapHealthChecks("/health");
+
+//TODO: this does not look good
+app.MapGet("/health", async (HealthCheckService healthCheckService, CancellationToken cancellationToken) =>
+{
+    HealthReport report = await healthCheckService.CheckHealthAsync(cancellationToken);
+
+    if (report.Status == HealthStatus.Unhealthy)
+    {
+        return Results.Text(report.Status.ToString(), statusCode: StatusCodes.Status503ServiceUnavailable);
+    }
+
+    return Results.Text(report.Status.ToString(), statusCode: StatusCodes.Status200OK);
+})
+.WithName("Health");
 
 ValidateStartup(app.Services);
 
