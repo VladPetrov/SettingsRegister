@@ -72,6 +72,8 @@ class ManifestService {
 class ConfigInstanceService {
   +CreateInstance(ConfigInstance instance)
   +GetById(Guid instanceId)
+  +List()
+  +Delete(Guid instanceId)
   +SetCellValue(Guid instanceId, string settingKey, int layerIndex, string? value)
 }
 
@@ -89,7 +91,9 @@ interface IManifestRepository {
 interface IConfigInstanceRepository {
   +Add(ConfigInstance instance)
   +GetById(Guid instanceId)
+  +List()
   +Update(ConfigInstance instance)
+  +Delete(Guid instanceId)
 }
 
 interface IConfigChangeRepository {

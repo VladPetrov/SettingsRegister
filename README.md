@@ -1,126 +1,103 @@
-﻿# Configuration Change Tracker API
+# Configuration Change Tracker API
 
-ASP.NET Core Web API for tracking configuration changes in a hierarchical settings table.
+ASP.NET Core Web API for importing versioned manifests, creating manifest-bound configuration instances, tracking immutable config changes, and notifying a simulated external monitor for critical changes.
 
-## Scenario
+## Architecture
 
-You join the Back-Office team and build a configuration change tracker that:
-- imports and versions table manifests,
-- stores configuration instances bound to a manifest version,
-- records add/update/delete cell changes,
-- notifies an external monitoring service for critical updates.
+The solution is strict-layered:
 
-## Final Domain Design
+1. `BackOfficeSmall.Domain`
+   - Aggregate roots: `Manifest`, `ConfigInstance`
+   - Supporting domain types: `ManifestSettingDefinition`, `ManifestOverridePermission`, `SettingCell`, `ConfigChange`, `ConfigOperation`
+   - Domain contracts: `IManifestRepository`, `IConfigInstanceRepository`, `IConfigChangeRepository`, `IMonitoringNotifier`
+2. `BackOfficeSmall.Application`
+   - Use-case orchestration services:
+     - `ManifestService` (import/version lookup)
+     - `ConfigInstanceService` (instance CRUD + cell mutation)
+     - `ConfigChangeQueryService` (query by id and filters)
+   - Application contracts/requests and application exceptions
+3. `BackOfficeSmall.Infrastructure`
+   - In-memory repository implementations with thread-safety
+   - Simulated async monitoring notifier (`SimulatedMonitoringNotifier`)
+4. `BackOfficeSmall.Api`
+   - REST controllers, DTOs, mapping, validation, `ProblemDetails` error middleware, `/health`
+5. `BackOfficeSmall.Tests`
+   - Unit tests for domain invariants and service decisions
+   - Integration tests for core endpoints and error contracts
 
-The domain is a hierarchical settings table (not a tree).
+## Core Domain Rules
 
-- Manifest defines table structure and size.
-- ConfigInstance stores actual values for one table instance.
-- ConfigChange stores immutable audit history of changes.
+- Manifest is immutable after creation.
+- Manifest uniqueness: (`Name`, `Version`).
+- Config instance name is unique.
+- Config instance must reference an existing `ManifestId`.
+- Cells are unique per (`ConfigInstanceId`, `SettingKey`, `LayerIndex`).
+- Layer index must stay in `0..LayerCount-1`.
+- Setting key must exist in the referenced manifest.
+- Override is allowed only when manifest permission for (`SettingKey`, `LayerIndex`) allows it.
+- `ConfigChange` is immutable and validates operation semantics:
+  - `Add`: `AfterValue` required, `BeforeValue` absent
+  - `Update`: both values required
+  - `Delete`: `BeforeValue` required, `AfterValue` absent
+- Critical notification is derived from manifest setting definition metadata.
 
-### Aggregate roots
+## Assumptions
 
-1. Manifest
-2. ConfigInstance
+- Persistence is in-memory only.
+- Monitoring integration is simulated, async, injectable, and retry-free.
+- UTC is required for date filters (`fromUtc`, `toUtc`) when provided.
+- API does not expose domain entities directly; DTO mapping is explicit.
+
+## API Endpoints
 
 ### Manifest
+- `POST /api/manifests/import`
+- `GET /api/manifests/{manifestId}`
+- `GET /api/manifests/latest/{name}`
 
-Manifest is immutable after creation.
+### Config Instance
+- `POST /api/config-instances`
+- `GET /api/config-instances`
+- `GET /api/config-instances/{instanceId}`
+- `DELETE /api/config-instances/{instanceId}`
+- `PUT /api/config-instances/{instanceId}/cells`
 
-Required shape:
-- `ManifestId`
-- `Name`
-- `Version`
-- `LayerCount`
-- setting definitions (columns)
-- override permissions per (`SettingKey`, `LayerIndex`)
-
-Versioning rules:
-- Importing JSON creates a new manifest version for a name.
-- Unique key is (`Name`, `Version`).
-
-### ConfigInstance
-
-ConfigInstance references one manifest by `ManifestId`.
-
-Required shape:
-- `ConfigInstanceId`
-- unique `Name`
-- `ManifestId`
-- value cells keyed by (`SettingKey`, `LayerIndex`)
-
-Binding rule:
-- Instance is pinned to the referenced manifest version.
-
-### ConfigChange
-
-Immutable change log record per value operation:
-- add/update/delete operation
-- before/after values
-- actor and UTC timestamp
-- target cell (`SettingKey`, `LayerIndex`) and instance reference
-
-Criticality rule:
-- Critical notification is derived from manifest/setting definition metadata.
-- It is not a mutable flag on `ConfigChange` payload.
-
-## Core Invariants
-
-- Manifest is immutable once created.
-- (`Name`, `Version`) for Manifest is unique.
-- ConfigInstance name is unique.
-- ConfigInstance must reference an existing ManifestId.
-- Layer index must be within `0..LayerCount-1`.
-- Setting key must exist in the referenced manifest.
-- Override at (`SettingKey`, `LayerIndex`) is allowed only when manifest permits it.
-- No duplicate value entry for the same (`ConfigInstanceId`, `SettingKey`, `LayerIndex`).
-
-## API Scope
-
-Minimum assignment endpoints remain:
+### Config Change
 - `POST /api/config-changes`
 - `GET /api/config-changes`
 - `GET /api/config-changes/{id}`
+
+### Operational
 - `GET /health`
 
-Domain-focused endpoints expected by this design:
-- manifest import/versioning endpoints
-- config instance CRUD endpoints
-- instance value mutation endpoints with invariant validation
+## Error Contract
 
-## Technical Focus
+Errors return `ProblemDetails` with consistent status mapping:
 
-Mandatory:
-- .NET
-- REST API
-- in-memory persistence
-- input validation and clear error handling
-- one simulated external integration
-- health check endpoint
-- unit and integration tests
+- `400` invalid request payload/model state
+- `404` resource not found
+- `409` conflict (uniqueness collisions)
+- `422` domain validation failures
+- `500` unexpected internal failures
 
-Optional:
-- `/metrics`
-- retry/circuit-breaker for external call
-- correlation ID tracing
-- additional edge case handling
-
-## How To Run
+## Run
 
 ```bash
 dotnet restore
-dotnet build
+dotnet build BackOfficeSmall.sln
 dotnet run --project BackOfficeSmall.Api
 ```
 
-## How To Test
+## Test
 
 ```bash
-dotnet test
+dotnet test BackOfficeSmall.sln
 ```
 
-## Authoritative Documents
+## Design Rationale
 
-- `code_style.md` - mandatory coding and design standards
-- `domain_model.puml` - domain model and invariants
-- `AGENTS.md` - agent behavior and architecture guardrails
+- Domain model is explicit and invariant-driven for auditability.
+- Application services orchestrate rules using only domain interfaces.
+- In-memory repositories enforce uniqueness constraints at boundary entry points.
+- Critical notification decision is centralized in mutation flow and derived from manifest metadata, not caller flags.
+- Documentation (`README.md`, `domain_model.puml`) is intentionally kept aligned with implementation.

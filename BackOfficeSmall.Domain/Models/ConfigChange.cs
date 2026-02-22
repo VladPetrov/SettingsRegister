@@ -1,25 +1,27 @@
-﻿namespace BackOfficeSmall.Domain.Models;
+namespace BackOfficeSmall.Domain.Models;
 
 public sealed class ConfigChange
 {
     public ConfigChange(
         Guid id,
-        string ruleType,
+        Guid configInstanceId,
+        Guid manifestId,
+        string settingKey,
+        int layerIndex,
         ConfigOperation operation,
-        string targetKey,
         string? beforeValue,
         string? afterValue,
-        string reason,
         string changedBy,
         DateTime changedAtUtc)
     {
         Id = id;
-        RuleType = ruleType;
+        ConfigInstanceId = configInstanceId;
+        ManifestId = manifestId;
+        SettingKey = settingKey;
+        LayerIndex = layerIndex;
         Operation = operation;
-        TargetKey = targetKey;
         BeforeValue = beforeValue;
         AfterValue = afterValue;
-        Reason = reason;
         ChangedBy = changedBy;
         ChangedAtUtc = changedAtUtc;
 
@@ -28,17 +30,19 @@ public sealed class ConfigChange
 
     public Guid Id { get; }
 
-    public string RuleType { get; }
+    public Guid ConfigInstanceId { get; }
+
+    public Guid ManifestId { get; }
+
+    public string SettingKey { get; }
+
+    public int LayerIndex { get; }
 
     public ConfigOperation Operation { get; }
-
-    public string TargetKey { get; }
 
     public string? BeforeValue { get; }
 
     public string? AfterValue { get; }
-
-    public string Reason { get; }
 
     public string ChangedBy { get; }
 
@@ -51,19 +55,24 @@ public sealed class ConfigChange
             throw new ArgumentException("Id must be a non-empty GUID.", nameof(Id));
         }
 
-        if (string.IsNullOrWhiteSpace(RuleType))
+        if (ConfigInstanceId == Guid.Empty)
         {
-            throw new ArgumentException("Rule type is required.", nameof(RuleType));
+            throw new ArgumentException("ConfigInstanceId must be a non-empty GUID.", nameof(ConfigInstanceId));
         }
 
-        if (string.IsNullOrWhiteSpace(TargetKey))
+        if (ManifestId == Guid.Empty)
         {
-            throw new ArgumentException("Target key is required.", nameof(TargetKey));
+            throw new ArgumentException("ManifestId must be a non-empty GUID.", nameof(ManifestId));
         }
 
-        if (string.IsNullOrWhiteSpace(Reason))
+        if (string.IsNullOrWhiteSpace(SettingKey))
         {
-            throw new ArgumentException("Reason is required.", nameof(Reason));
+            throw new ArgumentException("Setting key is required.", nameof(SettingKey));
+        }
+
+        if (LayerIndex < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(LayerIndex), "LayerIndex must be greater than or equal to zero.");
         }
 
         if (string.IsNullOrWhiteSpace(ChangedBy))
