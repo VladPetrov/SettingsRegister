@@ -1,5 +1,6 @@
 using BackOfficeSmall.Application.Contracts;
 using BackOfficeSmall.Application.Services;
+using BackOfficeSmall.Domain.Models.Manifest;
 using BackOfficeSmall.Infrastructure.Repositories;
 using BackOfficeSmall.Tests.TestDoubles;
 
@@ -16,11 +17,11 @@ public sealed class ManifestServiceTests
 
         ManifestImportRequest request = CreateManifestRequest("Main", "tester");
 
-        BackOfficeSmall.Domain.Models.Manifest first = await service.ImportManifestAsync(request, CancellationToken.None);
-        BackOfficeSmall.Domain.Models.Manifest firstSnapshot = await service.GetByIdAsync(first.ManifestId, CancellationToken.None);
+        ManifestValueObject first = await service.ImportManifestAsync(request, CancellationToken.None);
+        ManifestValueObject firstSnapshot = await service.GetByIdAsync(first.ManifestId, CancellationToken.None);
 
         clock.Set(DateTime.SpecifyKind(new DateTime(2026, 2, 22, 10, 5, 0), DateTimeKind.Utc));
-        BackOfficeSmall.Domain.Models.Manifest second = await service.ImportManifestAsync(request, CancellationToken.None);
+        ManifestValueObject second = await service.ImportManifestAsync(request, CancellationToken.None);
 
         Assert.Equal(1, first.Version);
         Assert.Equal(1, firstSnapshot.Version);

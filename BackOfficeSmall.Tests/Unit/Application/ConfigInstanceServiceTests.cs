@@ -2,6 +2,7 @@ using BackOfficeSmall.Application.Contracts;
 using BackOfficeSmall.Application.Exceptions;
 using BackOfficeSmall.Application.Services;
 using BackOfficeSmall.Domain.Models;
+using BackOfficeSmall.Domain.Models.Manifest;
 using BackOfficeSmall.Infrastructure.Repositories;
 using BackOfficeSmall.Tests.TestDoubles;
 
@@ -33,7 +34,7 @@ public sealed class ConfigInstanceServiceTests
         FakeSystemClock clock = new(DateTime.SpecifyKind(new DateTime(2026, 2, 22, 12, 0, 0), DateTimeKind.Utc));
         ConfigInstanceService service = new(manifestRepository, instanceRepository, changeRepository, notifier, clock);
 
-        Manifest manifest = CreateManifest(allowLayerOneOverride: false);
+        ManifestDomainRoot manifest = CreateManifest(allowLayerOneOverride: false);
         await manifestRepository.AddAsync(manifest, CancellationToken.None);
 
         ConfigInstance instance = await service.CreateInstanceAsync(
@@ -63,25 +64,27 @@ public sealed class ConfigInstanceServiceTests
         FakeSystemClock clock = new(DateTime.SpecifyKind(new DateTime(2026, 2, 22, 13, 0, 0), DateTimeKind.Utc));
         ConfigInstanceService service = new(manifestRepository, instanceRepository, changeRepository, notifier, clock);
 
-        Manifest manifest = new(
-            Guid.NewGuid(),
-            "Main",
-            1,
-            2,
-            clock.UtcNow,
-            "tester",
-            new[]
+        ManifestDomainRoot manifest = new()
+        {
+            ManifestId = Guid.NewGuid(),
+            Name = "Main",
+            Version = 1,
+            LayerCount = 2,
+            CreatedAtUtc = clock.UtcNow,
+            CreatedBy = "tester",
+            SettingDefinitions =
             {
                 new ManifestSettingDefinition("FeatureFlag", requiresCriticalNotification: true),
                 new ManifestSettingDefinition("SafeFlag", requiresCriticalNotification: false)
             },
-            new[]
+            OverridePermissions =
             {
                 new ManifestOverridePermission("FeatureFlag", 0, canOverride: true),
                 new ManifestOverridePermission("FeatureFlag", 1, canOverride: true),
                 new ManifestOverridePermission("SafeFlag", 0, canOverride: true),
                 new ManifestOverridePermission("SafeFlag", 1, canOverride: true)
-            });
+            }
+        };
 
         await manifestRepository.AddAsync(manifest, CancellationToken.None);
 
@@ -128,23 +131,25 @@ public sealed class ConfigInstanceServiceTests
         return new ConfigInstanceService(manifestRepository, instanceRepository, changeRepository, notifier, clock);
     }
 
-    private static Manifest CreateManifest(bool allowLayerOneOverride)
+    private static ManifestDomainRoot CreateManifest(bool allowLayerOneOverride)
     {
-        return new Manifest(
-            Guid.NewGuid(),
-            "Main",
-            1,
-            2,
-            DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Utc),
-            "tester",
-            new[]
+        return new ManifestDomainRoot
+        {
+            ManifestId = Guid.NewGuid(),
+            Name = "Main",
+            Version = 1,
+            LayerCount = 2,
+            CreatedAtUtc = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Utc),
+            CreatedBy = "tester",
+            SettingDefinitions =
             {
                 new ManifestSettingDefinition("FeatureFlag", requiresCriticalNotification: true)
             },
-            new[]
+            OverridePermissions =
             {
                 new ManifestOverridePermission("FeatureFlag", 0, canOverride: true),
                 new ManifestOverridePermission("FeatureFlag", 1, canOverride: allowLayerOneOverride)
-            });
+            }
+        };
     }
 }

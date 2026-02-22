@@ -1,7 +1,7 @@
 using BackOfficeSmall.Application.Abstractions;
 using BackOfficeSmall.Application.Contracts;
 using BackOfficeSmall.Application.Exceptions;
-using BackOfficeSmall.Domain.Models;
+using BackOfficeSmall.Domain.Models.Manifest;
 using BackOfficeSmall.Domain.Repositories;
 
 namespace BackOfficeSmall.Application.Services;
@@ -17,11 +17,11 @@ public sealed class ManifestService : IManifestService
         _clock = clock ?? throw new ArgumentNullException(nameof(clock));
     }
 
-    public async Task<Manifest> ImportManifestAsync(ManifestImportRequest request, CancellationToken cancellationToken)
+    public async Task<ManifestValueObject> ImportManifestAsync(ManifestImportRequest request, CancellationToken cancellationToken)
     {
         ValidateImportRequest(request);
 
-        Manifest? latestVersion = await _manifestRepository.GetLatestByNameAsync(request.Name, cancellationToken);
+        ManifestValueObject? latestVersion = await _manifestRepository.GetLatestByNameAsync(request.Name, cancellationToken);
         int newVersion = latestVersion is null ? 1 : latestVersion.Version + 1;
 
         List<ManifestSettingDefinition> settingDefinitions = request.SettingDefinitions
@@ -32,15 +32,19 @@ public sealed class ManifestService : IManifestService
             .Select(permission => new ManifestOverridePermission(permission.SettingKey, permission.LayerIndex, permission.CanOverride))
             .ToList();
 
-        Manifest manifest = new(
-            Guid.NewGuid(),
-            request.Name,
-            newVersion,
-            request.LayerCount,
-            _clock.UtcNow,
-            request.CreatedBy,
-            settingDefinitions,
-            overridePermissions);
+        ManifestDomainRoot manifest = new()
+        {
+            ManifestId = Guid.NewGuid(),
+            Name = request.Name,
+            Version = newVersion,
+            LayerCount = request.LayerCount,
+            CreatedAtUtc = _clock.UtcNow,
+            CreatedBy = request.CreatedBy,
+            SettingDefinitions = settingDefinitions,
+            OverridePermissions = overridePermissions
+        };
+
+        manifest.Validate();
 
         try
         {
@@ -51,17 +55,17 @@ public sealed class ManifestService : IManifestService
             throw new ConflictException(ex.Message);
         }
 
-        return manifest;
+        return ManifestValueObject.FromDomainRoot(manifest);
     }
 
-    public async Task<Manifest> GetByIdAsync(Guid manifestId, CancellationToken cancellationToken)
+    public async Task<ManifestValueObject> GetByIdAsync(Guid manifestId, CancellationToken cancellationToken)
     {
         if (manifestId == Guid.Empty)
         {
             throw new ValidationException("ManifestId must be a non-empty GUID.");
         }
 
-        Manifest? manifest = await _manifestRepository.GetByIdAsync(manifestId, cancellationToken);
+        ManifestValueObject? manifest = await _manifestRepository.GetByIdAsync(manifestId, cancellationToken);
         if (manifest is null)
         {
             throw new EntityNotFoundException("Manifest", manifestId.ToString());
@@ -70,14 +74,14 @@ public sealed class ManifestService : IManifestService
         return manifest;
     }
 
-    public async Task<Manifest> GetLatestByNameAsync(string name, CancellationToken cancellationToken)
+    public async Task<ManifestValueObject> GetLatestByNameAsync(string name, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(name))
         {
             throw new ValidationException("Manifest name is required.");
         }
 
-        Manifest? manifest = await _manifestRepository.GetLatestByNameAsync(name, cancellationToken);
+        ManifestValueObject? manifest = await _manifestRepository.GetLatestByNameAsync(name, cancellationToken);
         if (manifest is null)
         {
             throw new EntityNotFoundException("Manifest", name);

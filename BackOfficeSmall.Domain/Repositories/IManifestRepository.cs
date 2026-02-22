@@ -1,12 +1,12 @@
-using BackOfficeSmall.Domain.Models;
+using BackOfficeSmall.Domain.Models.Manifest;
 
 namespace BackOfficeSmall.Domain.Repositories;
 
 public interface IManifestRepository
 {
-    Task AddAsync(Manifest manifest, CancellationToken cancellationToken);
+    Task AddAsync(ManifestDomainRoot manifest, CancellationToken cancellationToken);
 
-    Task<Manifest?> GetByIdAsync(Guid manifestId, CancellationToken cancellationToken);
+    Task<ManifestValueObject?> GetByIdAsync(Guid manifestId, CancellationToken cancellationToken);
 
-    Task<Manifest?> GetLatestByNameAsync(string name, CancellationToken cancellationToken);
+    Task<ManifestValueObject?> GetLatestByNameAsync(string name, CancellationToken cancellationToken);
 }

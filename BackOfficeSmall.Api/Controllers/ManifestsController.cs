@@ -1,6 +1,7 @@
 using BackOfficeSmall.Api.Dtos.Manifests;
 using BackOfficeSmall.Api.Mapping;
 using BackOfficeSmall.Application.Abstractions;
+using BackOfficeSmall.Domain.Models.Manifest;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BackOfficeSmall.Api.Controllers;
@@ -26,7 +27,7 @@ public sealed class ManifestsController : ControllerBase
         [FromBody] ManifestImportRequestDto request,
         CancellationToken cancellationToken)
     {
-        BackOfficeSmall.Domain.Models.Manifest manifest = await _manifestService.ImportManifestAsync(
+        ManifestValueObject manifest = await _manifestService.ImportManifestAsync(
             request.ToApplication(),
             cancellationToken);
 
@@ -42,7 +43,7 @@ public sealed class ManifestsController : ControllerBase
         Guid manifestId,
         CancellationToken cancellationToken)
     {
-        BackOfficeSmall.Domain.Models.Manifest manifest = await _manifestService.GetByIdAsync(manifestId, cancellationToken);
+        ManifestValueObject manifest = await _manifestService.GetByIdAsync(manifestId, cancellationToken);
         return Ok(manifest.ToDto());
     }
 
@@ -55,7 +56,7 @@ public sealed class ManifestsController : ControllerBase
         string name,
         CancellationToken cancellationToken)
     {
-        BackOfficeSmall.Domain.Models.Manifest manifest = await _manifestService.GetLatestByNameAsync(name, cancellationToken);
+        ManifestValueObject manifest = await _manifestService.GetLatestByNameAsync(name, cancellationToken);
         return Ok(manifest.ToDto());
     }
 }

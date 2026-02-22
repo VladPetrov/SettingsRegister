@@ -7,7 +7,10 @@ ASP.NET Core Web API for importing versioned manifests, creating manifest-bound 
 The solution is strict-layered:
 
 1. `BackOfficeSmall.Domain`
-   - Aggregate roots: `Manifest`, `ConfigInstance`
+   - Manifest split:
+     - `ManifestDomainRoot` (mutable write-side object, `Validate()` only)
+     - `ManifestValueObject` (immutable read-side behavior object with `HasSetting`, `RequiresCriticalNotification`, `CanOverride`)
+   - Aggregate root: `ConfigInstance`
    - Supporting domain types: `ManifestSettingDefinition`, `ManifestOverridePermission`, `SettingCell`, `ConfigChange`, `ConfigOperation`
    - Domain contracts: `IManifestRepository`, `IConfigInstanceRepository`, `IConfigChangeRepository`, `IMonitoringNotifier`
 2. `BackOfficeSmall.Application`
@@ -18,16 +21,20 @@ The solution is strict-layered:
    - Application contracts/requests and application exceptions
 3. `BackOfficeSmall.Infrastructure`
    - In-memory repository implementations with thread-safety
+   - Persistence model `ManifestEntity` (no `Validate()`)
+   - Hydration component `ManifestValueObjectHydrator` for mapping entity -> value object
    - Simulated async monitoring notifier (`SimulatedMonitoringNotifier`)
 4. `BackOfficeSmall.Api`
    - REST controllers, DTOs, mapping, validation, `ProblemDetails` error middleware, `/health`
+   - `ManifestFileDto` JSON contract for file deserialization (structure only; no file-import workflow yet)
 5. `BackOfficeSmall.Tests`
    - Unit tests for domain invariants and service decisions
    - Integration tests for core endpoints and error contracts
 
 ## Core Domain Rules
 
-- Manifest is immutable after creation.
+- Manifest write-side state is represented by mutable `ManifestDomainRoot`.
+- Manifest behavior checks are performed through immutable `ManifestValueObject`.
 - Manifest uniqueness: (`Name`, `Version`).
 - Config instance name is unique.
 - Config instance must reference an existing `ManifestId`.
@@ -98,6 +105,7 @@ dotnet test BackOfficeSmall.sln
 ## Design Rationale
 
 - Domain model is explicit and invariant-driven for auditability.
+- Manifest responsibilities are separated between domain root, value object, persistence entity, and file DTO.
 - Application services orchestrate rules using only domain interfaces.
 - In-memory repositories enforce uniqueness constraints at boundary entry points.
 - Critical notification decision is centralized in mutation flow and derived from manifest metadata, not caller flags.

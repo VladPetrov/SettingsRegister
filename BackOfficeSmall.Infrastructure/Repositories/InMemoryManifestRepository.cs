@@ -1,15 +1,18 @@
-using BackOfficeSmall.Domain.Models;
+using BackOfficeSmall.Domain.Models.Manifest;
 using BackOfficeSmall.Domain.Repositories;
+using BackOfficeSmall.Infrastructure.Hydration;
+using BackOfficeSmall.Infrastructure.Persistence.Entities;
 
 namespace BackOfficeSmall.Infrastructure.Repositories;
 
 public sealed class InMemoryManifestRepository : IManifestRepository
 {
     private readonly object _syncRoot = new();
-    private readonly Dictionary<Guid, ManifestRecord> _manifestsById = new();
+    private readonly ManifestValueObjectHydrator _hydrator = new();
+    private readonly Dictionary<Guid, ManifestEntity> _manifestsById = new();
     private readonly Dictionary<string, Guid> _manifestKeyIndex = new(StringComparer.OrdinalIgnoreCase);
 
-    public Task AddAsync(Manifest manifest, CancellationToken cancellationToken)
+    public Task AddAsync(ManifestDomainRoot manifest, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -29,50 +32,50 @@ public sealed class InMemoryManifestRepository : IManifestRepository
                     $"Manifest with name '{manifest.Name}' and version '{manifest.Version}' already exists.");
             }
 
-            _manifestsById[manifest.ManifestId] = ToRecord(manifest);
+            _manifestsById[manifest.ManifestId] = ToEntity(manifest);
             _manifestKeyIndex[uniqueKey] = manifest.ManifestId;
         }
 
         return Task.CompletedTask;
     }
 
-    public Task<Manifest?> GetByIdAsync(Guid manifestId, CancellationToken cancellationToken)
+    public Task<ManifestValueObject?> GetByIdAsync(Guid manifestId, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
         lock (_syncRoot)
         {
-            if (!_manifestsById.TryGetValue(manifestId, out ManifestRecord? record))
+            if (!_manifestsById.TryGetValue(manifestId, out ManifestEntity? entity))
             {
-                return Task.FromResult<Manifest?>(null);
+                return Task.FromResult<ManifestValueObject?>(null);
             }
 
-            return Task.FromResult<Manifest?>(ToDomain(record));
+            return Task.FromResult<ManifestValueObject?>(_hydrator.Hydrate(entity));
         }
     }
 
-    public Task<Manifest?> GetLatestByNameAsync(string name, CancellationToken cancellationToken)
+    public Task<ManifestValueObject?> GetLatestByNameAsync(string name, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
         if (string.IsNullOrWhiteSpace(name))
         {
-            return Task.FromResult<Manifest?>(null);
+            return Task.FromResult<ManifestValueObject?>(null);
         }
 
         lock (_syncRoot)
         {
-            ManifestRecord? latest = _manifestsById.Values
-                .Where(record => string.Equals(record.Name, name, StringComparison.OrdinalIgnoreCase))
-                .OrderByDescending(record => record.Version)
+            ManifestEntity? latest = _manifestsById.Values
+                .Where(entity => string.Equals(entity.Name, name, StringComparison.OrdinalIgnoreCase))
+                .OrderByDescending(entity => entity.Version)
                 .FirstOrDefault();
 
             if (latest is null)
             {
-                return Task.FromResult<Manifest?>(null);
+                return Task.FromResult<ManifestValueObject?>(null);
             }
 
-            return Task.FromResult<Manifest?>(ToDomain(latest));
+            return Task.FromResult<ManifestValueObject?>(_hydrator.Hydrate(latest));
         }
     }
 
@@ -81,74 +84,35 @@ public sealed class InMemoryManifestRepository : IManifestRepository
         return $"{name}:{version}";
     }
 
-    private static ManifestRecord ToRecord(Manifest manifest)
+    private static ManifestEntity ToEntity(ManifestDomainRoot manifest)
     {
-        List<ManifestSettingDefinitionRecord> settingDefinitions = manifest.SettingDefinitions
-            .Select(definition => new ManifestSettingDefinitionRecord(
-                definition.SettingKey,
-                definition.RequiresCriticalNotification))
+        List<ManifestSettingDefinitionEntity> settingDefinitions = manifest.SettingDefinitions
+            .Select(definition => new ManifestSettingDefinitionEntity
+            {
+                SettingKey = definition.SettingKey,
+                RequiresCriticalNotification = definition.RequiresCriticalNotification
+            })
             .ToList();
 
-        List<ManifestOverridePermissionRecord> overridePermissions = manifest.OverridePermissions
-            .Select(permission => new ManifestOverridePermissionRecord(
-                permission.SettingKey,
-                permission.LayerIndex,
-                permission.CanOverride))
+        List<ManifestOverridePermissionEntity> overridePermissions = manifest.OverridePermissions
+            .Select(permission => new ManifestOverridePermissionEntity
+            {
+                SettingKey = permission.SettingKey,
+                LayerIndex = permission.LayerIndex,
+                CanOverride = permission.CanOverride
+            })
             .ToList();
 
-        return new ManifestRecord(
-            manifest.ManifestId,
-            manifest.Name,
-            manifest.Version,
-            manifest.LayerCount,
-            manifest.CreatedAtUtc,
-            manifest.CreatedBy,
-            settingDefinitions,
-            overridePermissions);
+        return new ManifestEntity
+        {
+            ManifestId = manifest.ManifestId,
+            Name = manifest.Name,
+            Version = manifest.Version,
+            LayerCount = manifest.LayerCount,
+            CreatedAtUtc = manifest.CreatedAtUtc,
+            CreatedBy = manifest.CreatedBy,
+            SettingDefinitions = settingDefinitions,
+            OverridePermissions = overridePermissions
+        };
     }
-
-    private static Manifest ToDomain(ManifestRecord record)
-    {
-        List<ManifestSettingDefinition> settingDefinitions = record.SettingDefinitions
-            .Select(definition => new ManifestSettingDefinition(
-                definition.SettingKey,
-                definition.RequiresCriticalNotification))
-            .ToList();
-
-        List<ManifestOverridePermission> overridePermissions = record.OverridePermissions
-            .Select(permission => new ManifestOverridePermission(
-                permission.SettingKey,
-                permission.LayerIndex,
-                permission.CanOverride))
-            .ToList();
-
-        return new Manifest(
-            record.ManifestId,
-            record.Name,
-            record.Version,
-            record.LayerCount,
-            record.CreatedAtUtc,
-            record.CreatedBy,
-            settingDefinitions,
-            overridePermissions);
-    }
-
-    private sealed record ManifestRecord(
-        Guid ManifestId,
-        string Name,
-        int Version,
-        int LayerCount,
-        DateTime CreatedAtUtc,
-        string CreatedBy,
-        IReadOnlyList<ManifestSettingDefinitionRecord> SettingDefinitions,
-        IReadOnlyList<ManifestOverridePermissionRecord> OverridePermissions);
-
-    private sealed record ManifestSettingDefinitionRecord(
-        string SettingKey,
-        bool RequiresCriticalNotification);
-
-    private sealed record ManifestOverridePermissionRecord(
-        string SettingKey,
-        int LayerIndex,
-        bool CanOverride);
 }

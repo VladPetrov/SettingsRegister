@@ -3,6 +3,7 @@ using BackOfficeSmall.Api.Dtos.ConfigInstances;
 using BackOfficeSmall.Api.Dtos.Manifests;
 using BackOfficeSmall.Application.Contracts;
 using BackOfficeSmall.Domain.Models;
+using BackOfficeSmall.Domain.Models.Manifest;
 
 namespace BackOfficeSmall.Api.Mapping;
 
@@ -63,7 +64,7 @@ public static class ApiMappings
             dto.ChangedBy);
     }
 
-    public static ManifestResponseDto ToDto(this Manifest manifest)
+    public static ManifestResponseDto ToDto(this ManifestValueObject manifest)
     {
         IReadOnlyList<ManifestSettingDefinitionDto> settings = manifest.SettingDefinitions
             .Select(setting => new ManifestSettingDefinitionDto

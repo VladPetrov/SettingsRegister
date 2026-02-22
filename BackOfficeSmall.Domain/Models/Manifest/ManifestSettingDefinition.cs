@@ -1,4 +1,4 @@
-namespace BackOfficeSmall.Domain.Models;
+namespace BackOfficeSmall.Domain.Models.Manifest;
 
 public sealed class ManifestSettingDefinition
 {

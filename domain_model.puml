@@ -1,16 +1,51 @@
-﻿@startuml
+@startuml
 title Configuration Change Tracker - Domain Model
 
 skinparam classAttributeIconSize 0
 
-class Manifest {
+class ManifestDomainRoot {
   +Guid ManifestId
   +string Name
   +int Version
   +int LayerCount
   +DateTime CreatedAtUtc
   +string CreatedBy
+  +List<ManifestSettingDefinition> SettingDefinitions
+  +List<ManifestOverridePermission> OverridePermissions
   +Validate()
+}
+
+class ManifestValueObject {
+  +Guid ManifestId
+  +string Name
+  +int Version
+  +int LayerCount
+  +DateTime CreatedAtUtc
+  +string CreatedBy
+  +IReadOnlyList<ManifestSettingDefinition> SettingDefinitions
+  +IReadOnlyList<ManifestOverridePermission> OverridePermissions
+  +HasSetting(string settingKey)
+  +RequiresCriticalNotification(string settingKey)
+  +CanOverride(string settingKey, int layerIndex)
+}
+
+class ManifestEntity {
+  +Guid ManifestId
+  +string Name
+  +int Version
+  +int LayerCount
+  +DateTime CreatedAtUtc
+  +string CreatedBy
+  +List<ManifestSettingDefinitionEntity> SettingDefinitions
+  +List<ManifestOverridePermissionEntity> OverridePermissions
+}
+
+class ManifestDto {
+  +string Name
+  +int LayerCount
+  +string CreatedBy
+  +IReadOnlyList<ManifestFileSettingDefinitionDto> SettingDefinitions
+  +IReadOnlyList<ManifestFileOverridePermissionDto> OverridePermissions
 }
 
 class ManifestSettingDefinition {
@@ -63,7 +98,7 @@ enum ConfigOperation {
 }
 
 class ManifestService {
-  +ImportManifest(Manifest manifest)
+  +ImportManifest(ManifestImportRequest request)
   +GetById(Guid manifestId)
   +GetLatestByName(string name)
 }
@@ -82,9 +117,9 @@ class ConfigChangeQueryService {
 }
 
 interface IManifestRepository {
-  +Add(Manifest manifest)
-  +GetById(Guid manifestId)
-  +GetLatestByName(string name)
+  +Add(ManifestDomainRoot manifest)
+  +GetById(Guid manifestId) : ManifestValueObject
+  +GetLatestByName(string name) : ManifestValueObject
 }
 
 interface IConfigInstanceRepository {
@@ -105,11 +140,15 @@ interface IMonitoringNotifier {
   +NotifyCriticalChangeAsync(ConfigChange change)
 }
 
-Manifest "1" *-- "*" ManifestSettingDefinition
-Manifest "1" *-- "*" ManifestOverridePermission
+ManifestDomainRoot "1" *-- "*" ManifestSettingDefinition
+ManifestDomainRoot "1" *-- "*" ManifestOverridePermission
+ManifestValueObject "1" *-- "*" ManifestSettingDefinition
+ManifestValueObject "1" *-- "*" ManifestOverridePermission
 ConfigInstance "1" *-- "*" SettingCell
-ConfigInstance --> Manifest : references by ManifestId
+ConfigInstance --> ManifestValueObject : references by ManifestId
 ConfigChange --> ConfigInstance
+ManifestEntity --> ManifestValueObject : hydrated to
+ManifestDto --> ManifestDomainRoot : mapped to
 
 ManifestService --> IManifestRepository
 ConfigInstanceService --> IManifestRepository : validates structure/rules
@@ -118,12 +157,23 @@ ConfigInstanceService --> IConfigChangeRepository : writes audit log
 ConfigInstanceService --> IMonitoringNotifier : on critical settings
 ConfigChangeQueryService --> IConfigChangeRepository
 
-note right of Manifest
-Invariants:
-1) Manifest is immutable after creation.
-2) (Name, Version) must be unique.
-3) LayerCount > 0.
-4) Setting keys are unique within a manifest.
+note right of ManifestDomainRoot
+Responsibilities:
+1) Mutable domain root used for write-side validation.
+2) Validate() enforces shape and invariant checks.
+end note
+
+note right of ManifestValueObject
+Responsibilities:
+1) Immutable read model for manifest behavior queries.
+2) Exposes HasSetting / CanOverride / RequiresCriticalNotification.
+3) Created via hydration from persistence entity.
+end note
+
+note right of ManifestEntity
+Responsibilities:
+1) Persistence-only representation.
+2) No domain behavior and no Validate() method.
 end note
 
 note right of ConfigInstance

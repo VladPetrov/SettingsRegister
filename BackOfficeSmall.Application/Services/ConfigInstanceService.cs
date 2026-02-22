@@ -2,6 +2,7 @@ using BackOfficeSmall.Application.Abstractions;
 using BackOfficeSmall.Application.Contracts;
 using BackOfficeSmall.Application.Exceptions;
 using BackOfficeSmall.Domain.Models;
+using BackOfficeSmall.Domain.Models.Manifest;
 using BackOfficeSmall.Domain.Repositories;
 using BackOfficeSmall.Domain.Services;
 
@@ -33,7 +34,7 @@ public sealed class ConfigInstanceService : IConfigInstanceService
     {
         ValidateCreateRequest(request);
 
-        Manifest manifest = await GetManifestOrThrowAsync(request.ManifestId, cancellationToken);
+        ManifestValueObject manifest = await GetManifestOrThrowAsync(request.ManifestId, cancellationToken);
         ConfigInstance instance = new(
             Guid.NewGuid(),
             request.Name,
@@ -112,7 +113,7 @@ public sealed class ConfigInstanceService : IConfigInstanceService
         ValidateSetCellRequest(request);
 
         ConfigInstance instance = await GetInstanceOrThrowAsync(instanceId, cancellationToken);
-        Manifest manifest = await GetManifestOrThrowAsync(instance.ManifestId, cancellationToken);
+        ManifestValueObject manifest = await GetManifestOrThrowAsync(instance.ManifestId, cancellationToken);
 
         ValidateMutationAgainstManifest(manifest, request.SettingKey, request.LayerIndex);
 
@@ -203,7 +204,7 @@ public sealed class ConfigInstanceService : IConfigInstanceService
         }
     }
 
-    private void ValidateMutationAgainstManifest(Manifest manifest, string settingKey, int layerIndex)
+    private void ValidateMutationAgainstManifest(ManifestValueObject manifest, string settingKey, int layerIndex)
     {
         if (!manifest.HasSetting(settingKey))
         {
@@ -223,9 +224,9 @@ public sealed class ConfigInstanceService : IConfigInstanceService
         }
     }
 
-    private async Task<Manifest> GetManifestOrThrowAsync(Guid manifestId, CancellationToken cancellationToken)
+    private async Task<ManifestValueObject> GetManifestOrThrowAsync(Guid manifestId, CancellationToken cancellationToken)
     {
-        Manifest? manifest = await _manifestRepository.GetByIdAsync(manifestId, cancellationToken);
+        ManifestValueObject? manifest = await _manifestRepository.GetByIdAsync(manifestId, cancellationToken);
         if (manifest is null)
         {
             throw new EntityNotFoundException("Manifest", manifestId.ToString());
