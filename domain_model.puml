@@ -3,23 +3,57 @@ title Configuration Change Tracker - Domain Model
 
 skinparam classAttributeIconSize 0
 
-class ConfigChange {
-  +Guid Id
-  +string RuleType
-  +ConfigOperation Operation
-  +string TargetKey
-  +string? BeforeValue
-  +string? AfterValue
-  +string Reason
-  +string ChangedBy
-  +DateTime ChangedAtUtc
+class Manifest {
+  +Guid ManifestId
+  +string Name
+  +int Version
+  +int LayerCount
+  +DateTime CreatedAtUtc
+  +string CreatedBy
   +Validate()
 }
 
-class ConfigDefinition {
-  +string RuleType
-  +string TargetKey
+class ManifestSettingDefinition {
+  +string SettingKey
   +bool RequiresCriticalNotification
+  +Validate()
+}
+
+class ManifestOverridePermission {
+  +string SettingKey
+  +int LayerIndex
+  +bool CanOverride
+  +Validate()
+}
+
+class ConfigInstance {
+  +Guid ConfigInstanceId
+  +string Name
+  +Guid ManifestId
+  +DateTime CreatedAtUtc
+  +string CreatedBy
+  +SetValue(string settingKey, int layerIndex, string? value)
+  +Validate()
+}
+
+class SettingCell {
+  +string SettingKey
+  +int LayerIndex
+  +string? Value
+  +Validate()
+}
+
+class ConfigChange {
+  +Guid Id
+  +Guid ConfigInstanceId
+  +Guid ManifestId
+  +string SettingKey
+  +int LayerIndex
+  +ConfigOperation Operation
+  +string? BeforeValue
+  +string? AfterValue
+  +string ChangedBy
+  +DateTime ChangedAtUtc
   +Validate()
 }
 
@@ -29,35 +63,85 @@ enum ConfigOperation {
   Delete
 }
 
-class ConfigChangeService {
-  +CreateChange(ConfigChange change)
+class ManifestService {
+  +ImportManifest(Manifest manifest)
+  +GetById(Guid manifestId)
+  +GetLatestByName(string name)
+}
+
+class ConfigInstanceService {
+  +CreateInstance(ConfigInstance instance)
+  +GetById(Guid instanceId)
+  +SetCellValue(Guid instanceId, string settingKey, int layerIndex, string? value)
+}
+
+class ConfigChangeQueryService {
   +GetChangeById(Guid id)
-  +ListChanges(string? type, DateTime? fromUtc, DateTime? toUtc)
+  +ListChanges(DateTime? fromUtc, DateTime? toUtc, ConfigOperation? operation)
+}
+
+interface IManifestRepository {
+  +Add(Manifest manifest)
+  +GetById(Guid manifestId)
+  +GetLatestByName(string name)
+}
+
+interface IConfigInstanceRepository {
+  +Add(ConfigInstance instance)
+  +GetById(Guid instanceId)
+  +Update(ConfigInstance instance)
 }
 
 interface IConfigChangeRepository {
   +Add(ConfigChange change)
   +GetById(Guid id)
-  +List(string? type, DateTime? fromUtc, DateTime? toUtc)
+  +List(DateTime? fromUtc, DateTime? toUtc, ConfigOperation? operation)
 }
 
 interface IMonitoringNotifier {
   +NotifyCriticalChangeAsync(ConfigChange change)
 }
 
-ConfigChangeService --> IConfigChangeRepository : persists and queries
-ConfigChangeService --> IMonitoringNotifier : notifies on critical change
-ConfigChangeService --> ConfigDefinition : resolves criticality from definition
+Manifest "1" *-- "*" ManifestSettingDefinition
+Manifest "1" *-- "*" ManifestOverridePermission
+ConfigInstance "1" *-- "*" SettingCell
+ConfigInstance --> Manifest : references by ManifestId
+ConfigChange --> ConfigInstance
+ConfigChange --> Manifest
+
+ManifestService --> IManifestRepository
+ConfigInstanceService --> IManifestRepository : validates structure/rules
+ConfigInstanceService --> IConfigInstanceRepository
+ConfigInstanceService --> IConfigChangeRepository : writes audit log
+ConfigInstanceService --> IMonitoringNotifier : on critical settings
+ConfigChangeQueryService --> IConfigChangeRepository
+
+note right of Manifest
+Invariants:
+1) Manifest is immutable after creation.
+2) (Name, Version) must be unique.
+3) LayerCount > 0.
+4) Setting keys are unique within a manifest.
+end note
+
+note right of ConfigInstance
+Invariants:
+1) Name is unique.
+2) ManifestId must exist.
+3) Cells must match manifest keys and layer range.
+4) Override allowed only by manifest permissions.
+5) No duplicate (SettingKey, LayerIndex) cell.
+end note
 
 note right of ConfigChange
 Invariants:
-1) Id is unique and immutable.
-2) ChangedAtUtc is set once in UTC.
-3) Operation=Add requires AfterValue and no BeforeValue.
-4) Operation=Update requires BeforeValue and AfterValue.
-5) Operation=Delete requires BeforeValue and no AfterValue.
-6) RuleType and TargetKey are required.
-7) Critical notification is determined by ConfigDefinition.
+1) Id is immutable and unique.
+2) ChangedAtUtc is UTC and immutable.
+3) Operation rules:
+   - Add: AfterValue required, BeforeValue absent.
+   - Update: BeforeValue and AfterValue required.
+   - Delete: BeforeValue required, AfterValue absent.
+4) Critical notification is derived from manifest setting definition.
 end note
 
 @enduml

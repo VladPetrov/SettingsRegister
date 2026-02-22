@@ -8,16 +8,17 @@ This document defines how AI agents operate within the Configuration Change Trac
 ## project overview
 
 ### purpose
-This project implements an ASP.NET Core Web API for tracking configuration changes to domain-specific rules (for example credit limits and approval policies).
+This project implements an ASP.NET Core Web API for managing versioned manifests and configuration instances represented as hierarchical settings tables.
 
 Core design principles and invariants are defined in `domain_model.puml`.
 
-The system is intentionally engineered so that change history is stable, auditable, and independent from infrastructure details.
+The system is intentionally engineered so that rules are auditable, deterministic, and independent from infrastructure details.
 
 ### target outcomes
-- create immutable records for config rule add/update/delete changes
-- retrieve changes by ID and list them by type or time window
-- notify an external monitoring service for critical updates
+- import manifests as JSON and create immutable versions
+- create and manage config instances bound to a manifest version (`ManifestId`)
+- track add/update/delete value changes as immutable history
+- notify an external monitoring service for critical changes derived from manifest setting metadata
 - keep behavior predictable for audits and operations
 
 ---
@@ -83,7 +84,7 @@ If any of the following change:
 - attributes of a core domain object
 - responsibilities of a core domain object
 - relationships between core domain objects
-- decision rules for operation validity or critical notification
+- decision rules for manifest versioning, override permissions, or critical notifications
 
 then all of the following must be updated in the same pull request:
 - `domain_model.puml`
@@ -124,12 +125,12 @@ Any generated code that violates these rules is invalid.
 ## domain evolution policy
 
 ### allowed evolution
-- adding new rule types or metadata fields that do not alter core responsibilities
+- adding new settings metadata fields without changing root responsibilities
 - adding new monitoring channels/templates
 - extending analytics/observability events
 
 ### restricted evolution
-Changes that alter responsibilities, invariants, or change-tracking semantics defined in `domain_model.puml` require:
+Changes that alter responsibilities, invariants, manifest versioning semantics, or override rules defined in `domain_model.puml` require:
 1. explicit architectural decision
 2. updates to all authoritative documents
 3. clear migration notes in the pull request
@@ -153,11 +154,12 @@ The agent will:
 - add or update unit tests for any non-trivial logic
 - add or update integration tests for API endpoints
 - ensure regression coverage for core decisions:
-  - add operation validity
-  - update operation validity
-  - delete operation validity
-  - missing change ID behavior
-  - critical change notification behavior
+  - manifest import creates new version and keeps previous versions immutable
+  - instance must reference existing manifest id
+  - layer/index validation against manifest constraints
+  - override allowed/denied based on manifest permissions
+  - add/update/delete operation validity for `ConfigChange`
+  - critical notification decision sourced from manifest setting definition
 
 ### testing strategies
 
