@@ -7,9 +7,9 @@ public sealed class DistributedDomainLock : IDomainLock
     // In production this lock should be backed by a real distributed store (for example SQL via DistributedLock package).
     // This implementation intentionally simulates distributed behavior for the in-memory test application.
     private static readonly object SyncRoot = new();
-    private static readonly Dictionary<string, DateTime> LeasesByKey = new(StringComparer.OrdinalIgnoreCase);
+    private static readonly Dictionary<string, LockEntry> LeasesByKey = new(StringComparer.OrdinalIgnoreCase);
 
-    public Task<bool> TakeLockAsync(string key, TimeSpan timeout, CancellationToken cancellationToken)
+    public Task<IDomainLockLease?> TakeLockAsync(string key, TimeSpan timeout, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
         ValidateArguments(key, timeout);
@@ -20,13 +20,16 @@ public sealed class DistributedDomainLock : IDomainLock
         {
             CleanupExpiredLeases(nowUtc);
 
-            if (LeasesByKey.TryGetValue(key, out DateTime expiresAtUtc) && expiresAtUtc > nowUtc)
+            if (LeasesByKey.TryGetValue(key, out LockEntry existingLease) && existingLease.ExpiresAtUtc > nowUtc)
             {
-                return Task.FromResult(false);
+                return Task.FromResult<IDomainLockLease?>(null);
             }
 
-            LeasesByKey[key] = nowUtc.Add(timeout);
-            return Task.FromResult(true);
+            LockEntry lease = new(Guid.NewGuid(), nowUtc.Add(timeout));
+            LeasesByKey[key] = lease;
+
+            IDomainLockLease leaseHandle = new DistributedDomainLockLease(key, lease.Token);
+            return Task.FromResult<IDomainLockLease?>(leaseHandle);
         }
     }
 
@@ -46,7 +49,7 @@ public sealed class DistributedDomainLock : IDomainLock
     private static void CleanupExpiredLeases(DateTime nowUtc)
     {
         List<string> expiredKeys = LeasesByKey
-            .Where(pair => pair.Value <= nowUtc)
+            .Where(pair => pair.Value.ExpiresAtUtc <= nowUtc)
             .Select(pair => pair.Key)
             .ToList();
 
@@ -55,4 +58,58 @@ public sealed class DistributedDomainLock : IDomainLock
             LeasesByKey.Remove(expiredKey);
         }
     }
+
+    private static void Release(string key, Guid token)
+    {
+        lock (SyncRoot)
+        {
+            if (!LeasesByKey.TryGetValue(key, out LockEntry existing))
+            {
+                return;
+            }
+
+            if (existing.Token != token)
+            {
+                return;
+            }
+
+            LeasesByKey.Remove(key);
+        }
+    }
+
+    private sealed class DistributedDomainLockLease : IDomainLockLease
+    {
+        private readonly string _key;
+        private readonly Guid _token;
+        private int _disposed;
+
+        public DistributedDomainLockLease(string key, Guid token)
+        {
+            _key = key;
+            _token = token;
+        }
+
+        public void Dispose()
+        {
+            DisposeCore();
+        }
+
+        public ValueTask DisposeAsync()
+        {
+            DisposeCore();
+            return ValueTask.CompletedTask;
+        }
+
+        private void DisposeCore()
+        {
+            if (Interlocked.Exchange(ref _disposed, 1) == 1)
+            {
+                return;
+            }
+
+            Release(_key, _token);
+        }
+    }
+
+    private readonly record struct LockEntry(Guid Token, DateTime ExpiresAtUtc);
 }

@@ -6,30 +6,30 @@ namespace BackOfficeSmall.Tests.Unit.Infrastructure;
 public sealed class DomainLockTests
 {
     [Fact]
-    public async Task InProcessDomainLock_WhenSameKeyIsActive_SecondAcquireReturnsFalse()
+    public async Task InProcessDomainLock_WhenSameKeyIsActive_SecondAcquireReturnsNull()
     {
         IDomainLock domainLock = new InProcessDomainLock();
         string key = $"inprocess-{Guid.NewGuid():N}";
 
-        bool first = await domainLock.TakeLockAsync(key, TimeSpan.FromSeconds(5), CancellationToken.None);
-        bool second = await domainLock.TakeLockAsync(key, TimeSpan.FromSeconds(5), CancellationToken.None);
+        await using IDomainLockLease? first = await domainLock.TakeLockAsync(key, TimeSpan.FromSeconds(5), CancellationToken.None);
+        IDomainLockLease? second = await domainLock.TakeLockAsync(key, TimeSpan.FromSeconds(5), CancellationToken.None);
 
-        Assert.True(first);
-        Assert.False(second);
+        Assert.NotNull(first);
+        Assert.Null(second);
     }
 
     [Fact]
-    public async Task InProcessDomainLock_AfterLeaseExpires_CanAcquireAgain()
+    public async Task InProcessDomainLock_AfterLeaseDispose_CanAcquireAgain()
     {
         IDomainLock domainLock = new InProcessDomainLock();
         string key = $"lease-{Guid.NewGuid():N}";
 
-        bool first = await domainLock.TakeLockAsync(key, TimeSpan.FromMilliseconds(100), CancellationToken.None);
-        await Task.Delay(150);
-        bool second = await domainLock.TakeLockAsync(key, TimeSpan.FromMilliseconds(100), CancellationToken.None);
+        await using IDomainLockLease? first = await domainLock.TakeLockAsync(key, TimeSpan.FromSeconds(5), CancellationToken.None);
+        Assert.NotNull(first);
+        await first.DisposeAsync();
 
-        Assert.True(first);
-        Assert.True(second);
+        await using IDomainLockLease? second = await domainLock.TakeLockAsync(key, TimeSpan.FromSeconds(5), CancellationToken.None);
+        Assert.NotNull(second);
     }
 
     [Fact]
@@ -39,10 +39,10 @@ public sealed class DomainLockTests
         IDomainLock lockB = new DistributedDomainLock();
         string key = $"distributed-{Guid.NewGuid():N}";
 
-        bool first = await lockA.TakeLockAsync(key, TimeSpan.FromSeconds(5), CancellationToken.None);
-        bool second = await lockB.TakeLockAsync(key, TimeSpan.FromSeconds(5), CancellationToken.None);
+        await using IDomainLockLease? first = await lockA.TakeLockAsync(key, TimeSpan.FromSeconds(5), CancellationToken.None);
+        IDomainLockLease? second = await lockB.TakeLockAsync(key, TimeSpan.FromSeconds(5), CancellationToken.None);
 
-        Assert.True(first);
-        Assert.False(second);
+        Assert.NotNull(first);
+        Assert.Null(second);
     }
 }

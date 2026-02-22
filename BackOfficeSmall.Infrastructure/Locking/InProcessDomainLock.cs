@@ -5,9 +5,9 @@ namespace BackOfficeSmall.Infrastructure.Locking;
 public sealed class InProcessDomainLock : IDomainLock
 {
     private readonly object _syncRoot = new();
-    private readonly Dictionary<string, DateTime> _leasesByKey = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, LockEntry> _leasesByKey = new(StringComparer.OrdinalIgnoreCase);
 
-    public Task<bool> TakeLockAsync(string key, TimeSpan timeout, CancellationToken cancellationToken)
+    public Task<IDomainLockLease?> TakeLockAsync(string key, TimeSpan timeout, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
         ValidateArguments(key, timeout);
@@ -18,13 +18,16 @@ public sealed class InProcessDomainLock : IDomainLock
         {
             CleanupExpiredLeases(nowUtc);
 
-            if (_leasesByKey.TryGetValue(key, out DateTime expiresAtUtc) && expiresAtUtc > nowUtc)
+            if (_leasesByKey.TryGetValue(key, out LockEntry existingLease) && existingLease.ExpiresAtUtc > nowUtc)
             {
-                return Task.FromResult(false);
+                return Task.FromResult<IDomainLockLease?>(null);
             }
 
-            _leasesByKey[key] = nowUtc.Add(timeout);
-            return Task.FromResult(true);
+            LockEntry lease = new(Guid.NewGuid(), nowUtc.Add(timeout));
+            _leasesByKey[key] = lease;
+
+            IDomainLockLease leaseHandle = new InProcessDomainLockLease(this, key, lease.Token);
+            return Task.FromResult<IDomainLockLease?>(leaseHandle);
         }
     }
 
@@ -44,7 +47,7 @@ public sealed class InProcessDomainLock : IDomainLock
     private void CleanupExpiredLeases(DateTime nowUtc)
     {
         List<string> expiredKeys = _leasesByKey
-            .Where(pair => pair.Value <= nowUtc)
+            .Where(pair => pair.Value.ExpiresAtUtc <= nowUtc)
             .Select(pair => pair.Key)
             .ToList();
 
@@ -53,4 +56,60 @@ public sealed class InProcessDomainLock : IDomainLock
             _leasesByKey.Remove(expiredKey);
         }
     }
+
+    private void Release(string key, Guid token)
+    {
+        lock (_syncRoot)
+        {
+            if (!_leasesByKey.TryGetValue(key, out LockEntry existing))
+            {
+                return;
+            }
+
+            if (existing.Token != token)
+            {
+                return;
+            }
+
+            _leasesByKey.Remove(key);
+        }
+    }
+
+    private sealed class InProcessDomainLockLease : IDomainLockLease
+    {
+        private readonly InProcessDomainLock _owner;
+        private readonly string _key;
+        private readonly Guid _token;
+        private int _disposed;
+
+        public InProcessDomainLockLease(InProcessDomainLock owner, string key, Guid token)
+        {
+            _owner = owner;
+            _key = key;
+            _token = token;
+        }
+
+        public void Dispose()
+        {
+            DisposeCore();
+        }
+
+        public ValueTask DisposeAsync()
+        {
+            DisposeCore();
+            return ValueTask.CompletedTask;
+        }
+
+        private void DisposeCore()
+        {
+            if (Interlocked.Exchange(ref _disposed, 1) == 1)
+            {
+                return;
+            }
+
+            _owner.Release(_key, _token);
+        }
+    }
+
+    private readonly record struct LockEntry(Guid Token, DateTime ExpiresAtUtc);
 }
