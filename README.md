@@ -65,6 +65,7 @@ The solution is strict-layered:
 ### Manifest
 - `POST /api/manifests/import`
 - `GET /api/manifests` (returns all manifests without pagination; fields: `manifestId`, `name`, `version`, `createdAtUtc`)
+  - Optional query filter: `?name=<manifest-name>` for exact name match (case-insensitive)
 - `GET /api/manifests/{manifestId}`
 
 ### Config Instance

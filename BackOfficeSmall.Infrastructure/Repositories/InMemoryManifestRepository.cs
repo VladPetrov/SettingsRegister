@@ -60,14 +60,44 @@ public sealed class InMemoryManifestRepository : IManifestRepository
 
         lock (_syncRoot)
         {
-            IReadOnlyList<ManifestValueObject> manifests = _manifestsById.Values
-                .OrderBy(entity => entity.Name, StringComparer.OrdinalIgnoreCase)
-                .ThenBy(entity => entity.Version)
-                .Select(entity => _hydrator.Hydrate(entity))
-                .ToList();
+            IReadOnlyList<ManifestValueObject> manifests = ListCore(null);
 
             return Task.FromResult(manifests);
         }
+    }
+
+    public Task<IReadOnlyList<ManifestValueObject>> ListAsync(string? name, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        lock (_syncRoot)
+        {
+            IReadOnlyList<ManifestValueObject> manifests = ListCore(name);
+
+            return Task.FromResult(manifests);
+        }
+    }
+
+    private IReadOnlyList<ManifestValueObject> ListCore(string? name)
+    {
+        IEnumerable<ManifestEntity> query = _manifestsById.Values;
+
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            query = query
+                .OrderBy(entity => entity.Name, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(entity => entity.Version);
+        }
+        else
+        {
+            query = query
+                .Where(entity => string.Equals(entity.Name, name, StringComparison.OrdinalIgnoreCase))
+                .OrderBy(entity => entity.Version);
+        }
+
+        return query
+            .Select(entity => _hydrator.Hydrate(entity))
+            .ToList();
     }
 
     private static string BuildUniqueKey(string name, int version)

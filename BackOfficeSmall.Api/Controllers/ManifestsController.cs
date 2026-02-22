@@ -50,9 +50,9 @@ public sealed class ManifestsController : ControllerBase
     [HttpGet]
     [ProducesResponseType(typeof(IReadOnlyList<ManifestSummaryDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<IReadOnlyList<ManifestSummaryDto>>> GetAllAsync(CancellationToken cancellationToken) // TODO: pagination
+    public async Task<ActionResult<IReadOnlyList<ManifestSummaryDto>>> GetAllAsync([FromQuery] string? name, CancellationToken cancellationToken) // TODO: pagination
     {
-        IReadOnlyList<ManifestValueObject> manifests = await _manifestService.ListAsync(cancellationToken);
+        IReadOnlyList<ManifestValueObject> manifests = await _manifestService.ListAsync(name, cancellationToken);
         IReadOnlyList<ManifestSummaryDto> payload = manifests.Select(manifest => manifest.ToSummaryDto()).ToList();
 
         return Ok(payload);

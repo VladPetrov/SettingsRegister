@@ -63,21 +63,25 @@ public sealed class ApiEndpointsTests
         await using WebApplicationFactory<Program> factory = new();
         using HttpClient client = factory.CreateClient();
 
-        _ = await ImportManifestAsync(client, allowLayerOneOverride: true);
+        Guid includedManifestId = await ImportManifestAsync(client, allowLayerOneOverride: true, manifestName: "Filtered-A");
+        _ = await ImportManifestAsync(client, allowLayerOneOverride: true, manifestName: "Filtered-B");
 
-        HttpResponseMessage response = await client.GetAsync("/api/manifests");
+        HttpResponseMessage response = await client.GetAsync("/api/manifests?name=Filtered-A");
         string body = await response.Content.ReadAsStringAsync();
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
         using JsonDocument document = JsonDocument.Parse(body);
-        Assert.True(document.RootElement.GetArrayLength() >= 1);
+        Assert.Equal(1, document.RootElement.GetArrayLength());
 
         JsonElement first = document.RootElement.EnumerateArray().First();
         Assert.True(first.TryGetProperty("manifestId", out _));
         Assert.True(first.TryGetProperty("name", out _));
         Assert.True(first.TryGetProperty("version", out _));
         Assert.True(first.TryGetProperty("createdAtUtc", out _));
+
+        Guid payloadManifestId = first.GetProperty("manifestId").GetGuid();
+        Assert.Equal(includedManifestId, payloadManifestId);
     }
 
     [Fact]
@@ -122,13 +126,16 @@ public sealed class ApiEndpointsTests
         Assert.Contains("Override is not allowed", body, StringComparison.OrdinalIgnoreCase);
     }
 
-    private static async Task<Guid> ImportManifestAsync(HttpClient client, bool allowLayerOneOverride)
+    private static async Task<Guid> ImportManifestAsync(
+        HttpClient client,
+        bool allowLayerOneOverride,
+        string? manifestName = null)
     {
-        string manifestName = $"Manifest-{Guid.NewGuid():N}";
+        string resolvedManifestName = manifestName ?? $"Manifest-{Guid.NewGuid():N}";
 
         HttpResponseMessage response = await client.PostAsJsonAsync("/api/manifests/import", new
         {
-            name = manifestName,
+            name = resolvedManifestName,
             layerCount = 2,
             createdBy = "tester",
             settingDefinitions = new[]

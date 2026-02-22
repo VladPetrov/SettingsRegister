@@ -9,5 +9,5 @@ public interface IManifestService
 
     Task<ManifestValueObject> GetByIdAsync(Guid manifestId, CancellationToken cancellationToken);
 
-    Task<IReadOnlyList<ManifestValueObject>> ListAsync(CancellationToken cancellationToken);
+    Task<IReadOnlyList<ManifestValueObject>> ListAsync(string? name, CancellationToken cancellationToken);
 }

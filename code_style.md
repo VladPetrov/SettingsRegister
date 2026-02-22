@@ -24,8 +24,8 @@ This document defines mandatory coding standards for this project. The agent wil
    - choose one approach (file-scoped or block-scoped) and apply everywhere.
 
 5. var usage
-   - use `var` when the type is obvious from the right-hand side (`new()`, LINQ projections with clear type, factory methods with explicit return type).
-   - use explicit types when it improves readability (public APIs, complex generics, ambiguous expressions).
+   - prefer `var` by default for local variables.
+   - use explicit types only when it materially improves readability (very complex/ambiguous expressions) or when required by API shape/signature.
 
 ## naming conventions
 - types: `PascalCase` (classes, records, structs, enums, interfaces)
@@ -115,6 +115,16 @@ method-level
 - dtos are allowed only at boundaries (io, persistence, external APIs).
 - map dtos to domain objects via explicit mappers/hydrators.
 - do not pass dtos deep into domain logic.
+
+## repository implementation rules
+- avoid duplicating query/filter logic across repository methods.
+- do not have one public repository method call another public repository method.
+- extract shared private helpers (or private query builders) and reuse them from each public method.
+
+## refactoring hygiene
+- after each refactor, scan touched files for dead code and remove unused private methods/helpers.
+- if a helper no longer has call sites, delete it in the same change set.
+- run build/tests after cleanup to confirm no behavioral regression.
 
 ## testability requirements
 - every non-trivial class will have unit tests.

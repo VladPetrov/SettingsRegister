@@ -32,23 +32,20 @@ public sealed class ManifestService : IManifestService
         request.Validate();
 
         // lock all manifest versions
-        await using IDomainLockLease? lockHandle = await _domainLock.TryTakeLockAsync(request.Name, ManifestImportLockTimeout, cancellationToken);
+        await using var lockHandle = await _domainLock.TryTakeLockAsync(request.Name, ManifestImportLockTimeout, cancellationToken);
         
         if (lockHandle is null)
         {
             throw new ConflictException($"Could not acquire manifest import lock for '{request.Name}'.");
         }
 
-        IReadOnlyList<ManifestValueObject> manifests = await _manifestRepository.ListAsync(cancellationToken);
+        var manifests = await _manifestRepository.ListAsync(request.Name, cancellationToken);
         
-        ManifestValueObject? latestVersion = manifests
-            .Where(manifest => string.Equals(manifest.Name, request.Name, StringComparison.OrdinalIgnoreCase))
-            .OrderByDescending(manifest => manifest.Version)
-            .FirstOrDefault();
+        var latestVersion = manifests.OrderByDescending(manifest => manifest.Version).FirstOrDefault();
 
-        int newVersion = latestVersion is null ? 1 : latestVersion.Version + 1;
+        var newVersion = latestVersion is null ? 1 : latestVersion.Version + 1;
 
-        ManifestDomainRoot manifest = request.ToDomainRoot(newVersion, _clock.UtcNow);
+        var manifest = request.ToDomainRoot(newVersion, _clock.UtcNow);
         manifest.Validate();
 
         try
@@ -79,8 +76,8 @@ public sealed class ManifestService : IManifestService
         return manifest;
     }
 
-    public Task<IReadOnlyList<ManifestValueObject>> ListAsync(CancellationToken cancellationToken)
+    public Task<IReadOnlyList<ManifestValueObject>> ListAsync(string? name, CancellationToken cancellationToken)
     {
-        return _manifestRepository.ListAsync(cancellationToken);
+        return _manifestRepository.ListAsync(name, cancellationToken);
     }
 }

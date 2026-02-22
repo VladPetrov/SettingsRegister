@@ -101,6 +101,7 @@ class ManifestService {
   +ImportManifest(ManifestImportRequest request)
   +GetById(Guid manifestId)
   +List()
+  +List(string? name)
 }
 
 class ConfigInstanceService {
@@ -120,6 +121,7 @@ interface IManifestRepository {
   +Add(ManifestDomainRoot manifest)
   +GetById(Guid manifestId) : ManifestValueObject
   +List() : IReadOnlyList<ManifestValueObject>
+  +List(string? name) : IReadOnlyList<ManifestValueObject>
 }
 
 interface IConfigInstanceRepository {
