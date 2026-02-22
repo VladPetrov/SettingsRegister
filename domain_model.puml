@@ -1,0 +1,63 @@
+﻿@startuml
+title Configuration Change Tracker - Domain Model
+
+skinparam classAttributeIconSize 0
+
+class ConfigChange {
+  +Guid Id
+  +string RuleType
+  +ConfigOperation Operation
+  +string TargetKey
+  +string? BeforeValue
+  +string? AfterValue
+  +string Reason
+  +string ChangedBy
+  +DateTime ChangedAtUtc
+  +Validate()
+}
+
+class ConfigDefinition {
+  +string RuleType
+  +string TargetKey
+  +bool RequiresCriticalNotification
+  +Validate()
+}
+
+enum ConfigOperation {
+  Add
+  Update
+  Delete
+}
+
+class ConfigChangeService {
+  +CreateChange(ConfigChange change)
+  +GetChangeById(Guid id)
+  +ListChanges(string? type, DateTime? fromUtc, DateTime? toUtc)
+}
+
+interface IConfigChangeRepository {
+  +Add(ConfigChange change)
+  +GetById(Guid id)
+  +List(string? type, DateTime? fromUtc, DateTime? toUtc)
+}
+
+interface IMonitoringNotifier {
+  +NotifyCriticalChangeAsync(ConfigChange change)
+}
+
+ConfigChangeService --> IConfigChangeRepository : persists and queries
+ConfigChangeService --> IMonitoringNotifier : notifies on critical change
+ConfigChangeService --> ConfigDefinition : resolves criticality from definition
+
+note right of ConfigChange
+Invariants:
+1) Id is unique and immutable.
+2) ChangedAtUtc is set once in UTC.
+3) Operation=Add requires AfterValue and no BeforeValue.
+4) Operation=Update requires BeforeValue and AfterValue.
+5) Operation=Delete requires BeforeValue and no AfterValue.
+6) RuleType and TargetKey are required.
+7) Critical notification is determined by ConfigDefinition.
+end note
+
+@enduml
