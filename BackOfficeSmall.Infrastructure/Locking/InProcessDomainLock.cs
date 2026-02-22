@@ -7,7 +7,7 @@ public sealed class InProcessDomainLock : IDomainLock
     private readonly object _syncRoot = new();
     private readonly Dictionary<string, LockEntry> _leasesByKey = new(StringComparer.OrdinalIgnoreCase);
 
-    public Task<IDomainLockLease?> TakeLockAsync(string key, TimeSpan timeout, CancellationToken cancellationToken)
+    public Task<IDomainLockLease?> TryTakeLockAsync(string key, TimeSpan timeout, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
         ValidateArguments(key, timeout);

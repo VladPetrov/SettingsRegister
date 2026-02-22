@@ -9,7 +9,7 @@ public sealed class DistributedDomainLock : IDomainLock
     private static readonly object SyncRoot = new();
     private static readonly Dictionary<string, LockEntry> LeasesByKey = new(StringComparer.OrdinalIgnoreCase);
 
-    public Task<IDomainLockLease?> TakeLockAsync(string key, TimeSpan timeout, CancellationToken cancellationToken)
+    public Task<IDomainLockLease?> TryTakeLockAsync(string key, TimeSpan timeout, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
         ValidateArguments(key, timeout);

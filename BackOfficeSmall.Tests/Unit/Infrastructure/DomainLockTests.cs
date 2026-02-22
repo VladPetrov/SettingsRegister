@@ -11,8 +11,8 @@ public sealed class DomainLockTests
         IDomainLock domainLock = new InProcessDomainLock();
         string key = $"inprocess-{Guid.NewGuid():N}";
 
-        await using IDomainLockLease? first = await domainLock.TakeLockAsync(key, TimeSpan.FromSeconds(5), CancellationToken.None);
-        IDomainLockLease? second = await domainLock.TakeLockAsync(key, TimeSpan.FromSeconds(5), CancellationToken.None);
+        await using IDomainLockLease? first = await domainLock.TryTakeLockAsync(key, TimeSpan.FromSeconds(5), CancellationToken.None);
+        IDomainLockLease? second = await domainLock.TryTakeLockAsync(key, TimeSpan.FromSeconds(5), CancellationToken.None);
 
         Assert.NotNull(first);
         Assert.Null(second);
@@ -24,11 +24,11 @@ public sealed class DomainLockTests
         IDomainLock domainLock = new InProcessDomainLock();
         string key = $"lease-{Guid.NewGuid():N}";
 
-        await using IDomainLockLease? first = await domainLock.TakeLockAsync(key, TimeSpan.FromSeconds(5), CancellationToken.None);
+        await using IDomainLockLease? first = await domainLock.TryTakeLockAsync(key, TimeSpan.FromSeconds(5), CancellationToken.None);
         Assert.NotNull(first);
         await first.DisposeAsync();
 
-        await using IDomainLockLease? second = await domainLock.TakeLockAsync(key, TimeSpan.FromSeconds(5), CancellationToken.None);
+        await using IDomainLockLease? second = await domainLock.TryTakeLockAsync(key, TimeSpan.FromSeconds(5), CancellationToken.None);
         Assert.NotNull(second);
     }
 
@@ -39,8 +39,8 @@ public sealed class DomainLockTests
         IDomainLock lockB = new DistributedDomainLock();
         string key = $"distributed-{Guid.NewGuid():N}";
 
-        await using IDomainLockLease? first = await lockA.TakeLockAsync(key, TimeSpan.FromSeconds(5), CancellationToken.None);
-        IDomainLockLease? second = await lockB.TakeLockAsync(key, TimeSpan.FromSeconds(5), CancellationToken.None);
+        await using IDomainLockLease? first = await lockA.TryTakeLockAsync(key, TimeSpan.FromSeconds(5), CancellationToken.None);
+        IDomainLockLease? second = await lockB.TryTakeLockAsync(key, TimeSpan.FromSeconds(5), CancellationToken.None);
 
         Assert.NotNull(first);
         Assert.Null(second);

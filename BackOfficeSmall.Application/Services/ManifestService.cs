@@ -4,17 +4,21 @@ using BackOfficeSmall.Application.Exceptions;
 using BackOfficeSmall.Application.Mapping;
 using BackOfficeSmall.Domain.Models.Manifest;
 using BackOfficeSmall.Domain.Repositories;
+using BackOfficeSmall.Domain.Services;
 
 namespace BackOfficeSmall.Application.Services;
 
 public sealed class ManifestService : IManifestService
 {
+    private static readonly TimeSpan ManifestImportLockTimeout = TimeSpan.FromSeconds(30);
     private readonly IManifestRepository _manifestRepository;
+    private readonly IDomainLock _domainLock;
     private readonly ISystemClock _clock;
 
-    public ManifestService(IManifestRepository manifestRepository, ISystemClock clock)
+    public ManifestService(IManifestRepository manifestRepository, IDomainLock domainLock, ISystemClock clock)
     {
         _manifestRepository = manifestRepository ?? throw new ArgumentNullException(nameof(manifestRepository));
+        _domainLock = domainLock ?? throw new ArgumentNullException(nameof(domainLock));
         _clock = clock ?? throw new ArgumentNullException(nameof(clock));
     }
 
@@ -27,11 +31,21 @@ public sealed class ManifestService : IManifestService
 
         request.Validate();
 
+        // lock all manifest versions
+        await using IDomainLockLease? lockHandle = await _domainLock.TryTakeLockAsync(request.Name, ManifestImportLockTimeout, cancellationToken);
+        
+        if (lockHandle is null)
+        {
+            throw new ConflictException($"Could not acquire manifest import lock for '{request.Name}'.");
+        }
+
         IReadOnlyList<ManifestValueObject> manifests = await _manifestRepository.ListAsync(cancellationToken);
+        
         ManifestValueObject? latestVersion = manifests
             .Where(manifest => string.Equals(manifest.Name, request.Name, StringComparison.OrdinalIgnoreCase))
             .OrderByDescending(manifest => manifest.Version)
             .FirstOrDefault();
+
         int newVersion = latestVersion is null ? 1 : latestVersion.Version + 1;
 
         ManifestDomainRoot manifest = request.ToDomainRoot(newVersion, _clock.UtcNow);

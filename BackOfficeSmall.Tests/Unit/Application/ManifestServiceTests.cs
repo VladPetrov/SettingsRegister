@@ -1,4 +1,5 @@
 using BackOfficeSmall.Application.Contracts;
+using BackOfficeSmall.Application.Exceptions;
 using BackOfficeSmall.Application.Services;
 using BackOfficeSmall.Domain.Models.Manifest;
 using BackOfficeSmall.Infrastructure.Repositories;
@@ -12,8 +13,9 @@ public sealed class ManifestServiceTests
     public async Task ImportManifestAsync_IncrementsVersion_AndKeepsOlderVersionImmutable()
     {
         FakeSystemClock clock = new(DateTime.SpecifyKind(new DateTime(2026, 2, 22, 10, 0, 0), DateTimeKind.Utc));
+        FakeDomainLock domainLock = new();
         InMemoryManifestRepository manifestRepository = new();
-        ManifestService service = new(manifestRepository, clock);
+        ManifestService service = new(manifestRepository, domainLock, clock);
 
         ManifestImportRequest request = CreateManifestRequest("Main", "tester");
 
@@ -27,6 +29,23 @@ public sealed class ManifestServiceTests
         Assert.Equal(1, firstSnapshot.Version);
         Assert.Equal(2, second.Version);
         Assert.NotEqual(first.ManifestId, second.ManifestId);
+        Assert.Equal("Main", domainLock.LastKey);
+        Assert.Equal(2, domainLock.DisposeCalls);
+    }
+
+    [Fact]
+    public async Task ImportManifestAsync_WhenDomainLockIsNotAcquired_ThrowsConflictException()
+    {
+        FakeSystemClock clock = new(DateTime.SpecifyKind(new DateTime(2026, 2, 22, 10, 0, 0), DateTimeKind.Utc));
+        FakeDomainLock domainLock = new(false);
+        InMemoryManifestRepository manifestRepository = new();
+        ManifestService service = new(manifestRepository, domainLock, clock);
+
+        ManifestImportRequest request = CreateManifestRequest("Main", "tester");
+
+        await Assert.ThrowsAsync<ConflictException>(() => service.ImportManifestAsync(request, CancellationToken.None));
+        Assert.Equal("Main", domainLock.LastKey);
+        Assert.Equal(0, domainLock.DisposeCalls);
     }
 
     private static ManifestImportRequest CreateManifestRequest(string name, string createdBy)
