@@ -46,7 +46,6 @@ class SettingCell {
 class ConfigChange {
   +Guid Id
   +Guid ConfigInstanceId
-  +Guid ManifestId
   +string SettingKey
   +int LayerIndex
   +ConfigOperation Operation
@@ -111,7 +110,6 @@ Manifest "1" *-- "*" ManifestOverridePermission
 ConfigInstance "1" *-- "*" SettingCell
 ConfigInstance --> Manifest : references by ManifestId
 ConfigChange --> ConfigInstance
-ConfigChange --> Manifest
 
 ManifestService --> IManifestRepository
 ConfigInstanceService --> IManifestRepository : validates structure/rules

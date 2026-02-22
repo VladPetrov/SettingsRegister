@@ -39,6 +39,7 @@ The solution is strict-layered:
   - `Add`: `AfterValue` required, `BeforeValue` absent
   - `Update`: both values required
   - `Delete`: `BeforeValue` required, `AfterValue` absent
+- `ConfigChange` references `ConfigInstanceId`; manifest context is derived from the instance.
 - Critical notification is derived from manifest setting definition metadata.
 
 ## Assumptions

@@ -12,7 +12,6 @@ public sealed class ConfigChangeTests
         Assert.Throws<ArgumentException>(() => new ConfigChange(
             Guid.NewGuid(),
             Guid.NewGuid(),
-            Guid.NewGuid(),
             "FeatureFlag",
             0,
             ConfigOperation.Add,
@@ -30,7 +29,6 @@ public sealed class ConfigChangeTests
         Assert.Throws<ArgumentException>(() => new ConfigChange(
             Guid.NewGuid(),
             Guid.NewGuid(),
-            Guid.NewGuid(),
             "FeatureFlag",
             0,
             ConfigOperation.Update,
@@ -46,7 +44,6 @@ public sealed class ConfigChangeTests
         DateTime now = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Utc);
 
         Assert.Throws<ArgumentException>(() => new ConfigChange(
-            Guid.NewGuid(),
             Guid.NewGuid(),
             Guid.NewGuid(),
             "FeatureFlag",

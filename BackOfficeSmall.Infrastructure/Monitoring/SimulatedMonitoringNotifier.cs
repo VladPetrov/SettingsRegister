@@ -22,7 +22,6 @@ public sealed class SimulatedMonitoringNotifier : IMonitoringNotifier
         ConfigChange snapshot = new(
             change.Id,
             change.ConfigInstanceId,
-            change.ManifestId,
             change.SettingKey,
             change.LayerIndex,
             change.Operation,

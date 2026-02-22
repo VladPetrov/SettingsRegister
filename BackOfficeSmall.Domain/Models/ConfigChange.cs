@@ -5,7 +5,6 @@ public sealed class ConfigChange
     public ConfigChange(
         Guid id,
         Guid configInstanceId,
-        Guid manifestId,
         string settingKey,
         int layerIndex,
         ConfigOperation operation,
@@ -16,7 +15,6 @@ public sealed class ConfigChange
     {
         Id = id;
         ConfigInstanceId = configInstanceId;
-        ManifestId = manifestId;
         SettingKey = settingKey;
         LayerIndex = layerIndex;
         Operation = operation;
@@ -31,8 +29,6 @@ public sealed class ConfigChange
     public Guid Id { get; }
 
     public Guid ConfigInstanceId { get; }
-
-    public Guid ManifestId { get; }
 
     public string SettingKey { get; }
 
@@ -58,11 +54,6 @@ public sealed class ConfigChange
         if (ConfigInstanceId == Guid.Empty)
         {
             throw new ArgumentException("ConfigInstanceId must be a non-empty GUID.", nameof(ConfigInstanceId));
-        }
-
-        if (ManifestId == Guid.Empty)
-        {
-            throw new ArgumentException("ManifestId must be a non-empty GUID.", nameof(ManifestId));
         }
 
         if (string.IsNullOrWhiteSpace(SettingKey))

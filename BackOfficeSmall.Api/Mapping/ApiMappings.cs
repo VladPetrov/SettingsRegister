@@ -116,7 +116,6 @@ public static class ApiMappings
         return new ConfigChangeResponseDto(
             change.Id,
             change.ConfigInstanceId,
-            change.ManifestId,
             change.SettingKey,
             change.LayerIndex,
             change.Operation.ToDto(),

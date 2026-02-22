@@ -88,7 +88,6 @@ public sealed class InMemoryConfigChangeRepository : IConfigChangeRepository
         return new ConfigChangeRecord(
             change.Id,
             change.ConfigInstanceId,
-            change.ManifestId,
             change.SettingKey,
             change.LayerIndex,
             change.Operation,
@@ -103,7 +102,6 @@ public sealed class InMemoryConfigChangeRepository : IConfigChangeRepository
         return new ConfigChange(
             record.Id,
             record.ConfigInstanceId,
-            record.ManifestId,
             record.SettingKey,
             record.LayerIndex,
             record.Operation,
@@ -116,7 +114,6 @@ public sealed class InMemoryConfigChangeRepository : IConfigChangeRepository
     private sealed record ConfigChangeRecord(
         Guid Id,
         Guid ConfigInstanceId,
-        Guid ManifestId,
         string SettingKey,
         int LayerIndex,
         ConfigOperation Operation,

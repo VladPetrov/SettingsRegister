@@ -139,7 +139,6 @@ public sealed class ConfigInstanceService : IConfigInstanceService
         ConfigChange change = new(
             Guid.NewGuid(),
             instance.ConfigInstanceId,
-            instance.ManifestId,
             request.SettingKey,
             request.LayerIndex,
             operation,
