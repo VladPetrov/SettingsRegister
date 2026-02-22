@@ -1,4 +1,4 @@
-using BackOfficeSmall.Domain.Models;
+using BackOfficeSmall.Domain.Models.Config;
 using BackOfficeSmall.Domain.Repositories;
 
 namespace BackOfficeSmall.Infrastructure.Repositories;

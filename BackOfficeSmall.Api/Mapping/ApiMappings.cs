@@ -2,7 +2,7 @@ using BackOfficeSmall.Api.Dtos.ConfigChanges;
 using BackOfficeSmall.Api.Dtos.ConfigInstances;
 using BackOfficeSmall.Api.Dtos.Manifests;
 using BackOfficeSmall.Application.Contracts;
-using BackOfficeSmall.Domain.Models;
+using BackOfficeSmall.Domain.Models.Config;
 using BackOfficeSmall.Domain.Models.Manifest;
 
 namespace BackOfficeSmall.Api.Mapping;

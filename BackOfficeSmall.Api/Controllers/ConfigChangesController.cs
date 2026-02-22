@@ -2,6 +2,7 @@ using BackOfficeSmall.Api.Dtos.ConfigChanges;
 using BackOfficeSmall.Api.Mapping;
 using BackOfficeSmall.Application.Abstractions;
 using BackOfficeSmall.Application.Exceptions;
+using BackOfficeSmall.Domain.Models.Config;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BackOfficeSmall.Api.Controllers;
@@ -32,7 +33,7 @@ public sealed class ConfigChangesController : ControllerBase
         [FromBody] CreateConfigChangeRequestDto request,
         CancellationToken cancellationToken)
     {
-        BackOfficeSmall.Domain.Models.ConfigChange change = await _configInstanceService.SetCellValueAsync(
+        ConfigChange change = await _configInstanceService.SetCellValueAsync(
             request.ConfigInstanceId,
             request.ToApplication(),
             cancellationToken);
@@ -53,7 +54,7 @@ public sealed class ConfigChangesController : ControllerBase
         DateTime? normalizedFromUtc = NormalizeUtcQueryDate(fromUtc, nameof(fromUtc));
         DateTime? normalizedToUtc = NormalizeUtcQueryDate(toUtc, nameof(toUtc));
 
-        IReadOnlyList<BackOfficeSmall.Domain.Models.ConfigChange> changes = await _configChangeQueryService.ListChangesAsync(
+        IReadOnlyList<ConfigChange> changes = await _configChangeQueryService.ListChangesAsync(
             normalizedFromUtc,
             normalizedToUtc,
             operation.ToDomain(),
@@ -72,7 +73,7 @@ public sealed class ConfigChangesController : ControllerBase
         Guid id,
         CancellationToken cancellationToken)
     {
-        BackOfficeSmall.Domain.Models.ConfigChange change = await _configChangeQueryService.GetChangeByIdAsync(id, cancellationToken);
+        ConfigChange change = await _configChangeQueryService.GetChangeByIdAsync(id, cancellationToken);
         return Ok(change.ToDto());
     }
 

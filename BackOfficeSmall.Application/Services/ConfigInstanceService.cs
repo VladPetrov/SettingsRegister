@@ -1,7 +1,7 @@
 using BackOfficeSmall.Application.Abstractions;
 using BackOfficeSmall.Application.Contracts;
 using BackOfficeSmall.Application.Exceptions;
-using BackOfficeSmall.Domain.Models;
+using BackOfficeSmall.Domain.Models.Config;
 using BackOfficeSmall.Domain.Models.Manifest;
 using BackOfficeSmall.Domain.Repositories;
 using BackOfficeSmall.Domain.Services;

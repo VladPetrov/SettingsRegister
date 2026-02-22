@@ -1,5 +1,5 @@
 using BackOfficeSmall.Application.Contracts;
-using BackOfficeSmall.Domain.Models;
+using BackOfficeSmall.Domain.Models.Config;
 
 namespace BackOfficeSmall.Application.Abstractions;
 

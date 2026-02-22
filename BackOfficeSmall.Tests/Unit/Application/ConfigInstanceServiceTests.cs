@@ -1,7 +1,7 @@
 using BackOfficeSmall.Application.Contracts;
 using BackOfficeSmall.Application.Exceptions;
 using BackOfficeSmall.Application.Services;
-using BackOfficeSmall.Domain.Models;
+using BackOfficeSmall.Domain.Models.Config;
 using BackOfficeSmall.Domain.Models.Manifest;
 using BackOfficeSmall.Infrastructure.Repositories;
 using BackOfficeSmall.Tests.TestDoubles;

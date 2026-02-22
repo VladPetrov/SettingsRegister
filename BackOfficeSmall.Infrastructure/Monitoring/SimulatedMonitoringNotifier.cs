@@ -1,5 +1,5 @@
 using System.Collections.Concurrent;
-using BackOfficeSmall.Domain.Models;
+using BackOfficeSmall.Domain.Models.Config;
 using BackOfficeSmall.Domain.Services;
 
 namespace BackOfficeSmall.Infrastructure.Monitoring;

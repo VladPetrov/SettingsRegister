@@ -2,6 +2,7 @@ using BackOfficeSmall.Api.Dtos.ConfigChanges;
 using BackOfficeSmall.Api.Dtos.ConfigInstances;
 using BackOfficeSmall.Api.Mapping;
 using BackOfficeSmall.Application.Abstractions;
+using BackOfficeSmall.Domain.Models.Config;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BackOfficeSmall.Api.Controllers;
@@ -28,7 +29,7 @@ public sealed class ConfigInstancesController : ControllerBase
         [FromBody] ConfigInstanceCreateRequestDto request,
         CancellationToken cancellationToken)
     {
-        BackOfficeSmall.Domain.Models.ConfigInstance instance = await _configInstanceService.CreateInstanceAsync(
+        ConfigInstance instance = await _configInstanceService.CreateInstanceAsync(
             request.ToApplication(),
             cancellationToken);
 
@@ -40,7 +41,7 @@ public sealed class ConfigInstancesController : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<IReadOnlyList<ConfigInstanceResponseDto>>> ListAsync(CancellationToken cancellationToken)
     {
-        IReadOnlyList<BackOfficeSmall.Domain.Models.ConfigInstance> instances =
+        IReadOnlyList<ConfigInstance> instances =
             await _configInstanceService.ListAsync(cancellationToken);
         IReadOnlyList<ConfigInstanceResponseDto> payload = instances.Select(instance => instance.ToDto()).ToList();
 
@@ -56,7 +57,7 @@ public sealed class ConfigInstancesController : ControllerBase
         Guid instanceId,
         CancellationToken cancellationToken)
     {
-        BackOfficeSmall.Domain.Models.ConfigInstance instance = await _configInstanceService.GetByIdAsync(instanceId, cancellationToken);
+        ConfigInstance instance = await _configInstanceService.GetByIdAsync(instanceId, cancellationToken);
         return Ok(instance.ToDto());
     }
 
@@ -83,7 +84,7 @@ public sealed class ConfigInstancesController : ControllerBase
         [FromBody] SetCellValueRequestDto request,
         CancellationToken cancellationToken)
     {
-        BackOfficeSmall.Domain.Models.ConfigChange change = await _configInstanceService.SetCellValueAsync(
+        ConfigChange change = await _configInstanceService.SetCellValueAsync(
             instanceId,
             request.ToApplication(),
             cancellationToken);

@@ -1,4 +1,4 @@
-namespace BackOfficeSmall.Domain.Models;
+namespace BackOfficeSmall.Domain.Models.Config;
 
 public enum ConfigOperation
 {

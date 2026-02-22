@@ -1,6 +1,6 @@
 using BackOfficeSmall.Application.Abstractions;
 using BackOfficeSmall.Application.Exceptions;
-using BackOfficeSmall.Domain.Models;
+using BackOfficeSmall.Domain.Models.Config;
 using BackOfficeSmall.Domain.Repositories;
 
 namespace BackOfficeSmall.Application.Services;
