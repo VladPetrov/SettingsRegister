@@ -8,5 +8,5 @@ public interface IManifestRepository
 
     Task<ManifestValueObject?> GetByIdAsync(Guid manifestId, CancellationToken cancellationToken);
 
-    Task<ManifestValueObject?> GetLatestByNameAsync(string name, CancellationToken cancellationToken);
+    Task<IReadOnlyList<ManifestValueObject>> ListAsync(CancellationToken cancellationToken);
 }

@@ -58,6 +58,29 @@ public sealed class ApiEndpointsTests
     }
 
     [Fact]
+    public async Task ManifestsEndpoint_List_ReturnsSummaryItems()
+    {
+        await using WebApplicationFactory<Program> factory = new();
+        using HttpClient client = factory.CreateClient();
+
+        _ = await ImportManifestAsync(client, allowLayerOneOverride: true);
+
+        HttpResponseMessage response = await client.GetAsync("/api/manifests");
+        string body = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        using JsonDocument document = JsonDocument.Parse(body);
+        Assert.True(document.RootElement.GetArrayLength() >= 1);
+
+        JsonElement first = document.RootElement.EnumerateArray().First();
+        Assert.True(first.TryGetProperty("manifestId", out _));
+        Assert.True(first.TryGetProperty("name", out _));
+        Assert.True(first.TryGetProperty("version", out _));
+        Assert.True(first.TryGetProperty("createdAtUtc", out _));
+    }
+
+    [Fact]
     public async Task CreateConfigInstance_WhenManifestMissing_Returns404ProblemDetails()
     {
         await using WebApplicationFactory<Program> factory = new();

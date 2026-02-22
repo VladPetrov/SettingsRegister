@@ -94,6 +94,15 @@ public static class ApiMappings
             permissions);
     }
 
+    public static ManifestSummaryDto ToSummaryDto(this ManifestValueObject manifest)
+    {
+        return new ManifestSummaryDto(
+            manifest.ManifestId,
+            manifest.Name,
+            manifest.Version,
+            manifest.CreatedAtUtc);
+    }
+
     public static ConfigInstanceResponseDto ToDto(this ConfigInstance instance)
     {
         IReadOnlyList<SettingCellResponseDto> cells = instance.Cells

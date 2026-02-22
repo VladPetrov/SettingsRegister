@@ -1,6 +1,7 @@
 using BackOfficeSmall.Application.Abstractions;
 using BackOfficeSmall.Application.Contracts;
 using BackOfficeSmall.Application.Exceptions;
+using BackOfficeSmall.Application.Mapping;
 using BackOfficeSmall.Domain.Models.Manifest;
 using BackOfficeSmall.Domain.Repositories;
 
@@ -19,31 +20,21 @@ public sealed class ManifestService : IManifestService
 
     public async Task<ManifestValueObject> ImportManifestAsync(ManifestImportRequest request, CancellationToken cancellationToken)
     {
-        ValidateImportRequest(request);
+        if (request is null)
+        {
+            throw new ArgumentNullException(nameof(request));
+        }
 
-        ManifestValueObject? latestVersion = await _manifestRepository.GetLatestByNameAsync(request.Name, cancellationToken);
+        request.Validate();
+
+        IReadOnlyList<ManifestValueObject> manifests = await _manifestRepository.ListAsync(cancellationToken);
+        ManifestValueObject? latestVersion = manifests
+            .Where(manifest => string.Equals(manifest.Name, request.Name, StringComparison.OrdinalIgnoreCase))
+            .OrderByDescending(manifest => manifest.Version)
+            .FirstOrDefault();
         int newVersion = latestVersion is null ? 1 : latestVersion.Version + 1;
 
-        List<ManifestSettingDefinition> settingDefinitions = request.SettingDefinitions
-            .Select(definition => new ManifestSettingDefinition(definition.SettingKey, definition.RequiresCriticalNotification))
-            .ToList();
-
-        List<ManifestOverridePermission> overridePermissions = request.OverridePermissions
-            .Select(permission => new ManifestOverridePermission(permission.SettingKey, permission.LayerIndex, permission.CanOverride))
-            .ToList();
-
-        ManifestDomainRoot manifest = new()
-        {
-            ManifestId = Guid.NewGuid(),
-            Name = request.Name,
-            Version = newVersion,
-            LayerCount = request.LayerCount,
-            CreatedAtUtc = _clock.UtcNow,
-            CreatedBy = request.CreatedBy,
-            SettingDefinitions = settingDefinitions,
-            OverridePermissions = overridePermissions
-        };
-
+        ManifestDomainRoot manifest = request.ToDomainRoot(newVersion, _clock.UtcNow);
         manifest.Validate();
 
         try
@@ -74,52 +65,8 @@ public sealed class ManifestService : IManifestService
         return manifest;
     }
 
-    public async Task<ManifestValueObject> GetLatestByNameAsync(string name, CancellationToken cancellationToken)
+    public Task<IReadOnlyList<ManifestValueObject>> ListAsync(CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(name))
-        {
-            throw new ValidationException("Manifest name is required.");
-        }
-
-        ManifestValueObject? manifest = await _manifestRepository.GetLatestByNameAsync(name, cancellationToken);
-        if (manifest is null)
-        {
-            throw new EntityNotFoundException("Manifest", name);
-        }
-
-        return manifest;
-    }
-
-    private static void ValidateImportRequest(ManifestImportRequest request)
-    {
-        if (request is null)
-        {
-            throw new ArgumentNullException(nameof(request));
-        }
-
-        if (string.IsNullOrWhiteSpace(request.Name))
-        {
-            throw new ValidationException("Manifest name is required.");
-        }
-
-        if (request.LayerCount <= 0)
-        {
-            throw new ValidationException("LayerCount must be greater than zero.");
-        }
-
-        if (string.IsNullOrWhiteSpace(request.CreatedBy))
-        {
-            throw new ValidationException("CreatedBy is required.");
-        }
-
-        if (request.SettingDefinitions is null || request.SettingDefinitions.Count == 0)
-        {
-            throw new ValidationException("At least one setting definition is required.");
-        }
-
-        if (request.OverridePermissions is null)
-        {
-            throw new ValidationException("Override permissions are required.");
-        }
+        return _manifestRepository.ListAsync(cancellationToken);
     }
 }

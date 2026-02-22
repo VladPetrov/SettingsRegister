@@ -54,28 +54,19 @@ public sealed class InMemoryManifestRepository : IManifestRepository
         }
     }
 
-    public Task<ManifestValueObject?> GetLatestByNameAsync(string name, CancellationToken cancellationToken)
+    public Task<IReadOnlyList<ManifestValueObject>> ListAsync(CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        if (string.IsNullOrWhiteSpace(name))
-        {
-            return Task.FromResult<ManifestValueObject?>(null);
-        }
-
         lock (_syncRoot)
         {
-            ManifestEntity? latest = _manifestsById.Values
-                .Where(entity => string.Equals(entity.Name, name, StringComparison.OrdinalIgnoreCase))
-                .OrderByDescending(entity => entity.Version)
-                .FirstOrDefault();
+            IReadOnlyList<ManifestValueObject> manifests = _manifestsById.Values
+                .OrderBy(entity => entity.Name, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(entity => entity.Version)
+                .Select(entity => _hydrator.Hydrate(entity))
+                .ToList();
 
-            if (latest is null)
-            {
-                return Task.FromResult<ManifestValueObject?>(null);
-            }
-
-            return Task.FromResult<ManifestValueObject?>(_hydrator.Hydrate(latest));
+            return Task.FromResult(manifests);
         }
     }
 

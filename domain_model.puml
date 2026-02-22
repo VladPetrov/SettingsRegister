@@ -100,7 +100,7 @@ enum ConfigOperation {
 class ManifestService {
   +ImportManifest(ManifestImportRequest request)
   +GetById(Guid manifestId)
-  +GetLatestByName(string name)
+  +List()
 }
 
 class ConfigInstanceService {
@@ -119,7 +119,7 @@ class ConfigChangeQueryService {
 interface IManifestRepository {
   +Add(ManifestDomainRoot manifest)
   +GetById(Guid manifestId) : ManifestValueObject
-  +GetLatestByName(string name) : ManifestValueObject
+  +List() : IReadOnlyList<ManifestValueObject>
 }
 
 interface IConfigInstanceRepository {

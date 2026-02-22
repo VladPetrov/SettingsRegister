@@ -15,7 +15,7 @@ The solution is strict-layered:
    - Domain contracts: `IManifestRepository`, `IConfigInstanceRepository`, `IConfigChangeRepository`, `IMonitoringNotifier`
 2. `BackOfficeSmall.Application`
    - Use-case orchestration services:
-     - `ManifestService` (import/version lookup)
+     - `ManifestService` (import + retrieval by id/list)
      - `ConfigInstanceService` (instance CRUD + cell mutation)
      - `ConfigChangeQueryService` (query by id and filters)
    - Application contracts/requests and application exceptions
@@ -60,8 +60,8 @@ The solution is strict-layered:
 
 ### Manifest
 - `POST /api/manifests/import`
+- `GET /api/manifests` (returns all manifests without pagination; fields: `manifestId`, `name`, `version`, `createdAtUtc`)
 - `GET /api/manifests/{manifestId}`
-- `GET /api/manifests/latest/{name}`
 
 ### Config Instance
 - `POST /api/config-instances`

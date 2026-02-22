@@ -47,16 +47,14 @@ public sealed class ManifestsController : ControllerBase
         return Ok(manifest.ToDto());
     }
 
-    [HttpGet("latest/{name}")]
-    [ProducesResponseType(typeof(ManifestResponseDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
+    [HttpGet]
+    [ProducesResponseType(typeof(IReadOnlyList<ManifestSummaryDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ManifestResponseDto>> GetLatestByNameAsync(
-        string name,
-        CancellationToken cancellationToken)
+    public async Task<ActionResult<IReadOnlyList<ManifestSummaryDto>>> GetAllAsync(CancellationToken cancellationToken) // TODO: pagination
     {
-        ManifestValueObject manifest = await _manifestService.GetLatestByNameAsync(name, cancellationToken);
-        return Ok(manifest.ToDto());
+        IReadOnlyList<ManifestValueObject> manifests = await _manifestService.ListAsync(cancellationToken);
+        IReadOnlyList<ManifestSummaryDto> payload = manifests.Select(manifest => manifest.ToSummaryDto()).ToList();
+
+        return Ok(payload);
     }
 }
