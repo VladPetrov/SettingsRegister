@@ -48,7 +48,7 @@ public sealed class AuthExchangeService : IAuthExchangeService
         // Production implementation also needs key rotation strategy and audit logging for token exchange decisions.
         string token = CreateJwt(
             _authSettings,
-            request.UpstreamToken,
+            request.UserId,
             issuedAtUtc,
             expiresAtUtc);
 
@@ -91,7 +91,7 @@ public sealed class AuthExchangeService : IAuthExchangeService
 
     private static string CreateJwt(
         AuthSettings authSettings,
-        string upstreamToken,
+        string userId,
         DateTime issuedAtUtc,
         DateTime expiresAtUtc)
     {
@@ -108,11 +108,11 @@ public sealed class AuthExchangeService : IAuthExchangeService
         {
             ["iss"] = authSettings.Issuer,
             ["aud"] = authSettings.Audience,
-            ["sub"] = "dev-exchange-client",
+            ["sub"] = userId,
+            ["user_id"] = userId,
             ["iat"] = issuedAt,
             ["nbf"] = issuedAt,
-            ["exp"] = expiresAt,
-            ["upstream_token"] = upstreamToken
+            ["exp"] = expiresAt
         };
 
         string encodedHeader = Base64UrlEncode(JsonSerializer.SerializeToUtf8Bytes(header, JsonOptions));

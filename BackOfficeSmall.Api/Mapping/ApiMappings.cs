@@ -12,7 +12,7 @@ public static class ApiMappings
 {
     public static AuthExchangeRequest ToApplication(this AuthExchangeRequestDto dto)
     {
-        return new AuthExchangeRequest(dto.UpstreamToken);
+        return new AuthExchangeRequest(dto.UserId);
     }
 
     public static ManifestImportRequest ToApplication(this ManifestImportRequestDto dto)

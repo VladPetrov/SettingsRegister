@@ -1,12 +1,12 @@
 namespace BackOfficeSmall.Application.Contracts;
 
-public sealed record AuthExchangeRequest(string UpstreamToken)
+public sealed record AuthExchangeRequest(string UserId)
 {
     public void Validate()
     {
-        if (string.IsNullOrWhiteSpace(UpstreamToken))
+        if (string.IsNullOrWhiteSpace(UserId))
         {
-            throw new Exceptions.ValidationException("UpstreamToken is required.");
+            throw new Exceptions.ValidationException("UserId is required.");
         }
     }
 }

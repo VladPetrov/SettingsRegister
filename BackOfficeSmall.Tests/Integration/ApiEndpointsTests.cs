@@ -135,7 +135,7 @@ public sealed class ApiEndpointsTests
 
         HttpResponseMessage response = await client.PostAsJsonAsync("/api/auth/exchange", new
         {
-            upstreamToken = "upstream-dev-token"
+            userId = "integration-user-dev"
         });
 
         string body = await response.Content.ReadAsStringAsync();
@@ -159,7 +159,7 @@ public sealed class ApiEndpointsTests
 
         HttpResponseMessage response = await client.PostAsJsonAsync("/api/auth/exchange", new
         {
-            upstreamToken = "upstream-prod-token"
+            userId = "integration-user-prod"
         });
 
         string body = await response.Content.ReadAsStringAsync();

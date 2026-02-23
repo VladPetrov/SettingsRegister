@@ -21,7 +21,7 @@ public sealed class AuthExchangeServiceTests
         AuthExchangeService service = new(settings, environment, clock);
 
         AuthExchangeResult result = await service.ExchangeAsync(
-            new AuthExchangeRequest("upstream-dev-token"),
+            new AuthExchangeRequest("test-user-1"),
             CancellationToken.None);
 
         Assert.Equal("Bearer", result.TokenType);
@@ -37,14 +37,15 @@ public sealed class AuthExchangeServiceTests
         using JsonDocument payload = DecodePayload(parts[1]);
         Assert.Equal(settings.Issuer, payload.RootElement.GetProperty("iss").GetString());
         Assert.Equal(settings.Audience, payload.RootElement.GetProperty("aud").GetString());
-        Assert.Equal("upstream-dev-token", payload.RootElement.GetProperty("upstream_token").GetString());
+        Assert.Equal("test-user-1", payload.RootElement.GetProperty("sub").GetString());
+        Assert.Equal("test-user-1", payload.RootElement.GetProperty("user_id").GetString());
 
         long expectedExp = new DateTimeOffset(nowUtc.AddMinutes(10)).ToUnixTimeSeconds();
         Assert.Equal(expectedExp, payload.RootElement.GetProperty("exp").GetInt64());
     }
 
     [Fact]
-    public async Task ExchangeAsync_WhenSigningKeyIsTooShort_ThrowsValidationException()
+    public void ExchangeAsync_WhenSigningKeyIsTooShort_ThrowsValidationException()
     {
         DateTime nowUtc = DateTime.SpecifyKind(new DateTime(2026, 2, 23, 9, 0, 0), DateTimeKind.Utc);
         FakeSystemClock clock = new(nowUtc);
@@ -66,7 +67,7 @@ public sealed class AuthExchangeServiceTests
         AuthExchangeService service = new(settings, environment, clock);
 
         await Assert.ThrowsAsync<FeatureNotAvailableException>(() =>
-            service.ExchangeAsync(new AuthExchangeRequest("upstream-prod-token"), CancellationToken.None));
+            service.ExchangeAsync(new AuthExchangeRequest("test-user-2"), CancellationToken.None));
     }
 
     private static AuthSettings CreateSettings(int tokenLifetimeMinutes = 15, string? devSigningKey = null)
