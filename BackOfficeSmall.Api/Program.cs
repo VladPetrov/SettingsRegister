@@ -1,6 +1,6 @@
-using BackOfficeSmall.Api.Configuration;
 using BackOfficeSmall.Api.ErrorHandling;
 using BackOfficeSmall.Application.Abstractions;
+using BackOfficeSmall.Application.Configuration;
 using BackOfficeSmall.Application.Services;
 using BackOfficeSmall.Domain.Repositories;
 using BackOfficeSmall.Domain.Services;
@@ -25,8 +25,7 @@ builder.Services.AddSingleton<IManifestRepository, InMemoryManifestRepository>()
 builder.Services.AddSingleton<IConfigInstanceRepository, InMemoryConfigInstanceRepository>();
 builder.Services.AddSingleton<IConfigChangeRepository, InMemoryConfigChangeRepository>();
 builder.Services.AddSingleton<IMonitoringNotifier, SimulatedMonitoringNotifier>();
-builder.Services.AddSingleton<IDomainLock>(
-    appSettings.AppScaling ? new DistributedDomainLock() : new InProcessDomainLock());
+builder.Services.AddSingleton<IDomainLock>(appSettings.AppScaling ? new DistributedDomainLock() : new InProcessDomainLock());
 builder.Services.AddSingleton<ISystemClock, SystemClock>();
 
 builder.Services.AddScoped<IManifestService, ManifestService>();

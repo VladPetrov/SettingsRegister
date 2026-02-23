@@ -1,4 +1,5 @@
 using BackOfficeSmall.Application.Contracts;
+using BackOfficeSmall.Application.Configuration;
 using BackOfficeSmall.Application.Exceptions;
 using BackOfficeSmall.Application.Services;
 using BackOfficeSmall.Domain.Models.Manifest;
@@ -9,13 +10,19 @@ namespace BackOfficeSmall.Tests.Unit.Application;
 
 public sealed class ManifestServiceTests
 {
+    private static readonly int ImportLockTimeoutSeconds = 15;
+
     [Fact]
     public async Task ImportManifestAsync_IncrementsVersion_AndKeepsOlderVersionImmutable()
     {
         FakeSystemClock clock = new(DateTime.SpecifyKind(new DateTime(2026, 2, 22, 10, 0, 0), DateTimeKind.Utc));
         FakeDomainLock domainLock = new();
         InMemoryManifestRepository manifestRepository = new();
-        ManifestService service = new(manifestRepository, domainLock, clock);
+        ApplicationSettings applicationSettings = new()
+        {
+            ManifestImportLockTimeoutSeconds = ImportLockTimeoutSeconds
+        };
+        ManifestService service = new(manifestRepository, domainLock, clock, applicationSettings);
 
         ManifestImportRequest request = CreateManifestRequest("Main", "tester");
 
@@ -30,6 +37,7 @@ public sealed class ManifestServiceTests
         Assert.Equal(2, second.Version);
         Assert.NotEqual(first.ManifestId, second.ManifestId);
         Assert.Equal("Main", domainLock.LastKey);
+        Assert.Equal(TimeSpan.FromSeconds(ImportLockTimeoutSeconds), domainLock.LastTimeout);
         Assert.Equal(2, domainLock.DisposeCalls);
     }
 
@@ -39,7 +47,11 @@ public sealed class ManifestServiceTests
         FakeSystemClock clock = new(DateTime.SpecifyKind(new DateTime(2026, 2, 22, 10, 0, 0), DateTimeKind.Utc));
         FakeDomainLock domainLock = new(false);
         InMemoryManifestRepository manifestRepository = new();
-        ManifestService service = new(manifestRepository, domainLock, clock);
+        ApplicationSettings applicationSettings = new()
+        {
+            ManifestImportLockTimeoutSeconds = ImportLockTimeoutSeconds
+        };
+        ManifestService service = new(manifestRepository, domainLock, clock, applicationSettings);
 
         ManifestImportRequest request = CreateManifestRequest("Main", "tester");
 

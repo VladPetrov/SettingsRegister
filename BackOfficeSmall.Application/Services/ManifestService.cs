@@ -1,4 +1,5 @@
 using BackOfficeSmall.Application.Abstractions;
+using BackOfficeSmall.Application.Configuration;
 using BackOfficeSmall.Application.Contracts;
 using BackOfficeSmall.Application.Exceptions;
 using BackOfficeSmall.Application.Mapping;
@@ -10,16 +11,34 @@ namespace BackOfficeSmall.Application.Services;
 
 public sealed class ManifestService : IManifestService
 {
-    private static readonly TimeSpan ManifestImportLockTimeout = TimeSpan.FromSeconds(30);
     private readonly IManifestRepository _manifestRepository;
     private readonly IDomainLock _domainLock;
     private readonly ISystemClock _clock;
+    private readonly TimeSpan _manifestImportLockTimeout;
 
-    public ManifestService(IManifestRepository manifestRepository, IDomainLock domainLock, ISystemClock clock)
+    public ManifestService(
+        IManifestRepository manifestRepository,
+        IDomainLock domainLock,
+        ISystemClock clock,
+        ApplicationSettings applicationSettings)
     {
         _manifestRepository = manifestRepository ?? throw new ArgumentNullException(nameof(manifestRepository));
         _domainLock = domainLock ?? throw new ArgumentNullException(nameof(domainLock));
         _clock = clock ?? throw new ArgumentNullException(nameof(clock));
+
+        if (applicationSettings is null)
+        {
+            throw new ArgumentNullException(nameof(applicationSettings));
+        }
+
+        if (applicationSettings.ManifestImportLockTimeoutSeconds <= 0)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(applicationSettings),
+                "Manifest import lock timeout seconds must be greater than zero.");
+        }
+
+        _manifestImportLockTimeout = TimeSpan.FromSeconds(applicationSettings.ManifestImportLockTimeoutSeconds);
     }
 
     public async Task<ManifestValueObject> ImportManifestAsync(ManifestImportRequest request, CancellationToken cancellationToken)
@@ -32,7 +51,7 @@ public sealed class ManifestService : IManifestService
         request.Validate();
 
         // lock all manifest versions
-        await using var lockHandle = await _domainLock.TryTakeLockAsync(request.Name, ManifestImportLockTimeout, cancellationToken);
+        await using var lockHandle = await _domainLock.TryTakeLockAsync(request.Name, _manifestImportLockTimeout, cancellationToken);
         
         if (lockHandle is null)
         {

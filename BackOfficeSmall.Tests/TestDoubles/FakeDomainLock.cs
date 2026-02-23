@@ -12,6 +12,7 @@ internal sealed class FakeDomainLock : IDomainLock
     }
 
     public string? LastKey { get; private set; }
+    public TimeSpan? LastTimeout { get; private set; }
 
     public int DisposeCalls { get; private set; }
 
@@ -19,6 +20,7 @@ internal sealed class FakeDomainLock : IDomainLock
     {
         cancellationToken.ThrowIfCancellationRequested();
         LastKey = key;
+        LastTimeout = timeout;
 
         bool canAcquire = _acquireSequence.Count == 0 || _acquireSequence.Dequeue();
         if (!canAcquire)

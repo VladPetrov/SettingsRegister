@@ -57,6 +57,7 @@ The solution is strict-layered:
 - `Application:AppScaling` controls lock strategy:
   - `false` (default): `InProcessDomainLock`
   - `true`: simulated `DistributedDomainLock` (placeholder for DB-backed distributed lock in real deployments)
+- `Application:ManifestImportLockTimeoutSeconds` configures manifest import lock acquisition timeout (default `30` seconds).
 - UTC is required for date filters (`fromUtc`, `toUtc`) when provided.
 - API does not expose domain entities directly; DTO mapping is explicit.
 
