@@ -54,7 +54,7 @@ The solution is strict-layered:
 
 - Persistence is in-memory only.
 - Monitoring integration is simulated, async, injectable, and retry-free.
-- Application runtime settings are bound from `appsettings*.json` into immutable `ApplicationSettings` and registered in DI.
+- Application runtime settings are bound from `appsettings*.json` into immutable `ApplicationSettings` and `AuthSettings`, then registered in DI.
 - `Application:AppScaling` controls lock strategy:
   - `false` (default): `InProcessDomainLock`
   - `true`: simulated `DistributedDomainLock` (placeholder for DB-backed distributed lock in real deployments)
@@ -106,13 +106,11 @@ Errors return `ProblemDetails` with consistent status mapping:
 
 ```json
 {
-  "Application": {
-    "Auth": {
-      "DevSigningKey": "dev-only-signing-key-change-before-production",
-      "Issuer": "BackOfficeSmall",
-      "Audience": "BackOfficeSmall.Api",
-      "TokenLifetimeMinutes": 15
-    }
+  "Auth": {
+    "DevSigningKey": "dev-only-signing-key-change-before-production",
+    "Issuer": "BackOfficeSmall",
+    "Audience": "BackOfficeSmall.Api",
+    "TokenLifetimeMinutes": 15
   }
 }
 ```

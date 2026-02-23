@@ -17,7 +17,7 @@ public sealed class AuthExchangeServiceTests
         DateTime nowUtc = DateTime.SpecifyKind(new DateTime(2026, 2, 23, 9, 0, 0), DateTimeKind.Utc);
         FakeSystemClock clock = new(nowUtc);
         FakeApplicationEnvironment environment = new(true);
-        ApplicationSettings settings = CreateSettings(tokenLifetimeMinutes: 10);
+        AuthSettings settings = CreateSettings(tokenLifetimeMinutes: 10);
         AuthExchangeService service = new(settings, environment, clock);
 
         AuthExchangeResult result = await service.ExchangeAsync(
@@ -31,12 +31,12 @@ public sealed class AuthExchangeServiceTests
         string[] parts = result.AccessToken.Split('.');
         Assert.Equal(3, parts.Length);
 
-        string expectedSignature = ComputeSignature(parts[0], parts[1], settings.Auth.DevSigningKey);
+        string expectedSignature = ComputeSignature(parts[0], parts[1], settings.DevSigningKey);
         Assert.Equal(expectedSignature, parts[2]);
 
         using JsonDocument payload = DecodePayload(parts[1]);
-        Assert.Equal(settings.Auth.Issuer, payload.RootElement.GetProperty("iss").GetString());
-        Assert.Equal(settings.Auth.Audience, payload.RootElement.GetProperty("aud").GetString());
+        Assert.Equal(settings.Issuer, payload.RootElement.GetProperty("iss").GetString());
+        Assert.Equal(settings.Audience, payload.RootElement.GetProperty("aud").GetString());
         Assert.Equal("upstream-dev-token", payload.RootElement.GetProperty("upstream_token").GetString());
 
         long expectedExp = new DateTimeOffset(nowUtc.AddMinutes(10)).ToUnixTimeSeconds();
@@ -49,11 +49,9 @@ public sealed class AuthExchangeServiceTests
         DateTime nowUtc = DateTime.SpecifyKind(new DateTime(2026, 2, 23, 9, 0, 0), DateTimeKind.Utc);
         FakeSystemClock clock = new(nowUtc);
         FakeApplicationEnvironment environment = new(true);
-        ApplicationSettings settings = CreateSettings(devSigningKey: "short-key");
-        AuthExchangeService service = new(settings, environment, clock);
-
-        ValidationException exception = await Assert.ThrowsAsync<ValidationException>(() =>
-            service.ExchangeAsync(new AuthExchangeRequest("upstream-dev-token"), CancellationToken.None));
+        AuthSettings settings = CreateSettings(devSigningKey: "short-key");
+        ValidationException exception = Assert.Throws<ValidationException>(() =>
+            new AuthExchangeService(settings, environment, clock));
 
         Assert.Contains("at least 32 characters", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
@@ -64,24 +62,21 @@ public sealed class AuthExchangeServiceTests
         DateTime nowUtc = DateTime.SpecifyKind(new DateTime(2026, 2, 23, 9, 0, 0), DateTimeKind.Utc);
         FakeSystemClock clock = new(nowUtc);
         FakeApplicationEnvironment environment = new(false);
-        ApplicationSettings settings = CreateSettings();
+        AuthSettings settings = CreateSettings();
         AuthExchangeService service = new(settings, environment, clock);
 
         await Assert.ThrowsAsync<FeatureNotAvailableException>(() =>
             service.ExchangeAsync(new AuthExchangeRequest("upstream-prod-token"), CancellationToken.None));
     }
 
-    private static ApplicationSettings CreateSettings(int tokenLifetimeMinutes = 15, string? devSigningKey = null)
+    private static AuthSettings CreateSettings(int tokenLifetimeMinutes = 15, string? devSigningKey = null)
     {
-        return new ApplicationSettings
+        return new AuthSettings
         {
-            Auth = new AuthSettings
-            {
-                DevSigningKey = devSigningKey ?? "0123456789abcdef0123456789abcdef",
-                Issuer = "BackOfficeSmall.Tests",
-                Audience = "BackOfficeSmall.Tests.Api",
-                TokenLifetimeMinutes = tokenLifetimeMinutes
-            }
+            DevSigningKey = devSigningKey ?? "0123456789abcdef0123456789abcdef",
+            Issuer = "BackOfficeSmall.Tests",
+            Audience = "BackOfficeSmall.Tests.Api",
+            TokenLifetimeMinutes = tokenLifetimeMinutes
         };
     }
 

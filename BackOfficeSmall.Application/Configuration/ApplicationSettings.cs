@@ -6,5 +6,4 @@ public sealed class ApplicationSettings
 
     public bool AppScaling { get; init; } = false;
     public int ManifestImportLockTimeoutSeconds { get; init; } = 30;
-    public AuthSettings Auth { get; init; } = new();
 }

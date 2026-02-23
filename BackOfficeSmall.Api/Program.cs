@@ -14,6 +14,9 @@ WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 ApplicationSettings appSettings = builder.Configuration
     .GetSection(ApplicationSettings.SectionName)
     .Get<ApplicationSettings>() ?? new ApplicationSettings();
+AuthSettings authSettings = builder.Configuration
+    .GetSection(AuthSettings.SectionName)
+    .Get<AuthSettings>() ?? new AuthSettings();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -21,6 +24,7 @@ builder.Services.AddOpenApi();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHealthChecks();
 builder.Services.AddSingleton(appSettings);
+builder.Services.AddSingleton(authSettings);
 
 builder.Services.AddSingleton<IManifestRepository, InMemoryManifestRepository>();
 builder.Services.AddSingleton<IConfigInstanceRepository, InMemoryConfigInstanceRepository>();
@@ -76,6 +80,7 @@ static void ValidateStartup(IServiceProvider services)
     scope.ServiceProvider.GetRequiredService<IAuthExchangeService>();
     scope.ServiceProvider.GetRequiredService<IDomainLock>();
     scope.ServiceProvider.GetRequiredService<ApplicationSettings>();
+    scope.ServiceProvider.GetRequiredService<AuthSettings>();
 }
 
 public partial class Program

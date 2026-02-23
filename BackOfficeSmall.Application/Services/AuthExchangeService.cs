@@ -11,17 +11,17 @@ namespace BackOfficeSmall.Application.Services;
 public sealed class AuthExchangeService : IAuthExchangeService
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
-    private readonly ApplicationSettings _applicationSettings;
+    private readonly AuthSettings _authSettings;
     private readonly IApplicationEnvironment _applicationEnvironment;
     private readonly ISystemClock _clock;
 
-    public AuthExchangeService(ApplicationSettings applicationSettings, IApplicationEnvironment applicationEnvironment, ISystemClock clock)
+    public AuthExchangeService(AuthSettings authSettings, IApplicationEnvironment applicationEnvironment, ISystemClock clock)
     {
-        _applicationSettings = applicationSettings ?? throw new ArgumentNullException(nameof(applicationSettings));
+        _authSettings = authSettings ?? throw new ArgumentNullException(nameof(authSettings));
         _applicationEnvironment = applicationEnvironment ?? throw new ArgumentNullException(nameof(applicationEnvironment));
         _clock = clock ?? throw new ArgumentNullException(nameof(clock));
 
-        ValidateAuthSettings(_applicationSettings.Auth);
+        ValidateAuthSettings(_authSettings);
     }
 
     public Task<AuthExchangeResult> ExchangeAsync(AuthExchangeRequest request, CancellationToken cancellationToken)
@@ -41,13 +41,13 @@ public sealed class AuthExchangeService : IAuthExchangeService
         }
 
         var issuedAtUtc = _clock.UtcNow;
-        var expiresAtUtc = issuedAtUtc.AddMinutes(_applicationSettings.Auth.TokenLifetimeMinutes);
+        var expiresAtUtc = issuedAtUtc.AddMinutes(_authSettings.TokenLifetimeMinutes);
 
         // Real production flow should validate upstream token against trusted JWKS metadata.
         // It should then authorize caller identity/scopes, normalize claims, and issue short-lived internal JWTs.
         // Production implementation also needs key rotation strategy and audit logging for token exchange decisions.
         string token = CreateJwt(
-            _applicationSettings.Auth,
+            _authSettings,
             request.UpstreamToken,
             issuedAtUtc,
             expiresAtUtc);
