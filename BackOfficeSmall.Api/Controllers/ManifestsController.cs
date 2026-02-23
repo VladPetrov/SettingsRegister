@@ -1,7 +1,6 @@
 using BackOfficeSmall.Api.Dtos.Manifests;
 using BackOfficeSmall.Api.Mapping;
 using BackOfficeSmall.Application.Abstractions;
-using BackOfficeSmall.Domain.Models.Manifest;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BackOfficeSmall.Api.Controllers;
@@ -23,13 +22,9 @@ public sealed class ManifestsController : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ManifestResponseDto>> ImportAsync(
-        [FromBody] ManifestImportRequestDto request,
-        CancellationToken cancellationToken)
+    public async Task<ActionResult<ManifestResponseDto>> ImportAsync([FromBody] ManifestImportRequestDto request, CancellationToken cancellationToken)
     {
-        ManifestValueObject manifest = await _manifestService.ImportManifestAsync(
-            request.ToApplication(),
-            cancellationToken);
+        var manifest = await _manifestService.ImportManifestAsync(request.ToApplication(), cancellationToken);
 
         return Created($"/api/manifests/{manifest.ManifestId}", manifest.ToDto());
     }
@@ -39,21 +34,20 @@ public sealed class ManifestsController : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ManifestResponseDto>> GetByIdAsync(
-        Guid manifestId,
-        CancellationToken cancellationToken)
+    public async Task<ActionResult<ManifestResponseDto>> GetByIdAsync(Guid manifestId, CancellationToken cancellationToken)
     {
-        ManifestValueObject manifest = await _manifestService.GetByIdAsync(manifestId, cancellationToken);
+        var manifest = await _manifestService.GetByIdAsync(manifestId, cancellationToken);
         return Ok(manifest.ToDto());
     }
 
     [HttpGet]
     [ProducesResponseType(typeof(IReadOnlyList<ManifestSummaryDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<IReadOnlyList<ManifestSummaryDto>>> GetAllAsync([FromQuery] string? name, CancellationToken cancellationToken) // TODO: pagination
+    // TODO: pagination must be in a real app
+    public async Task<ActionResult<IReadOnlyList<ManifestSummaryDto>>> GetAllAsync([FromQuery] string? name, CancellationToken cancellationToken) 
     {
-        IReadOnlyList<ManifestValueObject> manifests = await _manifestService.ListAsync(name, cancellationToken);
-        IReadOnlyList<ManifestSummaryDto> payload = manifests.Select(manifest => manifest.ToSummaryDto()).ToList();
+        var manifests = await _manifestService.ListAsync(name, cancellationToken);
+        var payload = manifests.Select(manifest => manifest.ToSummaryDto()).ToList();
 
         return Ok(payload);
     }
