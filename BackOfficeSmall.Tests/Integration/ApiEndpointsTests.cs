@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace BackOfficeSmall.Tests.Integration;
@@ -124,6 +125,57 @@ public sealed class ApiEndpointsTests
 
         Assert.Equal((HttpStatusCode)422, response.StatusCode);
         Assert.Contains("Override is not allowed", body, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task AuthExchange_WhenDevelopment_ReturnsJwtPayload()
+    {
+        await using WebApplicationFactory<Program> factory = CreateFactory("Development");
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage response = await client.PostAsJsonAsync("/api/auth/exchange", new
+        {
+            upstreamToken = "upstream-dev-token"
+        });
+
+        string body = await response.Content.ReadAsStringAsync();
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        using JsonDocument document = JsonDocument.Parse(body);
+        Assert.True(document.RootElement.TryGetProperty("accessToken", out JsonElement tokenElement));
+        Assert.True(document.RootElement.TryGetProperty("tokenType", out JsonElement tokenTypeElement));
+        Assert.True(document.RootElement.TryGetProperty("expiresAtUtc", out JsonElement expiresAtElement));
+
+        Assert.False(string.IsNullOrWhiteSpace(tokenElement.GetString()));
+        Assert.Equal("Bearer", tokenTypeElement.GetString());
+        Assert.True(expiresAtElement.GetDateTime() > DateTime.UtcNow);
+    }
+
+    [Fact]
+    public async Task AuthExchange_WhenNotDevelopment_Returns501ProblemDetails()
+    {
+        await using WebApplicationFactory<Program> factory = CreateFactory("Production");
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage response = await client.PostAsJsonAsync("/api/auth/exchange", new
+        {
+            upstreamToken = "upstream-prod-token"
+        });
+
+        string body = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal((HttpStatusCode)501, response.StatusCode);
+        Assert.Contains("Not Implemented", body, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("outside Development environment", body, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static WebApplicationFactory<Program> CreateFactory(string environmentName)
+    {
+        return new WebApplicationFactory<Program>()
+            .WithWebHostBuilder(builder =>
+            {
+                builder.UseEnvironment(environmentName);
+            });
     }
 
     private static async Task<Guid> ImportManifestAsync(

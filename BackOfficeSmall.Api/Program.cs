@@ -1,3 +1,4 @@
+using BackOfficeSmall.Api.Configuration;
 using BackOfficeSmall.Api.ErrorHandling;
 using BackOfficeSmall.Application.Abstractions;
 using BackOfficeSmall.Application.Configuration;
@@ -27,10 +28,12 @@ builder.Services.AddSingleton<IConfigChangeRepository, InMemoryConfigChangeRepos
 builder.Services.AddSingleton<IMonitoringNotifier, SimulatedMonitoringNotifier>();
 builder.Services.AddSingleton<IDomainLock>(appSettings.AppScaling ? new DistributedDomainLock() : new InProcessDomainLock());
 builder.Services.AddSingleton<ISystemClock, SystemClock>();
+builder.Services.AddSingleton<IApplicationEnvironment, HostApplicationEnvironment>();
 
 builder.Services.AddScoped<IManifestService, ManifestService>();
 builder.Services.AddScoped<IConfigInstanceService, ConfigInstanceService>();
 builder.Services.AddScoped<IConfigChangeQueryService, ConfigChangeQueryService>();
+builder.Services.AddScoped<IAuthExchangeService, AuthExchangeService>();
 
 WebApplication app = builder.Build();
 
@@ -70,6 +73,7 @@ static void ValidateStartup(IServiceProvider services)
     scope.ServiceProvider.GetRequiredService<IManifestService>();
     scope.ServiceProvider.GetRequiredService<IConfigInstanceService>();
     scope.ServiceProvider.GetRequiredService<IConfigChangeQueryService>();
+    scope.ServiceProvider.GetRequiredService<IAuthExchangeService>();
     scope.ServiceProvider.GetRequiredService<IDomainLock>();
     scope.ServiceProvider.GetRequiredService<ApplicationSettings>();
 }

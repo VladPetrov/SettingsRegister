@@ -18,6 +18,7 @@ The solution is strict-layered:
      - `ManifestService` (import + retrieval by id/list)
      - `ConfigInstanceService` (instance CRUD + cell mutation)
      - `ConfigChangeQueryService` (query by id and filters)
+     - `AuthExchangeService` (development token exchange endpoint behavior)
    - Application contracts/requests and application exceptions
 3. `BackOfficeSmall.Infrastructure`
    - In-memory repository implementations with thread-safety
@@ -58,6 +59,7 @@ The solution is strict-layered:
   - `false` (default): `InProcessDomainLock`
   - `true`: simulated `DistributedDomainLock` (placeholder for DB-backed distributed lock in real deployments)
 - `Application:ManifestImportLockTimeoutSeconds` configures manifest import lock acquisition timeout (default `30` seconds).
+- `/api/auth/exchange` is enabled in `Development` only; in non-development environments it returns `501 Not Implemented`.
 - UTC is required for date filters (`fromUtc`, `toUtc`) when provided.
 - API does not expose domain entities directly; DTO mapping is explicit.
 
@@ -81,6 +83,11 @@ The solution is strict-layered:
 - `GET /api/config-changes`
 - `GET /api/config-changes/{id}`
 
+### Auth
+- `POST /api/auth/exchange`
+  - `Development`: returns a JWT token payload (`accessToken`, `tokenType`, `expiresAtUtc`)
+  - Non-development: returns `501` `ProblemDetails`
+
 ### Operational
 - `GET /health`
 
@@ -91,8 +98,24 @@ Errors return `ProblemDetails` with consistent status mapping:
 - `400` invalid request payload/model state
 - `404` resource not found
 - `409` conflict (uniqueness collisions)
+- `501` feature not implemented for current environment
 - `422` domain validation failures
 - `500` unexpected internal failures
+
+## Auth Configuration
+
+```json
+{
+  "Application": {
+    "Auth": {
+      "DevSigningKey": "dev-only-signing-key-change-before-production",
+      "Issuer": "BackOfficeSmall",
+      "Audience": "BackOfficeSmall.Api",
+      "TokenLifetimeMinutes": 15
+    }
+  }
+}
+```
 
 ## Run
 

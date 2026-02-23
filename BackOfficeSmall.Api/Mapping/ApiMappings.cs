@@ -1,3 +1,4 @@
+using BackOfficeSmall.Api.Dtos.Auth;
 using BackOfficeSmall.Api.Dtos.ConfigChanges;
 using BackOfficeSmall.Api.Dtos.ConfigInstances;
 using BackOfficeSmall.Api.Dtos.Manifests;
@@ -9,6 +10,11 @@ namespace BackOfficeSmall.Api.Mapping;
 
 public static class ApiMappings
 {
+    public static AuthExchangeRequest ToApplication(this AuthExchangeRequestDto dto)
+    {
+        return new AuthExchangeRequest(dto.UpstreamToken);
+    }
+
     public static ManifestImportRequest ToApplication(this ManifestImportRequestDto dto)
     {
         IReadOnlyList<ManifestSettingDefinitionInput> settings = dto.SettingDefinitions
@@ -133,6 +139,11 @@ public static class ApiMappings
             change.AfterValue,
             change.ChangedBy,
             change.ChangedAtUtc);
+    }
+
+    public static AuthExchangeResponseDto ToDto(this AuthExchangeResult result)
+    {
+        return new AuthExchangeResponseDto(result.AccessToken, result.TokenType, result.ExpiresAtUtc);
     }
 
     public static ConfigOperation? ToDomain(this ConfigOperationDto? dto)

@@ -63,6 +63,11 @@ public sealed class ProblemDetailsExceptionHandlingMiddleware
             return (StatusCodes.Status409Conflict, "Conflict");
         }
 
+        if (exception is FeatureNotAvailableException)
+        {
+            return (StatusCodes.Status501NotImplemented, "Not Implemented");
+        }
+
         if (exception is ValidationException)
         {
             return (StatusCodes.Status422UnprocessableEntity, "Validation Failed");
