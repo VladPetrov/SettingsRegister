@@ -15,7 +15,7 @@ public static class ApiMappings
         return new AuthExchangeRequest(dto.UserId);
     }
 
-    public static ManifestImportRequest ToApplication(this ManifestImportRequestDto dto)
+    public static ManifestImportRequest ToApplication(this ManifestImportRequestDto dto, string createdBy)
     {
         IReadOnlyList<ManifestSettingDefinitionInput> settings = dto.SettingDefinitions
             .Select(setting => new ManifestSettingDefinitionInput(
@@ -33,7 +33,7 @@ public static class ApiMappings
         return new ManifestImportRequest(
             dto.Name,
             dto.LayerCount,
-            dto.CreatedBy,
+            createdBy,
             settings,
             permissions);
     }

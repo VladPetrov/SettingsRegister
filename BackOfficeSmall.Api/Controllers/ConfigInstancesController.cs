@@ -9,7 +9,7 @@ namespace BackOfficeSmall.Api.Controllers;
 
 [ApiController]
 [Route("api/config-instances")]
-public sealed class ConfigInstancesController : ControllerBase
+public sealed class ConfigInstancesController : AuthenticatedApiControllerBase
 {
     private readonly IConfigInstanceService _configInstanceService;
 

@@ -11,9 +11,6 @@ public sealed class ManifestImportRequestDto
     public int LayerCount { get; init; }
 
     [Required]
-    public string CreatedBy { get; init; } = string.Empty;
-
-    [Required]
     [MinLength(1)]
     public IReadOnlyList<ManifestSettingDefinitionDto> SettingDefinitions { get; init; } =
         Array.Empty<ManifestSettingDefinitionDto>();

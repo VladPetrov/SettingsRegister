@@ -9,7 +9,7 @@ namespace BackOfficeSmall.Api.Controllers;
 
 [ApiController]
 [Route("api/config-changes")]
-public sealed class ConfigChangesController : ControllerBase
+public sealed class ConfigChangesController : AuthenticatedApiControllerBase
 {
     private readonly IConfigChangeQueryService _configChangeQueryService;
     private readonly IConfigInstanceService _configInstanceService;

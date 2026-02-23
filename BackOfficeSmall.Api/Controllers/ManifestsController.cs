@@ -7,7 +7,7 @@ namespace BackOfficeSmall.Api.Controllers;
 
 [ApiController]
 [Route("api/manifests")]
-public sealed class ManifestsController : ControllerBase
+public sealed class ManifestsController : AuthenticatedApiControllerBase
 {
     private readonly IManifestService _manifestService;
 
@@ -18,13 +18,25 @@ public sealed class ManifestsController : ControllerBase
 
     [HttpPost("import")]
     [ProducesResponseType(typeof(ManifestResponseDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<ManifestResponseDto>> ImportAsync([FromBody] ManifestImportRequestDto request, CancellationToken cancellationToken)
     {
-        var manifest = await _manifestService.ImportManifestAsync(request.ToApplication(), cancellationToken);
+        string? createdBy = TryGetUserId();
+        if (string.IsNullOrWhiteSpace(createdBy))
+        {
+            return Unauthorized(new ProblemDetails
+            {
+                Title = "Unauthorized",
+                Detail = "Token must contain user identifier claim.",
+                Status = StatusCodes.Status401Unauthorized
+            });
+        }
+
+        var manifest = await _manifestService.ImportManifestAsync(request.ToApplication(createdBy), cancellationToken);
 
         return Created($"/api/manifests/{manifest.ManifestId}", manifest.ToDto());
     }

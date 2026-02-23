@@ -1,3 +1,4 @@
+using System.Text;
 using BackOfficeSmall.Api.Configuration;
 using BackOfficeSmall.Api.ErrorHandling;
 using BackOfficeSmall.Application.Abstractions;
@@ -8,7 +9,10 @@ using BackOfficeSmall.Domain.Services;
 using BackOfficeSmall.Infrastructure.Locking;
 using BackOfficeSmall.Infrastructure.Monitoring;
 using BackOfficeSmall.Infrastructure.Repositories;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.OpenApi;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 ApplicationSettings appSettings = builder.Configuration
@@ -21,10 +25,46 @@ AuthSettings authSettings = builder.Configuration
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddOpenApi();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Enter JWT token."
+    });
+
+    options.AddSecurityRequirement(document => new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecuritySchemeReference("Bearer", document, null),
+            new List<string>()
+        }
+    });
+});
 builder.Services.AddHealthChecks();
 builder.Services.AddSingleton(appSettings);
 builder.Services.AddSingleton(authSettings);
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(authSettings.DevSigningKey)),
+            ValidateIssuer = true,
+            ValidIssuer = authSettings.Issuer,
+            ValidateAudience = true,
+            ValidAudience = authSettings.Audience,
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.Zero
+        };
+    });
+builder.Services.AddAuthorization();
 
 builder.Services.AddSingleton<IManifestRepository, InMemoryManifestRepository>();
 builder.Services.AddSingleton<IConfigInstanceRepository, InMemoryConfigInstanceRepository>();
@@ -49,6 +89,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseMiddleware<ProblemDetailsExceptionHandlingMiddleware>();
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapControllers();
 

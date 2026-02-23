@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.AspNetCore.Hosting;
@@ -24,8 +25,8 @@ public sealed class ApiEndpointsTests
     [Fact]
     public async Task ConfigChangesEndpoints_CreateListAndGet_ById_Work()
     {
-        await using WebApplicationFactory<Program> factory = new();
-        using HttpClient client = factory.CreateClient();
+        await using WebApplicationFactory<Program> factory = CreateFactory("Development");
+        using HttpClient client = await CreateAuthorizedClientAsync(factory, "integration-user-config-changes");
 
         Guid manifestId = await ImportManifestAsync(client, allowLayerOneOverride: true);
         Guid instanceId = await CreateConfigInstanceAsync(client, manifestId, "Instance-A");
@@ -61,8 +62,8 @@ public sealed class ApiEndpointsTests
     [Fact]
     public async Task ManifestsEndpoint_List_ReturnsSummaryItems()
     {
-        await using WebApplicationFactory<Program> factory = new();
-        using HttpClient client = factory.CreateClient();
+        await using WebApplicationFactory<Program> factory = CreateFactory("Development");
+        using HttpClient client = await CreateAuthorizedClientAsync(factory, "integration-user-manifests");
 
         Guid includedManifestId = await ImportManifestAsync(client, allowLayerOneOverride: true, manifestName: "Filtered-A");
         _ = await ImportManifestAsync(client, allowLayerOneOverride: true, manifestName: "Filtered-B");
@@ -88,8 +89,8 @@ public sealed class ApiEndpointsTests
     [Fact]
     public async Task CreateConfigInstance_WhenManifestMissing_Returns404ProblemDetails()
     {
-        await using WebApplicationFactory<Program> factory = new();
-        using HttpClient client = factory.CreateClient();
+        await using WebApplicationFactory<Program> factory = CreateFactory("Development");
+        using HttpClient client = await CreateAuthorizedClientAsync(factory, "integration-user-instance-missing");
 
         HttpResponseMessage response = await client.PostAsJsonAsync("/api/config-instances", new
         {
@@ -107,8 +108,8 @@ public sealed class ApiEndpointsTests
     [Fact]
     public async Task SetCellValue_WhenOverrideDenied_Returns422ProblemDetails()
     {
-        await using WebApplicationFactory<Program> factory = new();
-        using HttpClient client = factory.CreateClient();
+        await using WebApplicationFactory<Program> factory = CreateFactory("Development");
+        using HttpClient client = await CreateAuthorizedClientAsync(factory, "integration-user-override-denied");
 
         Guid manifestId = await ImportManifestAsync(client, allowLayerOneOverride: false);
         Guid instanceId = await CreateConfigInstanceAsync(client, manifestId, "Instance-Denied");
@@ -178,6 +179,25 @@ public sealed class ApiEndpointsTests
             });
     }
 
+    private static async Task<HttpClient> CreateAuthorizedClientAsync(WebApplicationFactory<Program> factory, string userId)
+    {
+        HttpClient client = factory.CreateClient();
+        HttpResponseMessage response = await client.PostAsJsonAsync("/api/auth/exchange", new
+        {
+            userId
+        });
+
+        string body = await response.Content.ReadAsStringAsync();
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        using JsonDocument document = JsonDocument.Parse(body);
+        string? token = document.RootElement.GetProperty("accessToken").GetString();
+        Assert.False(string.IsNullOrWhiteSpace(token));
+
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return client;
+    }
+
     private static async Task<Guid> ImportManifestAsync(
         HttpClient client,
         bool allowLayerOneOverride,
@@ -189,7 +209,6 @@ public sealed class ApiEndpointsTests
         {
             name = resolvedManifestName,
             layerCount = 2,
-            createdBy = "tester",
             settingDefinitions = new[]
             {
                 new
