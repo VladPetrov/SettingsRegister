@@ -32,7 +32,12 @@ public sealed class ConfigurationInstanceService : IConfigurationService
 
     public async Task<ConfigurationInstance> CreateInstanceAsync(ConfigurationInstanceCreateRequest request, CancellationToken cancellationToken)
     {
-        ValidateCreateRequest(request);
+        if (request is null)
+        {
+            throw new ArgumentNullException(nameof(request));
+        }
+
+        request.Validate();
 
         ManifestValueObject manifest = await GetManifestOrThrowAsync(request.ManifestId, cancellationToken);
         ConfigurationInstance instance = new(
@@ -93,7 +98,12 @@ public sealed class ConfigurationInstanceService : IConfigurationService
             throw new ValidationException("ConfigurationInstanceId must be a non-empty GUID.");
         }
 
-        ValidateDeleteRequest(request);
+        if (request is null)
+        {
+            throw new ArgumentNullException(nameof(request));
+        }
+
+        request.Validate();
 
         ConfigurationInstance? instance = await _configInstanceRepository.GetByIdAsync(instanceId, cancellationToken);
         if (instance is null)
@@ -136,7 +146,12 @@ public sealed class ConfigurationInstanceService : IConfigurationService
             throw new ValidationException("ConfigurationInstanceId must be a non-empty GUID.");
         }
 
-        ValidateSetCellRequest(request);
+        if (request is null)
+        {
+            throw new ArgumentNullException(nameof(request));
+        }
+
+        request.Validate();
 
         ConfigurationInstance instance = await GetInstanceOrThrowAsync(instanceId, cancellationToken);
 
@@ -179,65 +194,6 @@ public sealed class ConfigurationInstanceService : IConfigurationService
         }
 
         return change;
-    }
-
-    private static void ValidateCreateRequest(ConfigurationInstanceCreateRequest request)
-    {
-        if (request is null)
-        {
-            throw new ArgumentNullException(nameof(request));
-        }
-
-        if (string.IsNullOrWhiteSpace(request.Name))
-        {
-            throw new ValidationException("Configuration instance name is required.");
-        }
-
-        if (request.ManifestId == Guid.Empty)
-        {
-            throw new ValidationException("ManifestId must be a non-empty GUID.");
-        }
-
-        if (string.IsNullOrWhiteSpace(request.CreatedBy))
-        {
-            throw new ValidationException("CreatedBy is required.");
-        }
-    }
-
-    private static void ValidateSetCellRequest(SetCellValueRequest request)
-    {
-        if (request is null)
-        {
-            throw new ArgumentNullException(nameof(request));
-        }
-
-        if (string.IsNullOrWhiteSpace(request.SettingKey))
-        {
-            throw new ValidationException("SettingKey is required.");
-        }
-
-        if (request.LayerIndex < 0)
-        {
-            throw new ValidationException("LayerIndex must be greater than or equal to zero.");
-        }
-
-        if (string.IsNullOrWhiteSpace(request.ChangedBy))
-        {
-            throw new ValidationException("ChangedBy is required.");
-        }
-    }
-
-    private static void ValidateDeleteRequest(DeleteConfigurationInstanceRequest request)
-    {
-        if (request is null)
-        {
-            throw new ArgumentNullException(nameof(request));
-        }
-
-        if (string.IsNullOrWhiteSpace(request.DeletedBy))
-        {
-            throw new ValidationException("DeletedBy is required.");
-        }
     }
 
     private async Task<ManifestValueObject> GetManifestOrThrowAsync(Guid manifestId, CancellationToken cancellationToken)
