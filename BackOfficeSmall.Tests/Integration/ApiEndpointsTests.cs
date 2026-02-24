@@ -92,7 +92,7 @@ public sealed class ApiEndpointsTests
         await using WebApplicationFactory<Program> factory = CreateFactory("Development");
         using HttpClient client = await CreateAuthorizedClientAsync(factory, "integration-user-instance-missing");
 
-        HttpResponseMessage response = await client.PostAsJsonAsync("/api/config-instances", new
+        HttpResponseMessage response = await client.PostAsJsonAsync("/api/configuration", new
         {
             name = "Instance-MissingManifest",
             manifestId = Guid.NewGuid(),
@@ -114,7 +114,7 @@ public sealed class ApiEndpointsTests
         Guid manifestId = await ImportManifestAsync(client, allowLayerOneOverride: false);
         Guid instanceId = await CreateConfigurationInstanceAsync(client, manifestId, "Instance-Denied");
 
-        HttpResponseMessage response = await client.PutAsJsonAsync($"/api/config-instances/{instanceId}/cells", new
+        HttpResponseMessage response = await client.PutAsJsonAsync($"/api/configuration/{instanceId}/cells", new
         {
             settingKey = "FeatureFlag",
             layerIndex = 1,
@@ -243,7 +243,7 @@ public sealed class ApiEndpointsTests
 
     private static async Task<Guid> CreateConfigurationInstanceAsync(HttpClient client, Guid manifestId, string name)
     {
-        HttpResponseMessage response = await client.PostAsJsonAsync("/api/config-instances", new
+        HttpResponseMessage response = await client.PostAsJsonAsync("/api/configuration", new
         {
             name,
             manifestId,

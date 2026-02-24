@@ -112,7 +112,7 @@ class ConfigurationInstanceService {
   +CreateInstance(ConfigurationInstance instance)
   +GetById(Guid instanceId)
   +List()
-  +Delete(Guid instanceId)
+  +Delete(Guid instanceId, string deletedBy)
   +SetCellValue(Guid instanceId, string settingKey, int layerIndex, string? value)
 }
 

@@ -11,7 +11,7 @@ public interface IConfigurationService
 
     Task<IReadOnlyList<ConfigurationInstance>> ListAsync(CancellationToken cancellationToken);
 
-    Task DeleteAsync(Guid instanceId, CancellationToken cancellationToken);
+    Task DeleteAsync(Guid instanceId, DeleteConfigurationInstanceRequest request, CancellationToken cancellationToken);
 
     Task<ConfigurationChange> SetCellValueAsync(
         Guid instanceId,

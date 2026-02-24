@@ -83,17 +83,44 @@ public sealed class ConfigurationInstanceService : IConfigurationService
         return _configInstanceRepository.ListAsync(cancellationToken);
     }
 
-    public async Task DeleteAsync(Guid instanceId, CancellationToken cancellationToken)
+    public async Task DeleteAsync(
+        Guid instanceId,
+        DeleteConfigurationInstanceRequest request,
+        CancellationToken cancellationToken)
     {
         if (instanceId == Guid.Empty)
         {
             throw new ValidationException("ConfigurationInstanceId must be a non-empty GUID.");
         }
 
+        ValidateDeleteRequest(request);
+
         ConfigurationInstance? instance = await _configInstanceRepository.GetByIdAsync(instanceId, cancellationToken);
         if (instance is null)
         {
             throw new EntityNotFoundException("ConfigurationInstance", instanceId.ToString());
+        }
+
+        IReadOnlyList<SettingCell> existingCells = instance.Cells.ToList();
+        foreach (SettingCell cell in existingCells)
+        {
+            ConfigurationChange change = new(
+                Guid.NewGuid(),
+                instance.ConfigurationInstanceId,
+                cell.SettingKey,
+                cell.LayerIndex,
+                ConfigurationOperation.Delete,
+                cell.Value,
+                null,
+                request.DeletedBy,
+                _clock.UtcNow);
+
+            await _configChangeRepository.AddAsync(change, cancellationToken);
+
+            if (instance.Manifest.RequiresCriticalNotification(cell.SettingKey))
+            {
+                await _monitoringNotifier.NotifyCriticalChangeAsync(change, cancellationToken);
+            }
         }
 
         await _configInstanceRepository.DeleteAsync(instanceId, cancellationToken);
@@ -197,6 +224,19 @@ public sealed class ConfigurationInstanceService : IConfigurationService
         if (string.IsNullOrWhiteSpace(request.ChangedBy))
         {
             throw new ValidationException("ChangedBy is required.");
+        }
+    }
+
+    private static void ValidateDeleteRequest(DeleteConfigurationInstanceRequest request)
+    {
+        if (request is null)
+        {
+            throw new ArgumentNullException(nameof(request));
+        }
+
+        if (string.IsNullOrWhiteSpace(request.DeletedBy))
+        {
+            throw new ValidationException("DeletedBy is required.");
         }
     }
 

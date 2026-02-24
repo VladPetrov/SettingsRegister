@@ -121,6 +121,75 @@ public sealed class ConfigurationInstanceServiceTests
         Assert.All(notifier.Notifications, notification => Assert.Equal("FeatureFlag", notification.SettingKey));
     }
 
+    [Fact]
+    public async Task DeleteAsync_WhenDeletedByMissing_ThrowsValidationException()
+    {
+        ConfigurationInstanceService service = CreateService();
+
+        await Assert.ThrowsAsync<ValidationException>(() => service.DeleteAsync(
+            Guid.NewGuid(),
+            new DeleteConfigurationInstanceRequest(" "),
+            CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task DeleteAsync_WritesDeleteAuditForAllCells_AndNotifiesCriticalOnly()
+    {
+        InMemoryManifestRepository manifestRepository = new();
+        InMemoryConfigurationInstanceRepository instanceRepository = new();
+        InMemoryConfigurationChangeRepository changeRepository = new();
+        FakeMonitoringNotifier notifier = new();
+        FakeSystemClock clock = new(DateTime.SpecifyKind(new DateTime(2026, 2, 22, 14, 0, 0), DateTimeKind.Utc));
+        ConfigurationInstanceService service = new(manifestRepository, instanceRepository, changeRepository, notifier, clock);
+
+        ManifestDomainRoot manifest = new()
+        {
+            ManifestId = Guid.NewGuid(),
+            Name = "Main",
+            Version = 1,
+            LayerCount = 2,
+            CreatedAtUtc = clock.UtcNow,
+            CreatedBy = "tester"
+        };
+        manifest.ReplaceSettingDefinitions(
+        [
+            new ManifestSettingDefinition("FeatureFlag", requiresCriticalNotification: true),
+            new ManifestSettingDefinition("SafeFlag", requiresCriticalNotification: false)
+        ]);
+        manifest.ReplaceOverridePermissions(
+        [
+            new ManifestOverridePermission("FeatureFlag", 0, canOverride: true),
+            new ManifestOverridePermission("SafeFlag", 0, canOverride: true)
+        ]);
+
+        await manifestRepository.AddAsync(manifest, CancellationToken.None);
+
+        ConfigurationInstance instance = await service.CreateInstanceAsync(
+            new ConfigurationInstanceCreateRequest(
+                "InstanceA",
+                manifest.ManifestId,
+                "tester",
+                [
+                    new SettingCellInput("FeatureFlag", 0, "on"),
+                    new SettingCellInput("SafeFlag", 0, "yes")
+                ]),
+            CancellationToken.None);
+
+        await service.DeleteAsync(
+            instance.ConfigurationInstanceId,
+            new DeleteConfigurationInstanceRequest("deleter"),
+            CancellationToken.None);
+
+        ConfigurationInstance? deletedInstance = await instanceRepository.GetByIdAsync(instance.ConfigurationInstanceId, CancellationToken.None);
+        IReadOnlyList<ConfigurationChange> changes = await changeRepository.ListAsync(null, null, ConfigurationOperation.Delete, CancellationToken.None);
+
+        Assert.Null(deletedInstance);
+        Assert.Equal(2, changes.Count);
+        Assert.All(changes, change => Assert.Equal("deleter", change.ChangedBy));
+        Assert.Single(notifier.Notifications);
+        Assert.Equal("FeatureFlag", notifier.Notifications[0].SettingKey);
+    }
+
     private static ConfigurationInstanceService CreateService()
     {
         InMemoryManifestRepository manifestRepository = new();

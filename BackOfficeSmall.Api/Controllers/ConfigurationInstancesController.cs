@@ -2,6 +2,7 @@ using BackOfficeSmall.Api.Dtos.ConfigurationChanges;
 using BackOfficeSmall.Api.Dtos.ConfigurationInstances;
 using BackOfficeSmall.Api.Mapping;
 using BackOfficeSmall.Application.Abstractions;
+using BackOfficeSmall.Application.Contracts;
 using BackOfficeSmall.Domain.Models.Configuration;
 using Microsoft.AspNetCore.Mvc;
 
@@ -60,7 +61,7 @@ public sealed class ConfigurationInstancesController : AuthenticatedApiControlle
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> DeleteAsync(Guid instanceId, CancellationToken cancellationToken)
     {
-        await _configurationService.DeleteAsync(instanceId, cancellationToken);
+        await _configurationService.DeleteAsync(instanceId, new DeleteConfigurationInstanceRequest(GetUserId()), cancellationToken);
         return NoContent();
     }
 
