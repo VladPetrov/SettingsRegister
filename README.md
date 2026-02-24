@@ -10,14 +10,14 @@ The solution is strict-layered:
    - Manifest split:
      - `ManifestDomainRoot` (write-side root with controlled mutation APIs + `Validate()`)
      - `ManifestValueObject` (immutable read-side behavior object with `HasSetting`, `RequiresCriticalNotification`, `CanOverride`)
-   - Aggregate root: `ConfigInstance`
-   - Supporting domain types: `ManifestSettingDefinition`, `ManifestOverridePermission`, `SettingCell`, `ConfigChange`, `ConfigOperation`
+   - Aggregate root: `ConfigurationInstance`
+   - Supporting domain types: `ManifestSettingDefinition`, `ManifestOverridePermission`, `SettingCell`, `ConfigurationChange`, `ConfigurationOperation`
    - Domain contracts: `IManifestRepository`, `IConfigInstanceRepository`, `IConfigChangeRepository`, `IMonitoringNotifier`
 2. `BackOfficeSmall.Application`
    - Use-case orchestration services:
      - `ManifestService` (import + retrieval by id/list)
-     - `ConfigInstanceService` (instance CRUD + cell mutation)
-     - `ConfigChangeQueryService` (query by id and filters)
+     - `ConfigurationInstanceService` (instance CRUD + cell mutation)
+     - `ConfigurationChangeQueryService` (query by id and filters)
      - `AuthExchangeService` (development token exchange endpoint behavior)
    - Application contracts/requests and application exceptions
 3. `BackOfficeSmall.Infrastructure`
@@ -37,17 +37,17 @@ The solution is strict-layered:
 - Manifest write-side state is represented by `ManifestDomainRoot` with read-only collection exposure and explicit mutation methods.
 - Manifest behavior checks are performed through immutable `ManifestValueObject`.
 - Manifest uniqueness: (`Name`, `Version`).
-- Config instance name is unique.
-- Config instance must reference an existing `ManifestId`.
-- Cells are unique per (`ConfigInstanceId`, `SettingKey`, `LayerIndex`).
+- Configuration instance name is unique.
+- Configuration instance must reference an existing `ManifestId`.
+- Cells are unique per (`ConfigurationInstanceId`, `SettingKey`, `LayerIndex`).
 - Layer index must stay in `0..LayerCount-1`.
 - Setting key must exist in the referenced manifest.
 - Override is allowed only when manifest permission for (`SettingKey`, `LayerIndex`) allows it.
-- `ConfigChange` is immutable and validates operation semantics:
+- `ConfigurationChange` is immutable and validates operation semantics:
   - `Add`: `AfterValue` required, `BeforeValue` absent
   - `Update`: both values required
   - `Delete`: `BeforeValue` required, `AfterValue` absent
-- `ConfigChange` references `ConfigInstanceId`; manifest context is derived from the instance.
+- `ConfigurationChange` references `ConfigurationInstanceId`; manifest context is derived from the instance.
 - Critical notification is derived from manifest setting definition metadata.
 
 ## Assumptions
@@ -72,14 +72,14 @@ The solution is strict-layered:
   - Optional query filter: `?name=<manifest-name>` for exact name match (case-insensitive)
 - `GET /api/manifests/{manifestId}`
 
-### Config Instance
+### Configuration Instance
 - `POST /api/config-instances`
 - `GET /api/config-instances`
 - `GET /api/config-instances/{instanceId}`
 - `DELETE /api/config-instances/{instanceId}`
 - `PUT /api/config-instances/{instanceId}/cells`
 
-### Config Change
+### Configuration Change
 - `POST /api/config-changes`
 - `GET /api/config-changes`
 - `GET /api/config-changes/{id}`

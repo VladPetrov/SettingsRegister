@@ -1,20 +1,20 @@
-using BackOfficeSmall.Domain.Models.Config;
+using BackOfficeSmall.Domain.Models.Configuration;
 
 namespace BackOfficeSmall.Tests.Unit.Domain;
 
-public sealed class ConfigChangeTests
+public sealed class ConfigurationChangeTests
 {
     [Fact]
     public void Constructor_WhenAddContainsBeforeValue_Throws()
     {
         DateTime now = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Utc);
 
-        Assert.Throws<ArgumentException>(() => new ConfigChange(
+        Assert.Throws<ArgumentException>(() => new ConfigurationChange(
             Guid.NewGuid(),
             Guid.NewGuid(),
             "FeatureFlag",
             0,
-            ConfigOperation.Add,
+            ConfigurationOperation.Add,
             "old",
             "new",
             "tester",
@@ -26,12 +26,12 @@ public sealed class ConfigChangeTests
     {
         DateTime now = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Utc);
 
-        Assert.Throws<ArgumentException>(() => new ConfigChange(
+        Assert.Throws<ArgumentException>(() => new ConfigurationChange(
             Guid.NewGuid(),
             Guid.NewGuid(),
             "FeatureFlag",
             0,
-            ConfigOperation.Update,
+            ConfigurationOperation.Update,
             "old",
             null,
             "tester",
@@ -43,12 +43,12 @@ public sealed class ConfigChangeTests
     {
         DateTime now = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Utc);
 
-        Assert.Throws<ArgumentException>(() => new ConfigChange(
+        Assert.Throws<ArgumentException>(() => new ConfigurationChange(
             Guid.NewGuid(),
             Guid.NewGuid(),
             "FeatureFlag",
             0,
-            ConfigOperation.Delete,
+            ConfigurationOperation.Delete,
             "old",
             "new",
             "tester",

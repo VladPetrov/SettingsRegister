@@ -1,11 +1,11 @@
-namespace BackOfficeSmall.Domain.Models.Config;
+namespace BackOfficeSmall.Domain.Models.Configuration;
 
-public sealed class ConfigInstance
+public sealed class ConfigurationInstance
 {
     private static readonly StringComparer SettingKeyComparer = StringComparer.OrdinalIgnoreCase;
     private readonly List<SettingCell> _cells;
 
-    public ConfigInstance(
+    public ConfigurationInstance(
         Guid configInstanceId,
         string name,
         Guid manifestId,
@@ -13,7 +13,7 @@ public sealed class ConfigInstance
         string createdBy,
         IEnumerable<SettingCell>? cells = null)
     {
-        ConfigInstanceId = configInstanceId;
+        ConfigurationInstanceId = configInstanceId;
         Name = name;
         ManifestId = manifestId;
         CreatedAtUtc = createdAtUtc;
@@ -23,7 +23,7 @@ public sealed class ConfigInstance
         Validate();
     }
 
-    public Guid ConfigInstanceId { get; }
+    public Guid ConfigurationInstanceId { get; }
 
     public string Name { get; }
 
@@ -85,9 +85,9 @@ public sealed class ConfigInstance
 
     public void Validate()
     {
-        if (ConfigInstanceId == Guid.Empty)
+        if (ConfigurationInstanceId == Guid.Empty)
         {
-            throw new ArgumentException("ConfigInstanceId must be a non-empty GUID.", nameof(ConfigInstanceId));
+            throw new ArgumentException("ConfigurationInstanceId must be a non-empty GUID.", nameof(ConfigurationInstanceId));
         }
 
         if (string.IsNullOrWhiteSpace(Name))

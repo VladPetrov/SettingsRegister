@@ -1,11 +1,11 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace BackOfficeSmall.Api.Dtos.ConfigChanges;
+namespace BackOfficeSmall.Api.Dtos.ConfigurationChanges;
 
 public sealed class CreateConfigChangeRequestDto
 {
     [Required]
-    public Guid ConfigInstanceId { get; init; }
+    public Guid ConfigurationInstanceId { get; init; }
 
     [Required]
     public string SettingKey { get; init; } = string.Empty;

@@ -1,6 +1,6 @@
 namespace BackOfficeSmall.Application.Contracts;
 
-public sealed record ConfigInstanceCreateRequest(
+public sealed record ConfigurationInstanceCreateRequest(
     string Name,
     Guid ManifestId,
     string CreatedBy,

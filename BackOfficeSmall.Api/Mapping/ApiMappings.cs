@@ -1,9 +1,9 @@
 using BackOfficeSmall.Api.Dtos.Auth;
-using BackOfficeSmall.Api.Dtos.ConfigChanges;
-using BackOfficeSmall.Api.Dtos.ConfigInstances;
+using BackOfficeSmall.Api.Dtos.ConfigurationChanges;
+using BackOfficeSmall.Api.Dtos.ConfigurationInstances;
 using BackOfficeSmall.Api.Dtos.Manifests;
 using BackOfficeSmall.Application.Contracts;
-using BackOfficeSmall.Domain.Models.Config;
+using BackOfficeSmall.Domain.Models.Configuration;
 using BackOfficeSmall.Domain.Models.Manifest;
 
 namespace BackOfficeSmall.Api.Mapping;
@@ -38,14 +38,14 @@ public static class ApiMappings
             permissions);
     }
 
-    public static ConfigInstanceCreateRequest ToApplication(this ConfigInstanceCreateRequestDto dto)
+    public static ConfigurationInstanceCreateRequest ToApplication(this ConfigurationInstanceCreateRequestDto dto)
     {
         IReadOnlyList<SettingCellInput>? cells = dto.Cells?.Select(cell => new SettingCellInput(
             cell.SettingKey,
             cell.LayerIndex,
             cell.Value)).ToList();
 
-        return new ConfigInstanceCreateRequest(
+        return new ConfigurationInstanceCreateRequest(
             dto.Name,
             dto.ManifestId,
             dto.CreatedBy,
@@ -109,7 +109,7 @@ public static class ApiMappings
             manifest.CreatedAtUtc);
     }
 
-    public static ConfigInstanceResponseDto ToDto(this ConfigInstance instance)
+    public static ConfigurationInstanceResponseDto ToDto(this ConfigurationInstance instance)
     {
         IReadOnlyList<SettingCellResponseDto> cells = instance.Cells
             .Select(cell => new SettingCellResponseDto(
@@ -118,8 +118,8 @@ public static class ApiMappings
                 cell.Value))
             .ToList();
 
-        return new ConfigInstanceResponseDto(
-            instance.ConfigInstanceId,
+        return new ConfigurationInstanceResponseDto(
+            instance.ConfigurationInstanceId,
             instance.Name,
             instance.ManifestId,
             instance.CreatedAtUtc,
@@ -127,11 +127,11 @@ public static class ApiMappings
             cells);
     }
 
-    public static ConfigChangeResponseDto ToDto(this ConfigChange change)
+    public static ConfigurationChangeResponseDto ToDto(this ConfigurationChange change)
     {
-        return new ConfigChangeResponseDto(
+        return new ConfigurationChangeResponseDto(
             change.Id,
-            change.ConfigInstanceId,
+            change.ConfigurationInstanceId,
             change.SettingKey,
             change.LayerIndex,
             change.Operation.ToDto(),
@@ -146,7 +146,7 @@ public static class ApiMappings
         return new AuthExchangeResponseDto(result.AccessToken, result.TokenType, result.ExpiresAtUtc);
     }
 
-    public static ConfigOperation? ToDomain(this ConfigOperationDto? dto)
+    public static ConfigurationOperation? ToDomain(this ConfigurationOperationDto? dto)
     {
         if (!dto.HasValue)
         {
@@ -155,20 +155,20 @@ public static class ApiMappings
 
         return dto.Value switch
         {
-            ConfigOperationDto.Add => ConfigOperation.Add,
-            ConfigOperationDto.Update => ConfigOperation.Update,
-            ConfigOperationDto.Delete => ConfigOperation.Delete,
+            ConfigurationOperationDto.Add => ConfigurationOperation.Add,
+            ConfigurationOperationDto.Update => ConfigurationOperation.Update,
+            ConfigurationOperationDto.Delete => ConfigurationOperation.Delete,
             _ => throw new ArgumentOutOfRangeException(nameof(dto), "Unsupported config operation value.")
         };
     }
 
-    private static ConfigOperationDto ToDto(this ConfigOperation operation)
+    private static ConfigurationOperationDto ToDto(this ConfigurationOperation operation)
     {
         return operation switch
         {
-            ConfigOperation.Add => ConfigOperationDto.Add,
-            ConfigOperation.Update => ConfigOperationDto.Update,
-            ConfigOperation.Delete => ConfigOperationDto.Delete,
+            ConfigurationOperation.Add => ConfigurationOperationDto.Add,
+            ConfigurationOperation.Update => ConfigurationOperationDto.Update,
+            ConfigurationOperation.Delete => ConfigurationOperationDto.Delete,
             _ => throw new ArgumentOutOfRangeException(nameof(operation), "Unsupported config operation value.")
         };
     }

@@ -1,14 +1,14 @@
 using BackOfficeSmall.Application.Abstractions;
 using BackOfficeSmall.Application.Contracts;
 using BackOfficeSmall.Application.Exceptions;
-using BackOfficeSmall.Domain.Models.Config;
+using BackOfficeSmall.Domain.Models.Configuration;
 using BackOfficeSmall.Domain.Models.Manifest;
 using BackOfficeSmall.Domain.Repositories;
 using BackOfficeSmall.Domain.Services;
 
 namespace BackOfficeSmall.Application.Services;
 
-public sealed class ConfigInstanceService : IConfigInstanceService
+public sealed class ConfigurationInstanceService : IConfigInstanceService
 {
     private readonly IManifestRepository _manifestRepository;
     private readonly IConfigInstanceRepository _configInstanceRepository;
@@ -16,7 +16,7 @@ public sealed class ConfigInstanceService : IConfigInstanceService
     private readonly IMonitoringNotifier _monitoringNotifier;
     private readonly ISystemClock _clock;
 
-    public ConfigInstanceService(
+    public ConfigurationInstanceService(
         IManifestRepository manifestRepository,
         IConfigInstanceRepository configInstanceRepository,
         IConfigChangeRepository configChangeRepository,
@@ -30,12 +30,12 @@ public sealed class ConfigInstanceService : IConfigInstanceService
         _clock = clock ?? throw new ArgumentNullException(nameof(clock));
     }
 
-    public async Task<ConfigInstance> CreateInstanceAsync(ConfigInstanceCreateRequest request, CancellationToken cancellationToken)
+    public async Task<ConfigurationInstance> CreateInstanceAsync(ConfigurationInstanceCreateRequest request, CancellationToken cancellationToken)
     {
         ValidateCreateRequest(request);
 
         ManifestValueObject manifest = await GetManifestOrThrowAsync(request.ManifestId, cancellationToken);
-        ConfigInstance instance = new(
+        ConfigurationInstance instance = new(
             Guid.NewGuid(),
             request.Name,
             request.ManifestId,
@@ -63,23 +63,23 @@ public sealed class ConfigInstanceService : IConfigInstanceService
         return instance;
     }
 
-    public async Task<ConfigInstance> GetByIdAsync(Guid instanceId, CancellationToken cancellationToken)
+    public async Task<ConfigurationInstance> GetByIdAsync(Guid instanceId, CancellationToken cancellationToken)
     {
         if (instanceId == Guid.Empty)
         {
-            throw new ValidationException("ConfigInstanceId must be a non-empty GUID.");
+            throw new ValidationException("ConfigurationInstanceId must be a non-empty GUID.");
         }
 
-        ConfigInstance? instance = await _configInstanceRepository.GetByIdAsync(instanceId, cancellationToken);
+        ConfigurationInstance? instance = await _configInstanceRepository.GetByIdAsync(instanceId, cancellationToken);
         if (instance is null)
         {
-            throw new EntityNotFoundException("ConfigInstance", instanceId.ToString());
+            throw new EntityNotFoundException("ConfigurationInstance", instanceId.ToString());
         }
 
         return instance;
     }
 
-    public Task<IReadOnlyList<ConfigInstance>> ListAsync(CancellationToken cancellationToken)
+    public Task<IReadOnlyList<ConfigurationInstance>> ListAsync(CancellationToken cancellationToken)
     {
         return _configInstanceRepository.ListAsync(cancellationToken);
     }
@@ -88,31 +88,31 @@ public sealed class ConfigInstanceService : IConfigInstanceService
     {
         if (instanceId == Guid.Empty)
         {
-            throw new ValidationException("ConfigInstanceId must be a non-empty GUID.");
+            throw new ValidationException("ConfigurationInstanceId must be a non-empty GUID.");
         }
 
-        ConfigInstance? instance = await _configInstanceRepository.GetByIdAsync(instanceId, cancellationToken);
+        ConfigurationInstance? instance = await _configInstanceRepository.GetByIdAsync(instanceId, cancellationToken);
         if (instance is null)
         {
-            throw new EntityNotFoundException("ConfigInstance", instanceId.ToString());
+            throw new EntityNotFoundException("ConfigurationInstance", instanceId.ToString());
         }
 
         await _configInstanceRepository.DeleteAsync(instanceId, cancellationToken);
     }
 
-    public async Task<ConfigChange> SetCellValueAsync(
+    public async Task<ConfigurationChange> SetCellValueAsync(
         Guid instanceId,
         SetCellValueRequest request,
         CancellationToken cancellationToken)
     {
         if (instanceId == Guid.Empty)
         {
-            throw new ValidationException("ConfigInstanceId must be a non-empty GUID.");
+            throw new ValidationException("ConfigurationInstanceId must be a non-empty GUID.");
         }
 
         ValidateSetCellRequest(request);
 
-        ConfigInstance instance = await GetInstanceOrThrowAsync(instanceId, cancellationToken);
+        ConfigurationInstance instance = await GetInstanceOrThrowAsync(instanceId, cancellationToken);
         ManifestValueObject manifest = await GetManifestOrThrowAsync(instance.ManifestId, cancellationToken);
 
         ValidateMutationAgainstManifest(manifest, request.SettingKey, request.LayerIndex);
@@ -136,10 +136,10 @@ public sealed class ConfigInstanceService : IConfigInstanceService
             throw new ConflictException(ex.Message);
         }
 
-        ConfigOperation operation = ResolveOperation(beforeValue, afterValue);
-        ConfigChange change = new(
+        ConfigurationOperation operation = ResolveOperation(beforeValue, afterValue);
+        ConfigurationChange change = new(
             Guid.NewGuid(),
-            instance.ConfigInstanceId,
+            instance.ConfigurationInstanceId,
             request.SettingKey,
             request.LayerIndex,
             operation,
@@ -158,7 +158,7 @@ public sealed class ConfigInstanceService : IConfigInstanceService
         return change;
     }
 
-    private static void ValidateCreateRequest(ConfigInstanceCreateRequest request)
+    private static void ValidateCreateRequest(ConfigurationInstanceCreateRequest request)
     {
         if (request is null)
         {
@@ -167,7 +167,7 @@ public sealed class ConfigInstanceService : IConfigInstanceService
 
         if (string.IsNullOrWhiteSpace(request.Name))
         {
-            throw new ValidationException("Config instance name is required.");
+            throw new ValidationException("Configuration instance name is required.");
         }
 
         if (request.ManifestId == Guid.Empty)
@@ -235,30 +235,30 @@ public sealed class ConfigInstanceService : IConfigInstanceService
         return manifest;
     }
 
-    private async Task<ConfigInstance> GetInstanceOrThrowAsync(Guid instanceId, CancellationToken cancellationToken)
+    private async Task<ConfigurationInstance> GetInstanceOrThrowAsync(Guid instanceId, CancellationToken cancellationToken)
     {
-        ConfigInstance? instance = await _configInstanceRepository.GetByIdAsync(instanceId, cancellationToken);
+        ConfigurationInstance? instance = await _configInstanceRepository.GetByIdAsync(instanceId, cancellationToken);
         if (instance is null)
         {
-            throw new EntityNotFoundException("ConfigInstance", instanceId.ToString());
+            throw new EntityNotFoundException("ConfigurationInstance", instanceId.ToString());
         }
 
         return instance;
     }
 
-    private static ConfigOperation ResolveOperation(string? beforeValue, string? afterValue)
+    private static ConfigurationOperation ResolveOperation(string? beforeValue, string? afterValue)
     {
         if (beforeValue is null && afterValue is not null)
         {
-            return ConfigOperation.Add;
+            return ConfigurationOperation.Add;
         }
 
         if (beforeValue is not null && afterValue is null)
         {
-            return ConfigOperation.Delete;
+            return ConfigurationOperation.Delete;
         }
 
-        return ConfigOperation.Update;
+        return ConfigurationOperation.Update;
     }
 
     private static string? NormalizeValue(string? value)

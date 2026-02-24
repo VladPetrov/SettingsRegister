@@ -1,20 +1,20 @@
-namespace BackOfficeSmall.Domain.Models.Config;
+namespace BackOfficeSmall.Domain.Models.Configuration;
 
-public sealed class ConfigChange
+public sealed class ConfigurationChange
 {
-    public ConfigChange(
+    public ConfigurationChange(
         Guid id,
         Guid configInstanceId,
         string settingKey,
         int layerIndex,
-        ConfigOperation operation,
+        ConfigurationOperation operation,
         string? beforeValue,
         string? afterValue,
         string changedBy,
         DateTime changedAtUtc)
     {
         Id = id;
-        ConfigInstanceId = configInstanceId;
+        ConfigurationInstanceId = configInstanceId;
         SettingKey = settingKey;
         LayerIndex = layerIndex;
         Operation = operation;
@@ -28,13 +28,13 @@ public sealed class ConfigChange
 
     public Guid Id { get; }
 
-    public Guid ConfigInstanceId { get; }
+    public Guid ConfigurationInstanceId { get; }
 
     public string SettingKey { get; }
 
     public int LayerIndex { get; }
 
-    public ConfigOperation Operation { get; }
+    public ConfigurationOperation Operation { get; }
 
     public string? BeforeValue { get; }
 
@@ -51,9 +51,9 @@ public sealed class ConfigChange
             throw new ArgumentException("Id must be a non-empty GUID.", nameof(Id));
         }
 
-        if (ConfigInstanceId == Guid.Empty)
+        if (ConfigurationInstanceId == Guid.Empty)
         {
-            throw new ArgumentException("ConfigInstanceId must be a non-empty GUID.", nameof(ConfigInstanceId));
+            throw new ArgumentException("ConfigurationInstanceId must be a non-empty GUID.", nameof(ConfigurationInstanceId));
         }
 
         if (string.IsNullOrWhiteSpace(SettingKey))
@@ -81,7 +81,7 @@ public sealed class ConfigChange
 
     private void ValidateOperationValues()
     {
-        if (Operation == ConfigOperation.Add)
+        if (Operation == ConfigurationOperation.Add)
         {
             if (HasValue(BeforeValue))
             {
@@ -96,7 +96,7 @@ public sealed class ConfigChange
             return;
         }
 
-        if (Operation == ConfigOperation.Update)
+        if (Operation == ConfigurationOperation.Update)
         {
             if (!HasValue(BeforeValue))
             {
@@ -111,7 +111,7 @@ public sealed class ConfigChange
             return;
         }
 
-        if (Operation == ConfigOperation.Delete)
+        if (Operation == ConfigurationOperation.Delete)
         {
             if (!HasValue(BeforeValue))
             {

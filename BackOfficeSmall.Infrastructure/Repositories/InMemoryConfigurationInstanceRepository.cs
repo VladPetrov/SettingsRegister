@@ -1,4 +1,4 @@
-using BackOfficeSmall.Domain.Models.Config;
+using BackOfficeSmall.Domain.Models.Configuration;
 using BackOfficeSmall.Domain.Repositories;
 
 namespace BackOfficeSmall.Infrastructure.Repositories;
@@ -7,10 +7,10 @@ public sealed class InMemoryConfigInstanceRepository : IConfigInstanceRepository
 {
     private static readonly StringComparer SettingKeyComparer = StringComparer.OrdinalIgnoreCase;
     private readonly object _syncRoot = new();
-    private readonly Dictionary<Guid, ConfigInstanceRecord> _instancesById = new();
+    private readonly Dictionary<Guid, ConfigurationInstanceRecord> _instancesById = new();
     private readonly Dictionary<string, Guid> _instanceNameIndex = new(StringComparer.OrdinalIgnoreCase);
 
-    public Task AddAsync(ConfigInstance instance, CancellationToken cancellationToken)
+    public Task AddAsync(ConfigurationInstance instance, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -24,47 +24,47 @@ public sealed class InMemoryConfigInstanceRepository : IConfigInstanceRepository
 
         lock (_syncRoot)
         {
-            if (_instancesById.ContainsKey(instance.ConfigInstanceId))
+            if (_instancesById.ContainsKey(instance.ConfigurationInstanceId))
             {
                 throw new InvalidOperationException(
-                    $"ConfigInstance '{instance.ConfigInstanceId}' already exists.");
+                    $"ConfigurationInstance '{instance.ConfigurationInstanceId}' already exists.");
             }
 
             if (_instanceNameIndex.ContainsKey(instance.Name))
             {
                 throw new InvalidOperationException(
-                    $"ConfigInstance name '{instance.Name}' already exists.");
+                    $"ConfigurationInstance name '{instance.Name}' already exists.");
             }
 
-            _instancesById[instance.ConfigInstanceId] = ToRecord(instance);
-            _instanceNameIndex[instance.Name] = instance.ConfigInstanceId;
+            _instancesById[instance.ConfigurationInstanceId] = ToRecord(instance);
+            _instanceNameIndex[instance.Name] = instance.ConfigurationInstanceId;
         }
 
         return Task.CompletedTask;
     }
 
-    public Task<ConfigInstance?> GetByIdAsync(Guid instanceId, CancellationToken cancellationToken)
+    public Task<ConfigurationInstance?> GetByIdAsync(Guid instanceId, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
         lock (_syncRoot)
         {
-            if (!_instancesById.TryGetValue(instanceId, out ConfigInstanceRecord? record))
+            if (!_instancesById.TryGetValue(instanceId, out ConfigurationInstanceRecord? record))
             {
-                return Task.FromResult<ConfigInstance?>(null);
+                return Task.FromResult<ConfigurationInstance?>(null);
             }
 
-            return Task.FromResult<ConfigInstance?>(ToDomain(record));
+            return Task.FromResult<ConfigurationInstance?>(ToDomain(record));
         }
     }
 
-    public Task<IReadOnlyList<ConfigInstance>> ListAsync(CancellationToken cancellationToken)
+    public Task<IReadOnlyList<ConfigurationInstance>> ListAsync(CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
         lock (_syncRoot)
         {
-            IReadOnlyList<ConfigInstance> instances = _instancesById.Values
+            IReadOnlyList<ConfigurationInstance> instances = _instancesById.Values
                 .Select(ToDomain)
                 .OrderBy(instance => instance.Name, StringComparer.OrdinalIgnoreCase)
                 .ToList();
@@ -73,7 +73,7 @@ public sealed class InMemoryConfigInstanceRepository : IConfigInstanceRepository
         }
     }
 
-    public Task UpdateAsync(ConfigInstance instance, CancellationToken cancellationToken)
+    public Task UpdateAsync(ConfigurationInstance instance, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -87,10 +87,10 @@ public sealed class InMemoryConfigInstanceRepository : IConfigInstanceRepository
 
         lock (_syncRoot)
         {
-            if (!_instancesById.TryGetValue(instance.ConfigInstanceId, out ConfigInstanceRecord? existing))
+            if (!_instancesById.TryGetValue(instance.ConfigurationInstanceId, out ConfigurationInstanceRecord? existing))
             {
                 throw new InvalidOperationException(
-                    $"ConfigInstance '{instance.ConfigInstanceId}' does not exist.");
+                    $"ConfigurationInstance '{instance.ConfigurationInstanceId}' does not exist.");
             }
 
             if (!string.Equals(existing.Name, instance.Name, StringComparison.OrdinalIgnoreCase))
@@ -98,14 +98,14 @@ public sealed class InMemoryConfigInstanceRepository : IConfigInstanceRepository
                 if (_instanceNameIndex.ContainsKey(instance.Name))
                 {
                     throw new InvalidOperationException(
-                        $"ConfigInstance name '{instance.Name}' already exists.");
+                        $"ConfigurationInstance name '{instance.Name}' already exists.");
                 }
 
                 _instanceNameIndex.Remove(existing.Name);
-                _instanceNameIndex[instance.Name] = instance.ConfigInstanceId;
+                _instanceNameIndex[instance.Name] = instance.ConfigurationInstanceId;
             }
 
-            _instancesById[instance.ConfigInstanceId] = ToRecord(instance);
+            _instancesById[instance.ConfigurationInstanceId] = ToRecord(instance);
         }
 
         return Task.CompletedTask;
@@ -117,10 +117,10 @@ public sealed class InMemoryConfigInstanceRepository : IConfigInstanceRepository
 
         lock (_syncRoot)
         {
-            if (!_instancesById.TryGetValue(instanceId, out ConfigInstanceRecord? existing))
+            if (!_instancesById.TryGetValue(instanceId, out ConfigurationInstanceRecord? existing))
             {
                 throw new InvalidOperationException(
-                    $"ConfigInstance '{instanceId}' does not exist.");
+                    $"ConfigurationInstance '{instanceId}' does not exist.");
             }
 
             _instancesById.Remove(instanceId);
@@ -130,7 +130,7 @@ public sealed class InMemoryConfigInstanceRepository : IConfigInstanceRepository
         return Task.CompletedTask;
     }
 
-    private static void ValidateUniqueCells(ConfigInstance instance)
+    private static void ValidateUniqueCells(ConfigurationInstance instance)
     {
         HashSet<string> uniqueCellKeys = new(SettingKeyComparer);
         foreach (SettingCell cell in instance.Cells)
@@ -144,14 +144,14 @@ public sealed class InMemoryConfigInstanceRepository : IConfigInstanceRepository
         }
     }
 
-    private static ConfigInstanceRecord ToRecord(ConfigInstance instance)
+    private static ConfigurationInstanceRecord ToRecord(ConfigurationInstance instance)
     {
         List<SettingCellRecord> cells = instance.Cells
             .Select(cell => new SettingCellRecord(cell.SettingKey, cell.LayerIndex, cell.Value))
             .ToList();
 
-        return new ConfigInstanceRecord(
-            instance.ConfigInstanceId,
+        return new ConfigurationInstanceRecord(
+            instance.ConfigurationInstanceId,
             instance.Name,
             instance.ManifestId,
             instance.CreatedAtUtc,
@@ -159,14 +159,14 @@ public sealed class InMemoryConfigInstanceRepository : IConfigInstanceRepository
             cells);
     }
 
-    private static ConfigInstance ToDomain(ConfigInstanceRecord record)
+    private static ConfigurationInstance ToDomain(ConfigurationInstanceRecord record)
     {
         List<SettingCell> cells = record.Cells
             .Select(cell => new SettingCell(cell.SettingKey, cell.LayerIndex, cell.Value))
             .ToList();
 
-        return new ConfigInstance(
-            record.ConfigInstanceId,
+        return new ConfigurationInstance(
+            record.ConfigurationInstanceId,
             record.Name,
             record.ManifestId,
             record.CreatedAtUtc,
@@ -174,8 +174,8 @@ public sealed class InMemoryConfigInstanceRepository : IConfigInstanceRepository
             cells);
     }
 
-    private sealed record ConfigInstanceRecord(
-        Guid ConfigInstanceId,
+    private sealed record ConfigurationInstanceRecord(
+        Guid ConfigurationInstanceId,
         string Name,
         Guid ManifestId,
         DateTime CreatedAtUtc,

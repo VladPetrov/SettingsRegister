@@ -1,39 +1,39 @@
 using BackOfficeSmall.Application.Abstractions;
 using BackOfficeSmall.Application.Exceptions;
-using BackOfficeSmall.Domain.Models.Config;
+using BackOfficeSmall.Domain.Models.Configuration;
 using BackOfficeSmall.Domain.Repositories;
 
 namespace BackOfficeSmall.Application.Services;
 
-public sealed class ConfigChangeQueryService : IConfigChangeQueryService
+public sealed class ConfigurationChangeQueryService : IConfigChangeQueryService
 {
     private readonly IConfigChangeRepository _configChangeRepository;
 
-    public ConfigChangeQueryService(IConfigChangeRepository configChangeRepository)
+    public ConfigurationChangeQueryService(IConfigChangeRepository configChangeRepository)
     {
         _configChangeRepository = configChangeRepository ?? throw new ArgumentNullException(nameof(configChangeRepository));
     }
 
-    public async Task<ConfigChange> GetChangeByIdAsync(Guid id, CancellationToken cancellationToken)
+    public async Task<ConfigurationChange> GetChangeByIdAsync(Guid id, CancellationToken cancellationToken)
     {
         if (id == Guid.Empty)
         {
-            throw new ValidationException("ConfigChange Id must be a non-empty GUID.");
+            throw new ValidationException("ConfigurationChange Id must be a non-empty GUID.");
         }
 
-        ConfigChange? change = await _configChangeRepository.GetByIdAsync(id, cancellationToken);
+        ConfigurationChange? change = await _configChangeRepository.GetByIdAsync(id, cancellationToken);
         if (change is null)
         {
-            throw new EntityNotFoundException("ConfigChange", id.ToString());
+            throw new EntityNotFoundException("ConfigurationChange", id.ToString());
         }
 
         return change;
     }
 
-    public Task<IReadOnlyList<ConfigChange>> ListChangesAsync(
+    public Task<IReadOnlyList<ConfigurationChange>> ListChangesAsync(
         DateTime? fromUtc,
         DateTime? toUtc,
-        ConfigOperation? operation,
+        ConfigurationOperation? operation,
         CancellationToken cancellationToken)
     {
         ValidateDateRange(fromUtc, toUtc);

@@ -10,7 +10,7 @@ Purpose:
 Target outcomes:
 - Import manifests from JSON as immutable versions.
 - Manage config instances linked by `ManifestId`.
-- Track add/update/delete as immutable `ConfigChange` history.
+- Track add/update/delete as immutable `ConfigurationChange` history.
 - Trigger external monitoring for critical settings.
 
 ## Architecture
@@ -75,7 +75,7 @@ For non-trivial changes:
   - Existing manifest requirement for instance creation.
   - Layer/index validation against manifest constraints.
   - Override allow/deny by manifest permissions.
-  - `ConfigChange` add/update/delete validity.
+  - `ConfigurationChange` add/update/delete validity.
   - Critical notification sourced from manifest setting metadata.
 
 Testing guidance:

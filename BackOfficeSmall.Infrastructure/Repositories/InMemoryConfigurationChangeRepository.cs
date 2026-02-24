@@ -1,4 +1,4 @@
-using BackOfficeSmall.Domain.Models.Config;
+using BackOfficeSmall.Domain.Models.Configuration;
 using BackOfficeSmall.Domain.Repositories;
 
 namespace BackOfficeSmall.Infrastructure.Repositories;
@@ -6,9 +6,9 @@ namespace BackOfficeSmall.Infrastructure.Repositories;
 public sealed class InMemoryConfigChangeRepository : IConfigChangeRepository
 {
     private readonly object _syncRoot = new();
-    private readonly Dictionary<Guid, ConfigChangeRecord> _changesById = new();
+    private readonly Dictionary<Guid, ConfigurationChangeRecord> _changesById = new();
 
-    public Task AddAsync(ConfigChange change, CancellationToken cancellationToken)
+    public Task AddAsync(ConfigurationChange change, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -23,7 +23,7 @@ public sealed class InMemoryConfigChangeRepository : IConfigChangeRepository
         {
             if (_changesById.ContainsKey(change.Id))
             {
-                throw new InvalidOperationException($"ConfigChange '{change.Id}' already exists.");
+                throw new InvalidOperationException($"ConfigurationChange '{change.Id}' already exists.");
             }
 
             _changesById[change.Id] = ToRecord(change);
@@ -32,32 +32,32 @@ public sealed class InMemoryConfigChangeRepository : IConfigChangeRepository
         return Task.CompletedTask;
     }
 
-    public Task<ConfigChange?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
+    public Task<ConfigurationChange?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
         lock (_syncRoot)
         {
-            if (!_changesById.TryGetValue(id, out ConfigChangeRecord? record))
+            if (!_changesById.TryGetValue(id, out ConfigurationChangeRecord? record))
             {
-                return Task.FromResult<ConfigChange?>(null);
+                return Task.FromResult<ConfigurationChange?>(null);
             }
 
-            return Task.FromResult<ConfigChange?>(ToDomain(record));
+            return Task.FromResult<ConfigurationChange?>(ToDomain(record));
         }
     }
 
-    public Task<IReadOnlyList<ConfigChange>> ListAsync(
+    public Task<IReadOnlyList<ConfigurationChange>> ListAsync(
         DateTime? fromUtc,
         DateTime? toUtc,
-        ConfigOperation? operation,
+        ConfigurationOperation? operation,
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
         lock (_syncRoot)
         {
-            IEnumerable<ConfigChangeRecord> records = _changesById.Values;
+            IEnumerable<ConfigurationChangeRecord> records = _changesById.Values;
 
             if (fromUtc.HasValue)
             {
@@ -74,7 +74,7 @@ public sealed class InMemoryConfigChangeRepository : IConfigChangeRepository
                 records = records.Where(record => record.Operation == operation.Value);
             }
 
-            IReadOnlyList<ConfigChange> changes = records
+            IReadOnlyList<ConfigurationChange> changes = records
                 .OrderBy(record => record.ChangedAtUtc)
                 .Select(ToDomain)
                 .ToList();
@@ -83,11 +83,11 @@ public sealed class InMemoryConfigChangeRepository : IConfigChangeRepository
         }
     }
 
-    private static ConfigChangeRecord ToRecord(ConfigChange change)
+    private static ConfigurationChangeRecord ToRecord(ConfigurationChange change)
     {
-        return new ConfigChangeRecord(
+        return new ConfigurationChangeRecord(
             change.Id,
-            change.ConfigInstanceId,
+            change.ConfigurationInstanceId,
             change.SettingKey,
             change.LayerIndex,
             change.Operation,
@@ -97,11 +97,11 @@ public sealed class InMemoryConfigChangeRepository : IConfigChangeRepository
             change.ChangedAtUtc);
     }
 
-    private static ConfigChange ToDomain(ConfigChangeRecord record)
+    private static ConfigurationChange ToDomain(ConfigurationChangeRecord record)
     {
-        return new ConfigChange(
+        return new ConfigurationChange(
             record.Id,
-            record.ConfigInstanceId,
+            record.ConfigurationInstanceId,
             record.SettingKey,
             record.LayerIndex,
             record.Operation,
@@ -111,12 +111,12 @@ public sealed class InMemoryConfigChangeRepository : IConfigChangeRepository
             record.ChangedAtUtc);
     }
 
-    private sealed record ConfigChangeRecord(
+    private sealed record ConfigurationChangeRecord(
         Guid Id,
-        Guid ConfigInstanceId,
+        Guid ConfigurationInstanceId,
         string SettingKey,
         int LayerIndex,
-        ConfigOperation Operation,
+        ConfigurationOperation Operation,
         string? BeforeValue,
         string? AfterValue,
         string ChangedBy,

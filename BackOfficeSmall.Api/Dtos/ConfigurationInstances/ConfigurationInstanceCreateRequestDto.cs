@@ -1,8 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace BackOfficeSmall.Api.Dtos.ConfigInstances;
+namespace BackOfficeSmall.Api.Dtos.ConfigurationInstances;
 
-public sealed class ConfigInstanceCreateRequestDto
+public sealed class ConfigurationInstanceCreateRequestDto
 {
     [Required]
     public string Name { get; init; } = string.Empty;

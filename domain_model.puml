@@ -63,8 +63,8 @@ class ManifestOverridePermission {
   +Validate()
 }
 
-class ConfigInstance {
-  +Guid ConfigInstanceId
+class ConfigurationInstance {
+  +Guid ConfigurationInstanceId
   +string Name
   +Guid ManifestId
   +DateTime CreatedAtUtc
@@ -80,12 +80,12 @@ class SettingCell {
   +Validate()
 }
 
-class ConfigChange {
+class ConfigurationChange {
   +Guid Id
-  +Guid ConfigInstanceId
+  +Guid ConfigurationInstanceId
   +string SettingKey
   +int LayerIndex
-  +ConfigOperation Operation
+  +ConfigurationOperation Operation
   +string? BeforeValue
   +string? AfterValue
   +string ChangedBy
@@ -93,7 +93,7 @@ class ConfigChange {
   +Validate()
 }
 
-enum ConfigOperation {
+enum ConfigurationOperation {
   Add
   Update
   Delete
@@ -106,17 +106,17 @@ class ManifestService {
   +List(string? name)
 }
 
-class ConfigInstanceService {
-  +CreateInstance(ConfigInstance instance)
+class ConfigurationInstanceService {
+  +CreateInstance(ConfigurationInstance instance)
   +GetById(Guid instanceId)
   +List()
   +Delete(Guid instanceId)
   +SetCellValue(Guid instanceId, string settingKey, int layerIndex, string? value)
 }
 
-class ConfigChangeQueryService {
+class ConfigurationChangeQueryService {
   +GetChangeById(Guid id)
-  +ListChanges(DateTime? fromUtc, DateTime? toUtc, ConfigOperation? operation)
+  +ListChanges(DateTime? fromUtc, DateTime? toUtc, ConfigurationOperation? operation)
 }
 
 interface IManifestRepository {
@@ -127,39 +127,39 @@ interface IManifestRepository {
 }
 
 interface IConfigInstanceRepository {
-  +Add(ConfigInstance instance)
+  +Add(ConfigurationInstance instance)
   +GetById(Guid instanceId)
   +List()
-  +Update(ConfigInstance instance)
+  +Update(ConfigurationInstance instance)
   +Delete(Guid instanceId)
 }
 
 interface IConfigChangeRepository {
-  +Add(ConfigChange change)
+  +Add(ConfigurationChange change)
   +GetById(Guid id)
-  +List(DateTime? fromUtc, DateTime? toUtc, ConfigOperation? operation)
+  +List(DateTime? fromUtc, DateTime? toUtc, ConfigurationOperation? operation)
 }
 
 interface IMonitoringNotifier {
-  +NotifyCriticalChangeAsync(ConfigChange change)
+  +NotifyCriticalChangeAsync(ConfigurationChange change)
 }
 
 ManifestDomainRoot "1" *-- "*" ManifestSettingDefinition
 ManifestDomainRoot "1" *-- "*" ManifestOverridePermission
 ManifestValueObject "1" *-- "*" ManifestSettingDefinition
 ManifestValueObject "1" *-- "*" ManifestOverridePermission
-ConfigInstance "1" *-- "*" SettingCell
-ConfigInstance --> ManifestValueObject : references by ManifestId
-ConfigChange --> ConfigInstance
+ConfigurationInstance "1" *-- "*" SettingCell
+ConfigurationInstance --> ManifestValueObject : references by ManifestId
+ConfigurationChange --> ConfigurationInstance
 ManifestEntity --> ManifestValueObject : hydrated to
 ManifestDto --> ManifestDomainRoot : mapped to
 
 ManifestService --> IManifestRepository
-ConfigInstanceService --> IManifestRepository : validates structure/rules
-ConfigInstanceService --> IConfigInstanceRepository
-ConfigInstanceService --> IConfigChangeRepository : writes audit log
-ConfigInstanceService --> IMonitoringNotifier : on critical settings
-ConfigChangeQueryService --> IConfigChangeRepository
+ConfigurationInstanceService --> IManifestRepository : validates structure/rules
+ConfigurationInstanceService --> IConfigInstanceRepository
+ConfigurationInstanceService --> IConfigChangeRepository : writes audit log
+ConfigurationInstanceService --> IMonitoringNotifier : on critical settings
+ConfigurationChangeQueryService --> IConfigChangeRepository
 
 note right of ManifestDomainRoot
 Responsibilities:
@@ -180,7 +180,7 @@ Responsibilities:
 2) No domain behavior and no Validate() method.
 end note
 
-note right of ConfigInstance
+note right of ConfigurationInstance
 Invariants:
 1) Name is unique.
 2) ManifestId must exist.
@@ -189,7 +189,7 @@ Invariants:
 5) No duplicate (SettingKey, LayerIndex) cell.
 end note
 
-note right of ConfigChange
+note right of ConfigurationChange
 Invariants:
 1) Id is immutable and unique.
 2) ChangedAtUtc is UTC and immutable.

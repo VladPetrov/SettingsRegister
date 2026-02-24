@@ -1,8 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace BackOfficeSmall.Api.Dtos.ConfigInstances;
+namespace BackOfficeSmall.Api.Dtos.ConfigurationInstances;
 
-public sealed class SetCellValueRequestDto
+public sealed class SettingCellInputDto
 {
     [Required]
     public string SettingKey { get; init; } = string.Empty;
@@ -11,7 +11,4 @@ public sealed class SetCellValueRequestDto
     public int LayerIndex { get; init; }
 
     public string? Value { get; init; }
-
-    [Required]
-    public string ChangedBy { get; init; } = string.Empty;
 }

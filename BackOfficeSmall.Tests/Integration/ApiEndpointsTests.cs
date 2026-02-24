@@ -23,7 +23,7 @@ public sealed class ApiEndpointsTests
     }
 
     [Fact]
-    public async Task ConfigChangesEndpoints_CreateListAndGet_ById_Work()
+    public async Task ConfigurationChangesEndpoints_CreateListAndGet_ById_Work()
     {
         await using WebApplicationFactory<Program> factory = CreateFactory("Development");
         using HttpClient client = await CreateAuthorizedClientAsync(factory, "integration-user-config-changes");

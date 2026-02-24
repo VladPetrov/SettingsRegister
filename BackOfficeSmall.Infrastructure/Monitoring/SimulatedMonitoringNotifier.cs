@@ -1,16 +1,16 @@
 using System.Collections.Concurrent;
-using BackOfficeSmall.Domain.Models.Config;
+using BackOfficeSmall.Domain.Models.Configuration;
 using BackOfficeSmall.Domain.Services;
 
 namespace BackOfficeSmall.Infrastructure.Monitoring;
 
 public sealed class SimulatedMonitoringNotifier : IMonitoringNotifier
 {
-    private readonly ConcurrentQueue<ConfigChange> _notifications = new();
+    private readonly ConcurrentQueue<ConfigurationChange> _notifications = new();
 
-    public IReadOnlyCollection<ConfigChange> Notifications => _notifications.ToArray();
+    public IReadOnlyCollection<ConfigurationChange> Notifications => _notifications.ToArray();
 
-    public Task NotifyCriticalChangeAsync(ConfigChange change, CancellationToken cancellationToken)
+    public Task NotifyCriticalChangeAsync(ConfigurationChange change, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -19,9 +19,9 @@ public sealed class SimulatedMonitoringNotifier : IMonitoringNotifier
             throw new ArgumentNullException(nameof(change));
         }
 
-        ConfigChange snapshot = new(
+        ConfigurationChange snapshot = new(
             change.Id,
-            change.ConfigInstanceId,
+            change.ConfigurationInstanceId,
             change.SettingKey,
             change.LayerIndex,
             change.Operation,

@@ -78,8 +78,8 @@ builder.Services.AddSingleton<ISystemClock, SystemClock>();
 builder.Services.AddSingleton<IApplicationEnvironment, HostApplicationEnvironment>();
 
 builder.Services.AddScoped<IManifestService, ManifestService>();
-builder.Services.AddScoped<IConfigInstanceService, ConfigInstanceService>();
-builder.Services.AddScoped<IConfigChangeQueryService, ConfigChangeQueryService>();
+builder.Services.AddScoped<IConfigInstanceService, ConfigurationInstanceService>();
+builder.Services.AddScoped<IConfigChangeQueryService, ConfigurationChangeQueryService>();
 builder.Services.AddScoped<IAuthExchangeService, AuthExchangeService>();
 
 WebApplication app = builder.Build();

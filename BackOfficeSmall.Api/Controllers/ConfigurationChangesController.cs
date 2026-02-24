@@ -1,20 +1,20 @@
-using BackOfficeSmall.Api.Dtos.ConfigChanges;
+using BackOfficeSmall.Api.Dtos.ConfigurationChanges;
 using BackOfficeSmall.Api.Mapping;
 using BackOfficeSmall.Application.Abstractions;
 using BackOfficeSmall.Application.Exceptions;
-using BackOfficeSmall.Domain.Models.Config;
+using BackOfficeSmall.Domain.Models.Configuration;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BackOfficeSmall.Api.Controllers;
 
 [ApiController]
 [Route("api/config-changes")]
-public sealed class ConfigChangesController : AuthenticatedApiControllerBase
+public sealed class ConfigurationChangesController : AuthenticatedApiControllerBase
 {
     private readonly IConfigChangeQueryService _configChangeQueryService;
     private readonly IConfigInstanceService _configInstanceService;
 
-    public ConfigChangesController(
+    public ConfigurationChangesController(
         IConfigChangeQueryService configChangeQueryService,
         IConfigInstanceService configInstanceService)
     {
@@ -23,18 +23,18 @@ public sealed class ConfigChangesController : AuthenticatedApiControllerBase
     }
 
     [HttpPost]
-    [ProducesResponseType(typeof(ConfigChangeResponseDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ConfigurationChangeResponseDto), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ConfigChangeResponseDto>> CreateAsync(
+    public async Task<ActionResult<ConfigurationChangeResponseDto>> CreateAsync(
         [FromBody] CreateConfigChangeRequestDto request,
         CancellationToken cancellationToken)
     {
-        ConfigChange change = await _configInstanceService.SetCellValueAsync(
-            request.ConfigInstanceId,
+        ConfigurationChange change = await _configInstanceService.SetCellValueAsync(
+            request.ConfigurationInstanceId,
             request.ToApplication(),
             cancellationToken);
 
@@ -42,38 +42,38 @@ public sealed class ConfigChangesController : AuthenticatedApiControllerBase
     }
 
     [HttpGet]
-    [ProducesResponseType(typeof(IReadOnlyList<ConfigChangeResponseDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(IReadOnlyList<ConfigurationChangeResponseDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<IReadOnlyList<ConfigChangeResponseDto>>> ListAsync(
+    public async Task<ActionResult<IReadOnlyList<ConfigurationChangeResponseDto>>> ListAsync(
         [FromQuery] DateTimeOffset? fromUtc,
         [FromQuery] DateTimeOffset? toUtc,
-        [FromQuery] ConfigOperationDto? operation,
+        [FromQuery] ConfigurationOperationDto? operation,
         CancellationToken cancellationToken)
     {
         DateTime? normalizedFromUtc = NormalizeUtcQueryDate(fromUtc, nameof(fromUtc));
         DateTime? normalizedToUtc = NormalizeUtcQueryDate(toUtc, nameof(toUtc));
 
-        IReadOnlyList<ConfigChange> changes = await _configChangeQueryService.ListChangesAsync(
+        IReadOnlyList<ConfigurationChange> changes = await _configChangeQueryService.ListChangesAsync(
             normalizedFromUtc,
             normalizedToUtc,
             operation.ToDomain(),
             cancellationToken);
 
-        IReadOnlyList<ConfigChangeResponseDto> payload = changes.Select(change => change.ToDto()).ToList();
+        IReadOnlyList<ConfigurationChangeResponseDto> payload = changes.Select(change => change.ToDto()).ToList();
         return Ok(payload);
     }
 
     [HttpGet("{id:guid}")]
-    [ProducesResponseType(typeof(ConfigChangeResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ConfigurationChangeResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ConfigChangeResponseDto>> GetByIdAsync(
+    public async Task<ActionResult<ConfigurationChangeResponseDto>> GetByIdAsync(
         Guid id,
         CancellationToken cancellationToken)
     {
-        ConfigChange change = await _configChangeQueryService.GetChangeByIdAsync(id, cancellationToken);
+        ConfigurationChange change = await _configChangeQueryService.GetChangeByIdAsync(id, cancellationToken);
         return Ok(change.ToDto());
     }
 
