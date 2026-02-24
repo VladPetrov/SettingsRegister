@@ -1,6 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <ProjectReference Include="..\BackOfficeSmall.Application\BackOfficeSmall.Application.csproj" />
     <ProjectReference Include="..\BackOfficeSmall.Domain\BackOfficeSmall.Domain.csproj" />
   </ItemGroup>
 

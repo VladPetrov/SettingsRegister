@@ -1,6 +1,6 @@
 namespace BackOfficeSmall.Application.Configuration;
 
-public sealed class ApplicationSettings
+public sealed class ApplicationSettings : ICachedManifestRepositorySettings
 {
     public const string SectionName = "Application";
 

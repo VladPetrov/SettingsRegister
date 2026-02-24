@@ -112,7 +112,7 @@ public sealed class CacheManifestRepositoryTests
         {
             InnerRepository = new CountingManifestRepository(manifest);
             MemoryCache = new MemoryCache(new MemoryCacheOptions());
-            ApplicationSettings = new ApplicationSettings
+            Settings = new ApplicationSettings
             {
                 ManifestByIdCacheSlidingExpirationSeconds = slidingExpirationSeconds
             };
@@ -122,11 +122,11 @@ public sealed class CacheManifestRepositoryTests
 
         public MemoryCache MemoryCache { get; }
 
-        public ApplicationSettings ApplicationSettings { get; }
+        public ICachedManifestRepositorySettings Settings { get; }
 
         public CachedManifestRepository CreateRepository()
         {
-            return new CachedManifestRepository(InnerRepository, MemoryCache, ApplicationSettings);
+            return new CachedManifestRepository(InnerRepository, MemoryCache, Settings);
         }
 
         public void Dispose()

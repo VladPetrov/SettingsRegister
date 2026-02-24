@@ -16,11 +16,11 @@ public sealed class CachedManifestRepository : ICachedManifestRepository
     public CachedManifestRepository(
         IManifestRepository innerRepository,
         IMemoryCache memoryCache,
-        ApplicationSettings applicationSettings)
+        ICachedManifestRepositorySettings settings)
     {
         _innerRepository = innerRepository ?? throw new ArgumentNullException(nameof(innerRepository));
         _memoryCache = memoryCache ?? throw new ArgumentNullException(nameof(memoryCache));
-        _manifestByIdCacheSlidingExpiration = BuildManifestByIdCacheSlidingExpiration(applicationSettings);
+        _manifestByIdCacheSlidingExpiration = BuildManifestByIdCacheSlidingExpiration(settings);
     }
 
     public Task AddAsync(ManifestDomainRoot manifest, CancellationToken cancellationToken)
@@ -65,20 +65,20 @@ public sealed class CachedManifestRepository : ICachedManifestRepository
         return _innerRepository.ListAsync(name, cancellationToken);
     }
 
-    private static TimeSpan BuildManifestByIdCacheSlidingExpiration(ApplicationSettings applicationSettings)
+    private static TimeSpan BuildManifestByIdCacheSlidingExpiration(ICachedManifestRepositorySettings settings)
     {
-        if (applicationSettings is null)
+        if (settings is null)
         {
-            throw new ArgumentNullException(nameof(applicationSettings));
+            throw new ArgumentNullException(nameof(settings));
         }
 
-        if (applicationSettings.ManifestByIdCacheSlidingExpirationSeconds <= 0)
+        if (settings.ManifestByIdCacheSlidingExpirationSeconds <= 0)
         {
             throw new ArgumentOutOfRangeException(
-                nameof(applicationSettings.ManifestByIdCacheSlidingExpirationSeconds),
+                nameof(settings.ManifestByIdCacheSlidingExpirationSeconds),
                 "ManifestByIdCacheSlidingExpirationSeconds must be greater than zero.");
         }
 
-        return TimeSpan.FromSeconds(applicationSettings.ManifestByIdCacheSlidingExpirationSeconds);
+        return TimeSpan.FromSeconds(settings.ManifestByIdCacheSlidingExpirationSeconds);
     }
 }

@@ -49,6 +49,7 @@ builder.Services.AddSwaggerGen(options =>
 });
 builder.Services.AddHealthChecks();
 builder.Services.AddSingleton(appSettings);
+builder.Services.AddSingleton<ICachedManifestRepositorySettings>(appSettings);
 builder.Services.AddSingleton(authSettings);
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -141,9 +142,9 @@ static void RegisterManifestRepositoryCacheDecorator(IServiceCollection services
     {
         IManifestRepository innerRepository = serviceProvider.GetRequiredKeyedService<IManifestRepository>(CachedManifestRepository.InnerManifestRepositoryKey);
         IMemoryCache memoryCache = serviceProvider.GetRequiredService<IMemoryCache>();
-        ApplicationSettings applicationSettings = serviceProvider.GetRequiredService<ApplicationSettings>();
+        ICachedManifestRepositorySettings settings = serviceProvider.GetRequiredService<ICachedManifestRepositorySettings>();
 
-        return new CachedManifestRepository(innerRepository, memoryCache, applicationSettings);
+        return new CachedManifestRepository(innerRepository, memoryCache, settings);
     });
 
         services.AddSingleton<IManifestRepository>(serviceProvider =>
