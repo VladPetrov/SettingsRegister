@@ -10,6 +10,7 @@ using BackOfficeSmall.Infrastructure.Locking;
 using BackOfficeSmall.Infrastructure.Monitoring;
 using BackOfficeSmall.Infrastructure.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.OpenApi;
@@ -25,6 +26,7 @@ AuthSettings authSettings = builder.Configuration
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddOpenApi();
+builder.Services.AddMemoryCache();
 builder.Services.AddSwaggerGen(options =>
 {
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
@@ -66,7 +68,22 @@ builder.Services
     });
 builder.Services.AddAuthorization();
 
-builder.Services.AddSingleton<IManifestRepository, InMemoryManifestRepository>();
+builder.Services.AddSingleton<InMemoryManifestRepository>();
+builder.Services.AddSingleton<ICacheManifestRepository>(serviceProvider =>
+{
+    InMemoryManifestRepository innerRepository = serviceProvider.GetRequiredService<InMemoryManifestRepository>();
+    ApplicationSettings settings = serviceProvider.GetRequiredService<ApplicationSettings>();
+    TimeSpan manifestByIdCacheSlidingExpiration = TimeSpan.FromSeconds(settings.ManifestByIdCacheSlidingExpirationSeconds);
+
+    return new CacheManifestRepository(
+        innerRepository,
+        serviceProvider.GetRequiredService<IMemoryCache>(),
+        manifestByIdCacheSlidingExpiration);
+});
+builder.Services.AddSingleton<IManifestRepository>(serviceProvider =>
+{
+    return serviceProvider.GetRequiredService<ICacheManifestRepository>();
+});
 builder.Services.AddSingleton<IConfigInstanceRepository, InMemoryConfigInstanceRepository>();
 builder.Services.AddSingleton<IConfigChangeRepository, InMemoryConfigChangeRepository>();
 builder.Services.AddSingleton<IMonitoringNotifier, SimulatedMonitoringNotifier>();

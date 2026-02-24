@@ -6,4 +6,5 @@ public sealed class ApplicationSettings
 
     public bool AppScaling { get; init; } = false;
     public int ManifestImportLockTimeoutSeconds { get; init; } = 30;
+    public int ManifestByIdCacheSlidingExpirationSeconds { get; init; } = 300;
 }
