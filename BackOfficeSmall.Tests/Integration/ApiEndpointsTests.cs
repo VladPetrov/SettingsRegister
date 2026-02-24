@@ -106,6 +106,32 @@ public sealed class ApiEndpointsTests
     }
 
     [Fact]
+    public async Task ConfigurationInstancesList_ReturnsLightweightItems()
+    {
+        await using WebApplicationFactory<Program> factory = CreateFactory("Development");
+        using HttpClient client = await CreateAuthorizedClientAsync(factory, "integration-user-instance-list");
+
+        Guid manifestId = await ImportManifestAsync(client, allowLayerOneOverride: true);
+        Guid instanceId = await CreateConfigurationInstanceAsync(client, manifestId, "Instance-List");
+
+        HttpResponseMessage response = await client.GetAsync("/api/configuration");
+        string body = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        using JsonDocument document = JsonDocument.Parse(body);
+        JsonElement entry = document.RootElement.EnumerateArray()
+            .Single(candidate => candidate.GetProperty("configurationInstanceId").GetGuid() == instanceId);
+
+        Assert.True(entry.TryGetProperty("configurationInstanceId", out _));
+        Assert.True(entry.TryGetProperty("name", out _));
+        Assert.True(entry.TryGetProperty("manifestId", out _));
+        Assert.True(entry.TryGetProperty("createdAtUtc", out _));
+        Assert.False(entry.TryGetProperty("createdBy", out _));
+        Assert.False(entry.TryGetProperty("rows", out _));
+    }
+
+    [Fact]
     public async Task SetCellValue_WhenOverrideDenied_Returns422ProblemDetails()
     {
         await using WebApplicationFactory<Program> factory = CreateFactory("Development");

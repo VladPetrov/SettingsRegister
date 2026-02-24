@@ -32,12 +32,12 @@ public sealed class ConfigurationInstancesController : AuthenticatedApiControlle
     }
 
     [HttpGet]
-    [ProducesResponseType(typeof(IReadOnlyList<ConfigurationInstanceResponseDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(IReadOnlyList<ConfigurationInstanceListItemDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<IReadOnlyList<ConfigurationInstanceResponseDto>>> ListAsync(CancellationToken cancellationToken)
+    public async Task<ActionResult<IReadOnlyList<ConfigurationInstanceListItemDto>>> ListAsync(CancellationToken cancellationToken)
     {
         var instances =  await _configurationService.ListAsync(cancellationToken);
-        var payload = instances.Select(instance => instance.ToDto()).ToList();
+        var payload = instances.Select(instance => instance.ToListItemDto()).ToList();
 
         return Ok(payload);
     }

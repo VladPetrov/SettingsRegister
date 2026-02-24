@@ -111,6 +111,12 @@ public static class ApiMappings
 
     public static ConfigurationInstanceResponseDto ToDto(this ConfigurationInstance instance)
     {
+        IReadOnlyList<ConfigurationSettingColumnDto> columns = instance.Manifest.SettingDefinitions
+            .Select(definition => new ConfigurationSettingColumnDto(
+                definition.SettingKey,
+                definition.RequiresCriticalNotification))
+            .ToList();
+
         IReadOnlyList<ConfigurationSettingsRowDto> rows = instance.GetSettings()
             .Select(row => new ConfigurationSettingsRowDto(
                 row.LayerIndex,
@@ -129,8 +135,17 @@ public static class ApiMappings
             instance.Name,
             instance.ManifestId,
             instance.CreatedAtUtc,
-            instance.CreatedBy,
+            columns,
             rows);
+    }
+
+    public static ConfigurationInstanceListItemDto ToListItemDto(this ConfigurationInstance instance)
+    {
+        return new ConfigurationInstanceListItemDto(
+            instance.ConfigurationInstanceId,
+            instance.Name,
+            instance.ManifestId,
+            instance.CreatedAtUtc);
     }
 
     public static ConfigurationChangeResponseDto ToDto(this ConfigurationChange change)
