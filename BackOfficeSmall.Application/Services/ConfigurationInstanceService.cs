@@ -83,10 +83,7 @@ public sealed class ConfigurationInstanceService : IConfigurationService
         return _configInstanceRepository.ListAsync(cancellationToken);
     }
 
-    public async Task DeleteAsync(
-        Guid instanceId,
-        DeleteConfigurationInstanceRequest request,
-        CancellationToken cancellationToken)
+    public async Task DeleteAsync(Guid instanceId, DeleteConfigurationInstanceRequest request, CancellationToken cancellationToken)
     {
         if (instanceId == Guid.Empty)
         {
@@ -100,13 +97,14 @@ public sealed class ConfigurationInstanceService : IConfigurationService
 
         request.Validate();
 
-        ConfigurationInstance? instance = await _configInstanceRepository.GetByIdAsync(instanceId, cancellationToken);
+        var instance = await _configInstanceRepository.GetByIdAsync(instanceId, cancellationToken);
         if (instance is null)
         {
             throw new EntityNotFoundException("ConfigurationInstance", instanceId.ToString());
         }
 
         IReadOnlyList<SettingCell> existingCells = instance.Cells.ToList();
+
         foreach (SettingCell cell in existingCells)
         {
             ConfigurationChange change = new(
@@ -131,10 +129,7 @@ public sealed class ConfigurationInstanceService : IConfigurationService
         await _configInstanceRepository.DeleteAsync(instanceId, cancellationToken);
     }
 
-    public async Task<ConfigurationChange> SetValueAsync(
-        Guid instanceId,
-        SetCellValueRequest request,
-        CancellationToken cancellationToken)
+    public async Task<ConfigurationChange> SetValueAsync(Guid instanceId, SetCellValueRequest request, CancellationToken cancellationToken)
     {
         if (instanceId == Guid.Empty)
         {
