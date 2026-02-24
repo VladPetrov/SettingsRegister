@@ -40,6 +40,19 @@ public sealed class ConfigurationInstance
 
     public IReadOnlyList<SettingCell> Cells => _cells.AsReadOnly();
 
+    public IReadOnlyList<ConfigurationSettingSummaryRow> GetSettings()
+    {
+        List<ConfigurationSettingSummaryRow> rows = new(_manifest.LayerCount);
+
+        for (int layerIndex = 0; layerIndex < _manifest.LayerCount; layerIndex++)
+        {
+            List<ConfigurationSettingSummaryCell> cells = BuildSummaryCellsForLayer(layerIndex);
+            rows.Add(new ConfigurationSettingSummaryRow(layerIndex, cells));
+        }
+
+        return rows;
+    }
+
     public string? GetValue(string settingKey, int layerIndex)
     {
         SettingCell? cell = GetCell(settingKey, layerIndex);
@@ -131,6 +144,39 @@ public sealed class ConfigurationInstance
         return _cells.FirstOrDefault(candidate =>
             SettingKeyComparer.Equals(candidate.SettingKey, settingKey) &&
             candidate.LayerIndex == layerIndex);
+    }
+
+    private List<ConfigurationSettingSummaryCell> BuildSummaryCellsForLayer(int layerIndex)
+    {
+        List<ConfigurationSettingSummaryCell> cells = new(_manifest.SettingDefinitions.Count);
+        foreach (ManifestSettingDefinition definition in _manifest.SettingDefinitions)
+        {
+            SettingCell? explicitCell = GetCell(definition.SettingKey, layerIndex);
+            string? summaryValue = ResolveSummaryValue(definition.SettingKey, layerIndex);
+
+            cells.Add(new ConfigurationSettingSummaryCell(
+                definition.SettingKey,
+                summaryValue,
+                explicitCell is not null,
+                _manifest.CanOverride(definition.SettingKey, layerIndex),
+                definition.RequiresCriticalNotification));
+        }
+
+        return cells;
+    }
+
+    private string? ResolveSummaryValue(string settingKey, int layerIndex)
+    {
+        for (int summaryLayerIndex = layerIndex; summaryLayerIndex >= 0; summaryLayerIndex--)
+        {
+            SettingCell? summaryCell = GetCell(settingKey, summaryLayerIndex);
+            if (summaryCell is not null)
+            {
+                return summaryCell.Value;
+            }
+        }
+
+        return null;
     }
 
     private void ValidateCellUniqueness()

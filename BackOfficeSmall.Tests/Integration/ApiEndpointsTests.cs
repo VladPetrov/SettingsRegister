@@ -114,7 +114,7 @@ public sealed class ApiEndpointsTests
         Guid manifestId = await ImportManifestAsync(client, allowLayerOneOverride: false);
         Guid instanceId = await CreateConfigurationInstanceAsync(client, manifestId, "Instance-Denied");
 
-        HttpResponseMessage response = await client.PutAsJsonAsync($"/api/configuration/{instanceId}/cells", new
+        HttpResponseMessage response = await client.PutAsJsonAsync($"/api/configuration/{instanceId}/value", new
         {
             settingKey = "FeatureFlag",
             layerIndex = 1,
@@ -126,6 +126,53 @@ public sealed class ApiEndpointsTests
 
         Assert.Equal((HttpStatusCode)422, response.StatusCode);
         Assert.Contains("Override is not allowed", body, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task ConfigurationInstanceGetById_ReturnsSummaryTableWithInheritedValues()
+    {
+        await using WebApplicationFactory<Program> factory = CreateFactory("Development");
+        using HttpClient client = await CreateAuthorizedClientAsync(factory, "integration-user-instance-summary-table");
+
+        Guid manifestId = await ImportManifestAsync(client, allowLayerOneOverride: true);
+        Guid instanceId = await CreateConfigurationInstanceAsync(client, manifestId, "Instance-Summary");
+
+        HttpResponseMessage setValueResponse = await client.PutAsJsonAsync($"/api/configuration/{instanceId}/value", new
+        {
+            settingKey = "FeatureFlag",
+            layerIndex = 0,
+            value = "on"
+        });
+        Assert.Equal(HttpStatusCode.OK, setValueResponse.StatusCode);
+
+        HttpResponseMessage getResponse = await client.GetAsync($"/api/configuration/{instanceId}");
+        string body = await getResponse.Content.ReadAsStringAsync();
+        Assert.Equal(HttpStatusCode.OK, getResponse.StatusCode);
+
+        using JsonDocument document = JsonDocument.Parse(body);
+        JsonElement columns = document.RootElement.GetProperty("columns");
+        JsonElement summaryRows = document.RootElement.GetProperty("summaryRows");
+
+        Assert.Equal(1, columns.GetArrayLength());
+        Assert.Equal(2, summaryRows.GetArrayLength());
+
+        JsonElement layerZero = summaryRows[0];
+        JsonElement layerOne = summaryRows[1];
+        JsonElement layerZeroCell = layerZero.GetProperty("cells")[0];
+        JsonElement layerOneCell = layerOne.GetProperty("cells")[0];
+
+        Assert.Equal(0, layerZero.GetProperty("layerIndex").GetInt32());
+        Assert.Equal(1, layerOne.GetProperty("layerIndex").GetInt32());
+
+        Assert.Equal("FeatureFlag", columns[0].GetProperty("settingKey").GetString());
+        Assert.True(columns[0].GetProperty("requiresCriticalNotification").GetBoolean());
+
+        Assert.Equal("on", layerZeroCell.GetProperty("value").GetString());
+        Assert.Equal("on", layerOneCell.GetProperty("value").GetString());
+        Assert.True(layerZeroCell.GetProperty("isExplicitValue").GetBoolean());
+        Assert.False(layerOneCell.GetProperty("isExplicitValue").GetBoolean());
+        Assert.True(layerZeroCell.GetProperty("canOverride").GetBoolean());
+        Assert.True(layerOneCell.GetProperty("canOverride").GetBoolean());
     }
 
     [Fact]
