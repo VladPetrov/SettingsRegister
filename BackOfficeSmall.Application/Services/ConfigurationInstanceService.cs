@@ -39,13 +39,8 @@ public sealed class ConfigurationInstanceService : IConfigurationService
 
         request.Validate();
 
-        ManifestValueObject manifest = await GetManifestOrThrowAsync(request.ManifestId, cancellationToken);
-        ConfigurationInstance instance = new(
-            Guid.NewGuid(),
-            request.Name,
-            manifest,
-            _clock.UtcNow,
-            request.CreatedBy);
+        var manifest = await GetManifestOrThrowAsync(request.ManifestId, cancellationToken);
+        ConfigurationInstance instance = new(Guid.NewGuid(), request.Name, manifest, _clock.UtcNow, request.CreatedBy);
 
         if (request.Cells is not null)
         {
