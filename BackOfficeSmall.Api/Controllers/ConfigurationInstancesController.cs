@@ -3,7 +3,6 @@ using BackOfficeSmall.Api.Dtos.ConfigurationInstances;
 using BackOfficeSmall.Api.Mapping;
 using BackOfficeSmall.Application.Abstractions;
 using BackOfficeSmall.Application.Contracts;
-using BackOfficeSmall.Domain.Models.Configuration;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BackOfficeSmall.Api.Controllers;
@@ -65,17 +64,16 @@ public sealed class ConfigurationInstancesController : AuthenticatedApiControlle
         return NoContent();
     }
 
-    [HttpPut("{instanceId:guid}/cells")]
+    [HttpPut("{instanceId:guid}/value")]
     [ProducesResponseType(typeof(ConfigurationChangeResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ConfigurationChangeResponseDto>> SetCellValueAsync(Guid instanceId, [FromBody] SetCellValueRequestDto request, CancellationToken cancellationToken)
+    public async Task<ActionResult<ConfigurationChangeResponseDto>> SetValueAsync(Guid instanceId, [FromBody] SetCellValueRequestDto request, CancellationToken cancellationToken)
     {
-        ConfigurationChange change = await _configurationService.SetCellValueAsync(instanceId, request.ToApplication(), cancellationToken);
-
+        var change = await _configurationService.SetValueAsync(instanceId, request.ToApplication(GetUserId()), cancellationToken);
         return Ok(change.ToDto());
     }
 }

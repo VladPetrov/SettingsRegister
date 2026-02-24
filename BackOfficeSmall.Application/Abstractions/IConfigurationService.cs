@@ -13,7 +13,7 @@ public interface IConfigurationService
 
     Task DeleteAsync(Guid instanceId, DeleteConfigurationInstanceRequest request, CancellationToken cancellationToken);
 
-    Task<ConfigurationChange> SetCellValueAsync(
+    Task<ConfigurationChange> SetValueAsync(
         Guid instanceId,
         SetCellValueRequest request,
         CancellationToken cancellationToken);

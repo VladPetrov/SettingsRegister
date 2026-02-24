@@ -33,7 +33,7 @@ public sealed class ConfigurationChangesController : AuthenticatedApiControllerB
         [FromBody] CreateConfigurationChangeRequestDto request,
         CancellationToken cancellationToken)
     {
-        ConfigurationChange change = await _configInstanceService.SetCellValueAsync(
+        ConfigurationChange change = await _configInstanceService.SetValueAsync(
             request.ConfigurationInstanceId,
             request.ToApplication(),
             cancellationToken);

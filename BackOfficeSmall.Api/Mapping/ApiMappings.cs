@@ -52,13 +52,13 @@ public static class ApiMappings
             cells);
     }
 
-    public static SetCellValueRequest ToApplication(this SetCellValueRequestDto dto)
+    public static SetCellValueRequest ToApplication(this SetCellValueRequestDto dto, string userId)
     {
         return new SetCellValueRequest(
             dto.SettingKey,
             dto.LayerIndex,
             dto.Value,
-            dto.ChangedBy);
+            userId);
     }
 
     public static SetCellValueRequest ToApplication(this CreateConfigurationChangeRequestDto dto)

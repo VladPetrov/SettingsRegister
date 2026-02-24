@@ -126,7 +126,7 @@ public sealed class ConfigurationInstanceService : IConfigurationService
         await _configInstanceRepository.DeleteAsync(instanceId, cancellationToken);
     }
 
-    public async Task<ConfigurationChange> SetCellValueAsync(
+    public async Task<ConfigurationChange> SetValueAsync(
         Guid instanceId,
         SetCellValueRequest request,
         CancellationToken cancellationToken)

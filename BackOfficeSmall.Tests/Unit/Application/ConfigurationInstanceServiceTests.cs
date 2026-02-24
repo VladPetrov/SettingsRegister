@@ -42,13 +42,13 @@ public sealed class ConfigurationInstanceServiceTests
             CancellationToken.None);
 
         SetCellValueRequest invalidLayerRequest = new("FeatureFlag", 5, "on", "tester");
-        await Assert.ThrowsAsync<ValidationException>(() => service.SetCellValueAsync(
+        await Assert.ThrowsAsync<ValidationException>(() => service.SetValueAsync(
             instance.ConfigurationInstanceId,
             invalidLayerRequest,
             CancellationToken.None));
 
         SetCellValueRequest deniedOverrideRequest = new("FeatureFlag", 1, "on", "tester");
-        await Assert.ThrowsAsync<ValidationException>(() => service.SetCellValueAsync(
+        await Assert.ThrowsAsync<ValidationException>(() => service.SetValueAsync(
             instance.ConfigurationInstanceId,
             deniedOverrideRequest,
             CancellationToken.None));
@@ -92,22 +92,22 @@ public sealed class ConfigurationInstanceServiceTests
             new ConfigurationInstanceCreateRequest("InstanceA", manifest.ManifestId, "tester", null),
             CancellationToken.None);
 
-        ConfigurationChange add = await service.SetCellValueAsync(
+        ConfigurationChange add = await service.SetValueAsync(
             instance.ConfigurationInstanceId,
             new SetCellValueRequest("FeatureFlag", 0, "on", "tester"),
             CancellationToken.None);
 
-        ConfigurationChange update = await service.SetCellValueAsync(
+        ConfigurationChange update = await service.SetValueAsync(
             instance.ConfigurationInstanceId,
             new SetCellValueRequest("FeatureFlag", 0, "off", "tester"),
             CancellationToken.None);
 
-        ConfigurationChange delete = await service.SetCellValueAsync(
+        ConfigurationChange delete = await service.SetValueAsync(
             instance.ConfigurationInstanceId,
             new SetCellValueRequest("FeatureFlag", 0, null, "tester"),
             CancellationToken.None);
 
-        ConfigurationChange nonCritical = await service.SetCellValueAsync(
+        ConfigurationChange nonCritical = await service.SetValueAsync(
             instance.ConfigurationInstanceId,
             new SetCellValueRequest("SafeFlag", 0, "on", "tester"),
             CancellationToken.None);
