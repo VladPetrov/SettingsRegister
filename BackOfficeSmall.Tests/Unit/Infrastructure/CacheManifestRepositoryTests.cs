@@ -1,3 +1,4 @@
+using BackOfficeSmall.Application.Configuration;
 using BackOfficeSmall.Domain.Models.Manifest;
 using BackOfficeSmall.Domain.Repositories;
 using BackOfficeSmall.Infrastructure.Repositories;
@@ -11,32 +12,43 @@ public sealed class CacheManifestRepositoryTests
     public async Task GetByIdAsync_WhenManifestExists_UsesSlidingCacheAndCallsInnerOnce()
     {
         Guid manifestId = Guid.NewGuid();
-        CountingManifestRepository innerRepository = new(CreateManifest(manifestId));
-        using MemoryCache memoryCache = new(new MemoryCacheOptions());
-        CacheManifestRepository repository = new(innerRepository, memoryCache, TimeSpan.FromMinutes(5));
+        using TestContext context = CreateContext(CreateManifest(manifestId));
+        CachedManifestRepository repository = context.CreateRepository();
 
         ManifestValueObject? first = await repository.GetByIdAsync(manifestId, CancellationToken.None);
         ManifestValueObject? second = await repository.GetByIdAsync(manifestId, CancellationToken.None);
 
         Assert.NotNull(first);
         Assert.Same(first, second);
-        Assert.Equal(1, innerRepository.GetByIdAsyncCallCount);
+        Assert.Equal(1, context.InnerRepository.GetByIdAsyncCallCount);
     }
 
     [Fact]
     public async Task GetByIdAsync_WhenManifestDoesNotExist_DoesNotCacheNullResults()
     {
         Guid manifestId = Guid.NewGuid();
-        CountingManifestRepository innerRepository = new(null);
-        using MemoryCache memoryCache = new(new MemoryCacheOptions());
-        CacheManifestRepository repository = new(innerRepository, memoryCache, TimeSpan.FromMinutes(5));
+        using TestContext context = CreateContext(null);
+        CachedManifestRepository repository = context.CreateRepository();
 
         ManifestValueObject? first = await repository.GetByIdAsync(manifestId, CancellationToken.None);
         ManifestValueObject? second = await repository.GetByIdAsync(manifestId, CancellationToken.None);
 
         Assert.Null(first);
         Assert.Null(second);
-        Assert.Equal(2, innerRepository.GetByIdAsyncCallCount);
+        Assert.Equal(2, context.InnerRepository.GetByIdAsyncCallCount);
+    }
+
+    [Fact]
+    public void Constructor_WhenSlidingExpirationIsInvalid_ThrowsArgumentOutOfRangeException()
+    {
+        using TestContext context = CreateContext(null, slidingExpirationSeconds: 0);
+
+        Assert.Throws<ArgumentOutOfRangeException>(() => context.CreateRepository());
+    }
+
+    private static TestContext CreateContext(ManifestValueObject? manifest, int slidingExpirationSeconds = 300)
+    {
+        return new TestContext(manifest, slidingExpirationSeconds);
     }
 
     private static ManifestValueObject CreateManifest(Guid manifestId)
@@ -91,6 +103,35 @@ public sealed class CacheManifestRepositoryTests
         public Task<IReadOnlyList<ManifestValueObject>> ListAsync(string? name, CancellationToken cancellationToken)
         {
             throw new NotSupportedException();
+        }
+    }
+
+    private sealed class TestContext : IDisposable
+    {
+        public TestContext(ManifestValueObject? manifest, int slidingExpirationSeconds)
+        {
+            InnerRepository = new CountingManifestRepository(manifest);
+            MemoryCache = new MemoryCache(new MemoryCacheOptions());
+            ApplicationSettings = new ApplicationSettings
+            {
+                ManifestByIdCacheSlidingExpirationSeconds = slidingExpirationSeconds
+            };
+        }
+
+        public CountingManifestRepository InnerRepository { get; }
+
+        public MemoryCache MemoryCache { get; }
+
+        public ApplicationSettings ApplicationSettings { get; }
+
+        public CachedManifestRepository CreateRepository()
+        {
+            return new CachedManifestRepository(InnerRepository, MemoryCache, ApplicationSettings);
+        }
+
+        public void Dispose()
+        {
+            MemoryCache.Dispose();
         }
     }
 }

@@ -2,6 +2,6 @@ using BackOfficeSmall.Domain.Repositories;
 
 namespace BackOfficeSmall.Infrastructure.Repositories;
 
-public interface ICacheManifestRepository : IManifestRepository
+public interface ICachedManifestRepository : IManifestRepository
 {
 }

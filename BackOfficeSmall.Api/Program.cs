@@ -1,4 +1,3 @@
-using System.Text;
 using BackOfficeSmall.Api.Configuration;
 using BackOfficeSmall.Api.ErrorHandling;
 using BackOfficeSmall.Application.Abstractions;
@@ -11,9 +10,10 @@ using BackOfficeSmall.Infrastructure.Monitoring;
 using BackOfficeSmall.Infrastructure.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Caching.Memory;
-using Microsoft.IdentityModel.Tokens;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
+using System.Text;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 ApplicationSettings appSettings = builder.Configuration
@@ -68,22 +68,7 @@ builder.Services
     });
 builder.Services.AddAuthorization();
 
-builder.Services.AddSingleton<InMemoryManifestRepository>();
-builder.Services.AddSingleton<ICacheManifestRepository>(serviceProvider =>
-{
-    InMemoryManifestRepository innerRepository = serviceProvider.GetRequiredService<InMemoryManifestRepository>();
-    ApplicationSettings settings = serviceProvider.GetRequiredService<ApplicationSettings>();
-    TimeSpan manifestByIdCacheSlidingExpiration = TimeSpan.FromSeconds(settings.ManifestByIdCacheSlidingExpirationSeconds);
-
-    return new CacheManifestRepository(
-        innerRepository,
-        serviceProvider.GetRequiredService<IMemoryCache>(),
-        manifestByIdCacheSlidingExpiration);
-});
-builder.Services.AddSingleton<IManifestRepository>(serviceProvider =>
-{
-    return serviceProvider.GetRequiredService<ICacheManifestRepository>();
-});
+RegisterManifestRepositoryCacheDecorator(builder.Services);
 builder.Services.AddSingleton<IConfigInstanceRepository, InMemoryConfigInstanceRepository>();
 builder.Services.AddSingleton<IConfigChangeRepository, InMemoryConfigChangeRepository>();
 builder.Services.AddSingleton<IMonitoringNotifier, SimulatedMonitoringNotifier>();
@@ -140,6 +125,31 @@ static void ValidateStartup(IServiceProvider services)
     scope.ServiceProvider.GetRequiredService<IDomainLock>();
     scope.ServiceProvider.GetRequiredService<ApplicationSettings>();
     scope.ServiceProvider.GetRequiredService<AuthSettings>();
+}
+
+// TODO: Make me look better
+static void RegisterManifestRepositoryCacheDecorator(IServiceCollection services)
+{
+    if (services is null)
+    {
+        throw new ArgumentNullException(nameof(services));
+    }
+
+    services.AddKeyedSingleton<IManifestRepository, InMemoryManifestRepository>(CachedManifestRepository.InnerManifestRepositoryKey);
+
+    services.AddSingleton<ICachedManifestRepository>(serviceProvider =>
+    {
+        IManifestRepository innerRepository = serviceProvider.GetRequiredKeyedService<IManifestRepository>(CachedManifestRepository.InnerManifestRepositoryKey);
+        IMemoryCache memoryCache = serviceProvider.GetRequiredService<IMemoryCache>();
+        ApplicationSettings applicationSettings = serviceProvider.GetRequiredService<ApplicationSettings>();
+
+        return new CachedManifestRepository(innerRepository, memoryCache, applicationSettings);
+    });
+
+        services.AddSingleton<IManifestRepository>(serviceProvider =>
+    {
+        return serviceProvider.GetRequiredService<ICachedManifestRepository>();
+    });
 }
 
 public partial class Program

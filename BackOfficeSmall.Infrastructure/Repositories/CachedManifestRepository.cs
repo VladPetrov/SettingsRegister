@@ -1,23 +1,26 @@
+using BackOfficeSmall.Application.Configuration;
 using BackOfficeSmall.Domain.Models.Manifest;
 using BackOfficeSmall.Domain.Repositories;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace BackOfficeSmall.Infrastructure.Repositories;
 
-public sealed class CacheManifestRepository : ICacheManifestRepository
+public sealed class CachedManifestRepository : ICachedManifestRepository
 {
+    public const string InnerManifestRepositoryKey = "inner-manifest-repository";
+    
     private readonly IManifestRepository _innerRepository;
     private readonly IMemoryCache _memoryCache;
     private readonly TimeSpan _manifestByIdCacheSlidingExpiration;
 
-    public CacheManifestRepository(
+    public CachedManifestRepository(
         IManifestRepository innerRepository,
         IMemoryCache memoryCache,
-        TimeSpan manifestByIdCacheSlidingExpiration)
+        ApplicationSettings applicationSettings)
     {
         _innerRepository = innerRepository ?? throw new ArgumentNullException(nameof(innerRepository));
         _memoryCache = memoryCache ?? throw new ArgumentNullException(nameof(memoryCache));
-        _manifestByIdCacheSlidingExpiration = manifestByIdCacheSlidingExpiration;
+        _manifestByIdCacheSlidingExpiration = BuildManifestByIdCacheSlidingExpiration(applicationSettings);
     }
 
     public Task AddAsync(ManifestDomainRoot manifest, CancellationToken cancellationToken)
@@ -60,5 +63,22 @@ public sealed class CacheManifestRepository : ICacheManifestRepository
     public Task<IReadOnlyList<ManifestValueObject>> ListAsync(string? name, CancellationToken cancellationToken)
     {
         return _innerRepository.ListAsync(name, cancellationToken);
+    }
+
+    private static TimeSpan BuildManifestByIdCacheSlidingExpiration(ApplicationSettings applicationSettings)
+    {
+        if (applicationSettings is null)
+        {
+            throw new ArgumentNullException(nameof(applicationSettings));
+        }
+
+        if (applicationSettings.ManifestByIdCacheSlidingExpirationSeconds <= 0)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(applicationSettings.ManifestByIdCacheSlidingExpirationSeconds),
+                "ManifestByIdCacheSlidingExpirationSeconds must be greater than zero.");
+        }
+
+        return TimeSpan.FromSeconds(applicationSettings.ManifestByIdCacheSlidingExpirationSeconds);
     }
 }
