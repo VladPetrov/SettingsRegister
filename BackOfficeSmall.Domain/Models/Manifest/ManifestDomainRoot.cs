@@ -3,6 +3,8 @@ namespace BackOfficeSmall.Domain.Models.Manifest;
 public sealed class ManifestDomainRoot
 {
     private static readonly StringComparer SettingKeyComparer = StringComparer.OrdinalIgnoreCase;
+    private readonly List<ManifestSettingDefinition> _settingDefinitions = new();
+    private readonly List<ManifestOverridePermission> _overridePermissions = new();
 
     public Guid ManifestId { get; set; }
 
@@ -16,9 +18,31 @@ public sealed class ManifestDomainRoot
 
     public string CreatedBy { get; set; } = string.Empty;
 
-    public List<ManifestSettingDefinition> SettingDefinitions { get; set; } = new();
+    public IReadOnlyList<ManifestSettingDefinition> SettingDefinitions => _settingDefinitions;
 
-    public List<ManifestOverridePermission> OverridePermissions { get; set; } = new();
+    public IReadOnlyList<ManifestOverridePermission> OverridePermissions => _overridePermissions;
+
+    public void ReplaceSettingDefinitions(IEnumerable<ManifestSettingDefinition> settingDefinitions)
+    {
+        if (settingDefinitions is null)
+        {
+            throw new ArgumentNullException(nameof(settingDefinitions));
+        }
+
+        _settingDefinitions.Clear();
+        _settingDefinitions.AddRange(settingDefinitions);
+    }
+
+    public void ReplaceOverridePermissions(IEnumerable<ManifestOverridePermission> overridePermissions)
+    {
+        if (overridePermissions is null)
+        {
+            throw new ArgumentNullException(nameof(overridePermissions));
+        }
+
+        _overridePermissions.Clear();
+        _overridePermissions.AddRange(overridePermissions);
+    }
 
     public void Validate()
     {
@@ -52,13 +76,13 @@ public sealed class ManifestDomainRoot
             throw new ArgumentException("CreatedBy is required.", nameof(CreatedBy));
         }
 
-        if (SettingDefinitions.Count == 0)
+        if (_settingDefinitions.Count == 0)
         {
             throw new ArgumentException("At least one setting definition is required.", nameof(SettingDefinitions));
         }
 
         HashSet<string> uniqueSettingKeys = new(SettingKeyComparer);
-        foreach (ManifestSettingDefinition definition in SettingDefinitions)
+        foreach (ManifestSettingDefinition definition in _settingDefinitions)
         {
             definition.Validate();
             if (!uniqueSettingKeys.Add(definition.SettingKey))
@@ -70,7 +94,7 @@ public sealed class ManifestDomainRoot
         }
 
         HashSet<string> uniqueOverrideKeys = new(SettingKeyComparer);
-        foreach (ManifestOverridePermission permission in OverridePermissions)
+        foreach (ManifestOverridePermission permission in _overridePermissions)
         {
             permission.Validate(LayerCount);
 

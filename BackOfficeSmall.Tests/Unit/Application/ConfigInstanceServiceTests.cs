@@ -71,20 +71,20 @@ public sealed class ConfigInstanceServiceTests
             Version = 1,
             LayerCount = 2,
             CreatedAtUtc = clock.UtcNow,
-            CreatedBy = "tester",
-            SettingDefinitions =
-            {
-                new ManifestSettingDefinition("FeatureFlag", requiresCriticalNotification: true),
-                new ManifestSettingDefinition("SafeFlag", requiresCriticalNotification: false)
-            },
-            OverridePermissions =
-            {
-                new ManifestOverridePermission("FeatureFlag", 0, canOverride: true),
-                new ManifestOverridePermission("FeatureFlag", 1, canOverride: true),
-                new ManifestOverridePermission("SafeFlag", 0, canOverride: true),
-                new ManifestOverridePermission("SafeFlag", 1, canOverride: true)
-            }
+            CreatedBy = "tester"
         };
+        manifest.ReplaceSettingDefinitions(
+        [
+            new ManifestSettingDefinition("FeatureFlag", requiresCriticalNotification: true),
+            new ManifestSettingDefinition("SafeFlag", requiresCriticalNotification: false)
+        ]);
+        manifest.ReplaceOverridePermissions(
+        [
+            new ManifestOverridePermission("FeatureFlag", 0, canOverride: true),
+            new ManifestOverridePermission("FeatureFlag", 1, canOverride: true),
+            new ManifestOverridePermission("SafeFlag", 0, canOverride: true),
+            new ManifestOverridePermission("SafeFlag", 1, canOverride: true)
+        ]);
 
         await manifestRepository.AddAsync(manifest, CancellationToken.None);
 
@@ -133,23 +133,26 @@ public sealed class ConfigInstanceServiceTests
 
     private static ManifestDomainRoot CreateManifest(bool allowLayerOneOverride)
     {
-        return new ManifestDomainRoot
+        ManifestDomainRoot manifest = new()
         {
             ManifestId = Guid.NewGuid(),
             Name = "Main",
             Version = 1,
             LayerCount = 2,
             CreatedAtUtc = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Utc),
-            CreatedBy = "tester",
-            SettingDefinitions =
-            {
-                new ManifestSettingDefinition("FeatureFlag", requiresCriticalNotification: true)
-            },
-            OverridePermissions =
-            {
-                new ManifestOverridePermission("FeatureFlag", 0, canOverride: true),
-                new ManifestOverridePermission("FeatureFlag", 1, canOverride: allowLayerOneOverride)
-            }
+            CreatedBy = "tester"
         };
+
+        manifest.ReplaceSettingDefinitions(
+        [
+            new ManifestSettingDefinition("FeatureFlag", requiresCriticalNotification: true)
+        ]);
+        manifest.ReplaceOverridePermissions(
+        [
+            new ManifestOverridePermission("FeatureFlag", 0, canOverride: true),
+            new ManifestOverridePermission("FeatureFlag", 1, canOverride: allowLayerOneOverride)
+        ]);
+
+        return manifest;
     }
 }

@@ -8,7 +8,7 @@ The solution is strict-layered:
 
 1. `BackOfficeSmall.Domain`
    - Manifest split:
-     - `ManifestDomainRoot` (mutable write-side object, `Validate()` only)
+     - `ManifestDomainRoot` (write-side root with controlled mutation APIs + `Validate()`)
      - `ManifestValueObject` (immutable read-side behavior object with `HasSetting`, `RequiresCriticalNotification`, `CanOverride`)
    - Aggregate root: `ConfigInstance`
    - Supporting domain types: `ManifestSettingDefinition`, `ManifestOverridePermission`, `SettingCell`, `ConfigChange`, `ConfigOperation`
@@ -34,7 +34,7 @@ The solution is strict-layered:
 
 ## Core Domain Rules
 
-- Manifest write-side state is represented by mutable `ManifestDomainRoot`.
+- Manifest write-side state is represented by `ManifestDomainRoot` with read-only collection exposure and explicit mutation methods.
 - Manifest behavior checks are performed through immutable `ManifestValueObject`.
 - Manifest uniqueness: (`Name`, `Version`).
 - Config instance name is unique.

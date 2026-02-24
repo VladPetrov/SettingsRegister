@@ -10,8 +10,10 @@ class ManifestDomainRoot {
   +int LayerCount
   +DateTime CreatedAtUtc
   +string CreatedBy
-  +List<ManifestSettingDefinition> SettingDefinitions
-  +List<ManifestOverridePermission> OverridePermissions
+  +IReadOnlyList<ManifestSettingDefinition> SettingDefinitions
+  +IReadOnlyList<ManifestOverridePermission> OverridePermissions
+  +ReplaceSettingDefinitions(IEnumerable<ManifestSettingDefinition> settingDefinitions)
+  +ReplaceOverridePermissions(IEnumerable<ManifestOverridePermission> overridePermissions)
   +Validate()
 }
 
@@ -161,7 +163,7 @@ ConfigChangeQueryService --> IConfigChangeRepository
 
 note right of ManifestDomainRoot
 Responsibilities:
-1) Mutable domain root used for write-side validation.
+1) Write-side domain root with controlled mutation APIs.
 2) Validate() enforces shape and invariant checks.
 end note
 

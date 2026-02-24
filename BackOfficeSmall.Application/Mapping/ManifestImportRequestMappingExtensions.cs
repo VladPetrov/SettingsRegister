@@ -28,16 +28,19 @@ public static class ManifestImportRequestMappingExtensions
                 permission.CanOverride))
             .ToList();
 
-        return new ManifestDomainRoot
+        ManifestDomainRoot domainRoot = new()
         {
             ManifestId = Guid.NewGuid(),
             Name = request.Name,
             Version = version,
             LayerCount = request.LayerCount,
             CreatedAtUtc = createdAtUtc,
-            CreatedBy = request.CreatedBy,
-            SettingDefinitions = settingDefinitions,
-            OverridePermissions = overridePermissions
+            CreatedBy = request.CreatedBy
         };
+
+        domainRoot.ReplaceSettingDefinitions(settingDefinitions);
+        domainRoot.ReplaceOverridePermissions(overridePermissions);
+
+        return domainRoot;
     }
 }
