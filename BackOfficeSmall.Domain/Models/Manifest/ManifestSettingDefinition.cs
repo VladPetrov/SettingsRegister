@@ -6,8 +6,6 @@ public sealed class ManifestSettingDefinition
     {
         SettingKey = settingKey;
         RequiresCriticalNotification = requiresCriticalNotification;
-
-        Validate();
     }
 
     public string SettingKey { get; }

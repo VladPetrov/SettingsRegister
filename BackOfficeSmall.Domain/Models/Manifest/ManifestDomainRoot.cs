@@ -72,7 +72,7 @@ public sealed class ManifestDomainRoot
         HashSet<string> uniqueOverrideKeys = new(SettingKeyComparer);
         foreach (ManifestOverridePermission permission in OverridePermissions)
         {
-            permission.Validate();
+            permission.Validate(LayerCount);
 
             if (permission.LayerIndex >= LayerCount)
             {

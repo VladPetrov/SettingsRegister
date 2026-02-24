@@ -7,8 +7,6 @@ public sealed class ManifestOverridePermission
         SettingKey = settingKey;
         LayerIndex = layerIndex;
         CanOverride = canOverride;
-
-        Validate();
     }
 
     public string SettingKey { get; }
@@ -17,7 +15,7 @@ public sealed class ManifestOverridePermission
 
     public bool CanOverride { get; }
 
-    public void Validate()
+    public void Validate(int layersConfigured)
     {
         if (string.IsNullOrWhiteSpace(SettingKey))
         {
@@ -27,6 +25,11 @@ public sealed class ManifestOverridePermission
         if (LayerIndex < 0)
         {
             throw new ArgumentOutOfRangeException(nameof(LayerIndex), "LayerIndex must be greater than or equal to zero.");
+        }
+
+        if (LayerIndex > layersConfigured)
+        {
+            throw new ArgumentOutOfRangeException(nameof(LayerIndex), "LayerIndex must be less than or equal to the number of configured layers.");
         }
     }
 }
