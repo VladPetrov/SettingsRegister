@@ -3,7 +3,7 @@ using BackOfficeSmall.Domain.Repositories;
 
 namespace BackOfficeSmall.Infrastructure.Repositories;
 
-public sealed class InMemoryConfigInstanceRepository : IConfigInstanceRepository
+public sealed class InMemoryConfigurationInstanceRepository : IConfigurationInstanceRepository
 {
     private static readonly StringComparer SettingKeyComparer = StringComparer.OrdinalIgnoreCase;
     private readonly object _syncRoot = new();

@@ -8,18 +8,18 @@ using BackOfficeSmall.Domain.Services;
 
 namespace BackOfficeSmall.Application.Services;
 
-public sealed class ConfigurationInstanceService : IConfigInstanceService
+public sealed class ConfigurationInstanceService : IConfigurationInstanceService
 {
     private readonly IManifestRepository _manifestRepository;
-    private readonly IConfigInstanceRepository _configInstanceRepository;
-    private readonly IConfigChangeRepository _configChangeRepository;
+    private readonly IConfigurationInstanceRepository _configInstanceRepository;
+    private readonly IConfigurationChangeRepository _configChangeRepository;
     private readonly IMonitoringNotifier _monitoringNotifier;
     private readonly ISystemClock _clock;
 
     public ConfigurationInstanceService(
         IManifestRepository manifestRepository,
-        IConfigInstanceRepository configInstanceRepository,
-        IConfigChangeRepository configChangeRepository,
+        IConfigurationInstanceRepository configInstanceRepository,
+        IConfigurationChangeRepository configChangeRepository,
         IMonitoringNotifier monitoringNotifier,
         ISystemClock clock)
     {

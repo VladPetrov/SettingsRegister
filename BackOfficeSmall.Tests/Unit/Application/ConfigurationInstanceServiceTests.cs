@@ -28,8 +28,8 @@ public sealed class ConfigurationInstanceServiceTests
     public async Task SetCellValueAsync_WhenLayerOrOverrideIsInvalid_ThrowsValidationException()
     {
         InMemoryManifestRepository manifestRepository = new();
-        InMemoryConfigInstanceRepository instanceRepository = new();
-        InMemoryConfigChangeRepository changeRepository = new();
+        InMemoryConfigurationInstanceRepository instanceRepository = new();
+        InMemoryConfigurationChangeRepository changeRepository = new();
         FakeMonitoringNotifier notifier = new();
         FakeSystemClock clock = new(DateTime.SpecifyKind(new DateTime(2026, 2, 22, 12, 0, 0), DateTimeKind.Utc));
         ConfigurationInstanceService service = new(manifestRepository, instanceRepository, changeRepository, notifier, clock);
@@ -58,8 +58,8 @@ public sealed class ConfigurationInstanceServiceTests
     public async Task SetCellValueAsync_ProducesAddUpdateDeleteAndCriticalNotificationFromManifestDefinition()
     {
         InMemoryManifestRepository manifestRepository = new();
-        InMemoryConfigInstanceRepository instanceRepository = new();
-        InMemoryConfigChangeRepository changeRepository = new();
+        InMemoryConfigurationInstanceRepository instanceRepository = new();
+        InMemoryConfigurationChangeRepository changeRepository = new();
         FakeMonitoringNotifier notifier = new();
         FakeSystemClock clock = new(DateTime.SpecifyKind(new DateTime(2026, 2, 22, 13, 0, 0), DateTimeKind.Utc));
         ConfigurationInstanceService service = new(manifestRepository, instanceRepository, changeRepository, notifier, clock);
@@ -124,8 +124,8 @@ public sealed class ConfigurationInstanceServiceTests
     private static ConfigurationInstanceService CreateService()
     {
         InMemoryManifestRepository manifestRepository = new();
-        InMemoryConfigInstanceRepository instanceRepository = new();
-        InMemoryConfigChangeRepository changeRepository = new();
+        InMemoryConfigurationInstanceRepository instanceRepository = new();
+        InMemoryConfigurationChangeRepository changeRepository = new();
         FakeMonitoringNotifier notifier = new();
         FakeSystemClock clock = new(DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Utc));
         return new ConfigurationInstanceService(manifestRepository, instanceRepository, changeRepository, notifier, clock);

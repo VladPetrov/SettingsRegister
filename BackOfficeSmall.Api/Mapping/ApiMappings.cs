@@ -61,7 +61,7 @@ public static class ApiMappings
             dto.ChangedBy);
     }
 
-    public static SetCellValueRequest ToApplication(this CreateConfigChangeRequestDto dto)
+    public static SetCellValueRequest ToApplication(this CreateConfigurationChangeRequestDto dto)
     {
         return new SetCellValueRequest(
             dto.SettingKey,

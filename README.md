@@ -12,7 +12,7 @@ The solution is strict-layered:
      - `ManifestValueObject` (immutable read-side behavior object with `HasSetting`, `RequiresCriticalNotification`, `CanOverride`)
    - Aggregate root: `ConfigurationInstance`
    - Supporting domain types: `ManifestSettingDefinition`, `ManifestOverridePermission`, `SettingCell`, `ConfigurationChange`, `ConfigurationOperation`
-   - Domain contracts: `IManifestRepository`, `IConfigInstanceRepository`, `IConfigChangeRepository`, `IMonitoringNotifier`
+   - Domain contracts: `IManifestRepository`, `IConfigurationInstanceRepository`, `IConfigurationChangeRepository`, `IMonitoringNotifier`
 2. `BackOfficeSmall.Application`
    - Use-case orchestration services:
      - `ManifestService` (import + retrieval by id/list)

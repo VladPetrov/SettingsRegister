@@ -5,11 +5,11 @@ using BackOfficeSmall.Domain.Repositories;
 
 namespace BackOfficeSmall.Application.Services;
 
-public sealed class ConfigurationChangeQueryService : IConfigChangeQueryService
+public sealed class ConfigurationChangeQueryService : IConfigurationChangeQueryService
 {
-    private readonly IConfigChangeRepository _configChangeRepository;
+    private readonly IConfigurationChangeRepository _configChangeRepository;
 
-    public ConfigurationChangeQueryService(IConfigChangeRepository configChangeRepository)
+    public ConfigurationChangeQueryService(IConfigurationChangeRepository configChangeRepository)
     {
         _configChangeRepository = configChangeRepository ?? throw new ArgumentNullException(nameof(configChangeRepository));
     }

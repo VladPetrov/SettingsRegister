@@ -126,7 +126,7 @@ interface IManifestRepository {
   +List(string? name) : IReadOnlyList<ManifestValueObject>
 }
 
-interface IConfigInstanceRepository {
+interface IConfigurationInstanceRepository {
   +Add(ConfigurationInstance instance)
   +GetById(Guid instanceId)
   +List()
@@ -134,7 +134,7 @@ interface IConfigInstanceRepository {
   +Delete(Guid instanceId)
 }
 
-interface IConfigChangeRepository {
+interface IConfigurationChangeRepository {
   +Add(ConfigurationChange change)
   +GetById(Guid id)
   +List(DateTime? fromUtc, DateTime? toUtc, ConfigurationOperation? operation)
@@ -156,10 +156,10 @@ ManifestDto --> ManifestDomainRoot : mapped to
 
 ManifestService --> IManifestRepository
 ConfigurationInstanceService --> IManifestRepository : validates structure/rules
-ConfigurationInstanceService --> IConfigInstanceRepository
-ConfigurationInstanceService --> IConfigChangeRepository : writes audit log
+ConfigurationInstanceService --> IConfigurationInstanceRepository
+ConfigurationInstanceService --> IConfigurationChangeRepository : writes audit log
 ConfigurationInstanceService --> IMonitoringNotifier : on critical settings
-ConfigurationChangeQueryService --> IConfigChangeRepository
+ConfigurationChangeQueryService --> IConfigurationChangeRepository
 
 note right of ManifestDomainRoot
 Responsibilities:

@@ -12,7 +12,7 @@ namespace BackOfficeSmall.Tests.Unit.Application;
 public sealed class AuthExchangeServiceTests
 {
     [Fact]
-    public async Task ExchangeAsync_WhenDevelopment_ReturnsSignedTokenWithConfiguredClaimsAndExpiry()
+    public async Task ExchangeAsync_WhenDevelopment_ReturnsSignedTokenWithConfigurationuredClaimsAndExpiry()
     {
         DateTime nowUtc = DateTime.SpecifyKind(new DateTime(2026, 2, 23, 9, 0, 0), DateTimeKind.Utc);
         FakeSystemClock clock = new(nowUtc);

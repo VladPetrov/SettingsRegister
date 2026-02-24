@@ -11,9 +11,9 @@ namespace BackOfficeSmall.Api.Controllers;
 [Route("api/config-instances")]
 public sealed class ConfigurationInstancesController : AuthenticatedApiControllerBase
 {
-    private readonly IConfigInstanceService _configInstanceService;
+    private readonly IConfigurationInstanceService _configInstanceService;
 
-    public ConfigurationInstancesController(IConfigInstanceService configInstanceService)
+    public ConfigurationInstancesController(IConfigurationInstanceService configInstanceService)
     {
         _configInstanceService = configInstanceService ?? throw new ArgumentNullException(nameof(configInstanceService));
     }

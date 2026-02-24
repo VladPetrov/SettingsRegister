@@ -70,16 +70,16 @@ builder.Services
 builder.Services.AddAuthorization();
 
 RegisterManifestRepositoryCacheDecorator(builder.Services);
-builder.Services.AddSingleton<IConfigInstanceRepository, InMemoryConfigInstanceRepository>();
-builder.Services.AddSingleton<IConfigChangeRepository, InMemoryConfigChangeRepository>();
+builder.Services.AddSingleton<IConfigurationInstanceRepository, InMemoryConfigurationInstanceRepository>();
+builder.Services.AddSingleton<IConfigurationChangeRepository, InMemoryConfigurationChangeRepository>();
 builder.Services.AddSingleton<IMonitoringNotifier, SimulatedMonitoringNotifier>();
 builder.Services.AddSingleton<IDomainLock>(appSettings.AppScaling ? new DistributedDomainLock() : new InProcessDomainLock());
 builder.Services.AddSingleton<ISystemClock, SystemClock>();
 builder.Services.AddSingleton<IApplicationEnvironment, HostApplicationEnvironment>();
 
 builder.Services.AddScoped<IManifestService, ManifestService>();
-builder.Services.AddScoped<IConfigInstanceService, ConfigurationInstanceService>();
-builder.Services.AddScoped<IConfigChangeQueryService, ConfigurationChangeQueryService>();
+builder.Services.AddScoped<IConfigurationInstanceService, ConfigurationInstanceService>();
+builder.Services.AddScoped<IConfigurationChangeQueryService, ConfigurationChangeQueryService>();
 builder.Services.AddScoped<IAuthExchangeService, AuthExchangeService>();
 
 WebApplication app = builder.Build();
@@ -120,8 +120,8 @@ static void ValidateStartup(IServiceProvider services)
     using IServiceScope scope = services.CreateScope();
 
     scope.ServiceProvider.GetRequiredService<IManifestService>();
-    scope.ServiceProvider.GetRequiredService<IConfigInstanceService>();
-    scope.ServiceProvider.GetRequiredService<IConfigChangeQueryService>();
+    scope.ServiceProvider.GetRequiredService<IConfigurationInstanceService>();
+    scope.ServiceProvider.GetRequiredService<IConfigurationChangeQueryService>();
     scope.ServiceProvider.GetRequiredService<IAuthExchangeService>();
     scope.ServiceProvider.GetRequiredService<IDomainLock>();
     scope.ServiceProvider.GetRequiredService<ApplicationSettings>();

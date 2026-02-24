@@ -29,11 +29,11 @@ public sealed class ApiEndpointsTests
         using HttpClient client = await CreateAuthorizedClientAsync(factory, "integration-user-config-changes");
 
         Guid manifestId = await ImportManifestAsync(client, allowLayerOneOverride: true);
-        Guid instanceId = await CreateConfigInstanceAsync(client, manifestId, "Instance-A");
+        Guid instanceId = await CreateConfigurationInstanceAsync(client, manifestId, "Instance-A");
 
         HttpResponseMessage createChangeResponse = await client.PostAsJsonAsync("/api/config-changes", new
         {
-            configInstanceId = instanceId,
+            configurationInstanceId = instanceId,
             settingKey = "FeatureFlag",
             layerIndex = 0,
             value = "on",
@@ -87,7 +87,7 @@ public sealed class ApiEndpointsTests
     }
 
     [Fact]
-    public async Task CreateConfigInstance_WhenManifestMissing_Returns404ProblemDetails()
+    public async Task CreateConfigurationInstance_WhenManifestMissing_Returns404ProblemDetails()
     {
         await using WebApplicationFactory<Program> factory = CreateFactory("Development");
         using HttpClient client = await CreateAuthorizedClientAsync(factory, "integration-user-instance-missing");
@@ -112,7 +112,7 @@ public sealed class ApiEndpointsTests
         using HttpClient client = await CreateAuthorizedClientAsync(factory, "integration-user-override-denied");
 
         Guid manifestId = await ImportManifestAsync(client, allowLayerOneOverride: false);
-        Guid instanceId = await CreateConfigInstanceAsync(client, manifestId, "Instance-Denied");
+        Guid instanceId = await CreateConfigurationInstanceAsync(client, manifestId, "Instance-Denied");
 
         HttpResponseMessage response = await client.PutAsJsonAsync($"/api/config-instances/{instanceId}/cells", new
         {
@@ -241,7 +241,7 @@ public sealed class ApiEndpointsTests
         return document.RootElement.GetProperty("manifestId").GetGuid();
     }
 
-    private static async Task<Guid> CreateConfigInstanceAsync(HttpClient client, Guid manifestId, string name)
+    private static async Task<Guid> CreateConfigurationInstanceAsync(HttpClient client, Guid manifestId, string name)
     {
         HttpResponseMessage response = await client.PostAsJsonAsync("/api/config-instances", new
         {
@@ -254,6 +254,6 @@ public sealed class ApiEndpointsTests
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
 
         using JsonDocument document = JsonDocument.Parse(body);
-        return document.RootElement.GetProperty("configInstanceId").GetGuid();
+        return document.RootElement.GetProperty("configurationInstanceId").GetGuid();
     }
 }

@@ -2,7 +2,7 @@ using BackOfficeSmall.Domain.Models.Configuration;
 
 namespace BackOfficeSmall.Application.Abstractions;
 
-public interface IConfigChangeQueryService
+public interface IConfigurationChangeQueryService
 {
     Task<ConfigurationChange> GetChangeByIdAsync(Guid id, CancellationToken cancellationToken);
 

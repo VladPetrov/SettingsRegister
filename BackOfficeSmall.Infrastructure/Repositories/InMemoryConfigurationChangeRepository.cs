@@ -3,7 +3,7 @@ using BackOfficeSmall.Domain.Repositories;
 
 namespace BackOfficeSmall.Infrastructure.Repositories;
 
-public sealed class InMemoryConfigChangeRepository : IConfigChangeRepository
+public sealed class InMemoryConfigurationChangeRepository : IConfigurationChangeRepository
 {
     private readonly object _syncRoot = new();
     private readonly Dictionary<Guid, ConfigurationChangeRecord> _changesById = new();

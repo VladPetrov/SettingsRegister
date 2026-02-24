@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace BackOfficeSmall.Api.Dtos.ConfigurationChanges;
 
-public sealed class CreateConfigChangeRequestDto
+public sealed class CreateConfigurationChangeRequestDto
 {
     [Required]
     public Guid ConfigurationInstanceId { get; init; }

@@ -11,12 +11,12 @@ namespace BackOfficeSmall.Api.Controllers;
 [Route("api/config-changes")]
 public sealed class ConfigurationChangesController : AuthenticatedApiControllerBase
 {
-    private readonly IConfigChangeQueryService _configChangeQueryService;
-    private readonly IConfigInstanceService _configInstanceService;
+    private readonly IConfigurationChangeQueryService _configChangeQueryService;
+    private readonly IConfigurationInstanceService _configInstanceService;
 
     public ConfigurationChangesController(
-        IConfigChangeQueryService configChangeQueryService,
-        IConfigInstanceService configInstanceService)
+        IConfigurationChangeQueryService configChangeQueryService,
+        IConfigurationInstanceService configInstanceService)
     {
         _configChangeQueryService = configChangeQueryService ?? throw new ArgumentNullException(nameof(configChangeQueryService));
         _configInstanceService = configInstanceService ?? throw new ArgumentNullException(nameof(configInstanceService));
@@ -30,7 +30,7 @@ public sealed class ConfigurationChangesController : AuthenticatedApiControllerB
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<ConfigurationChangeResponseDto>> CreateAsync(
-        [FromBody] CreateConfigChangeRequestDto request,
+        [FromBody] CreateConfigurationChangeRequestDto request,
         CancellationToken cancellationToken)
     {
         ConfigurationChange change = await _configInstanceService.SetCellValueAsync(
