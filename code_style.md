@@ -1,147 +1,124 @@
 # code_style.md
-.NET code style and engineering standards (for AI agent)
+.NET code style and engineering standards (mandatory for AI agents).
 
-This document defines mandatory coding standards for this project. The agent will follow these rules by default.
+## Goals
+- Produce maintainable, testable, object-oriented .NET code.
+- Enforce single responsibility at class and method level.
+- Keep behavior deterministic and easy to reason about.
+- Minimize hidden coupling and implicit behavior.
 
-## goals
-- produce maintainable, testable, strongly object-oriented .net code
-- enforce single responsibility at class and method level
-- keep behavior deterministic and easy to reason about
-- minimize hidden coupling and “smart” helpers
+## Non-Negotiable Formatting
+1. Braces are always required for control flow (`if`, `else`, loops, `lock`, `using`, `switch`).
+2. One statement per line.
+3. Avoid deep nesting; prefer guard clauses and early returns.
+4. File-scoped namespaces are allowed if consistent across the repository.
+5. Prefer `var` for locals; use explicit type only when clarity materially improves.
 
-## non-negotiable formatting rules
-1. braces are always required
-   - every `if`, `else`, `for`, `foreach`, `while`, `do`, `lock`, `using`, `switch` statement uses braces, even for one-liners.
-   - no single-line statements without braces.
+## Naming
+- Types: `PascalCase`.
+- Methods/properties/events: `PascalCase`.
+- Locals/parameters: `camelCase`.
+- Private fields: `_camelCase`.
+- `const` and `static readonly`: `PascalCase`.
+- Interfaces: `I` prefix.
+- Avoid non-standard abbreviations (keep `Id`, `Utc`, `Json`, `Dto`).
 
-2. one statement per line
-   - no comma operator tricks or chained statements on a single line.
+## Design Requirements
+Single responsibility:
+- Each class has one primary reason to change.
+- Each method does one thing.
+- If a method name needs "and", split it.
 
-3. avoid deeply nested blocks
-   - prefer guard clauses and early returns, but still keep braces.
+Cohesion and coupling:
+- Keep related behavior together.
+- Depend on interfaces.
+- Use constructor injection.
+- Avoid static mutable state.
 
-4. file-scoped namespaces are allowed if consistent across the repo
-   - choose one approach (file-scoped or block-scoped) and apply everywhere.
+Inheritance:
+- Prefer composition.
+- Use inheritance only for stable is-a relationships with clear invariant ownership.
+- Avoid deep hierarchies (target max 2-3 levels).
 
-5. var usage
-   - prefer `var` by default for local variables.
-   - use explicit types only when it materially improves readability (very complex/ambiguous expressions) or when required by API shape/signature.
+Immutability:
+- Prefer immutable value objects (`record` or `readonly struct`) for data carriers.
+- Keep mutable state in explicit stateful domain objects with controlled mutation.
 
-## naming conventions
-- types: `PascalCase` (classes, records, structs, enums, interfaces)
-- methods/properties/events: `PascalCase`
-- locals/parameters: `camelCase`
-- private fields: `_camelCase`
-- constants: `PascalCase` for `const`, `PascalCase` for `static readonly`
-- interfaces: `I` prefix (e.g., `IEscalationCallback`)
-- avoid abbreviations unless industry-standard (e.g., `Id`, `Utc`, `Json`, `Dto`)
+## Layering and API Boundaries
+- Keep public surface minimal.
+- Default implementation details to `internal`.
+- Maintain clean boundaries:
+  - Domain: pure rules/invariants, no infrastructure concerns.
+  - Application: orchestration/use cases.
+  - Infrastructure: IO, persistence, external systems.
+  - Presentation: API/UI/adapters.
+- Do not leak infrastructure details into domain.
 
-## object-oriented design requirements
+## Validation and Exceptions
+- Validate inputs at boundaries (public methods, constructors, deserialization).
+- Use guard clauses for invalid arguments.
+- Do not use exceptions for normal control flow.
+- Throw specific exceptions (`ArgumentNullException`, `ArgumentException`, `InvalidOperationException`).
+- Include parameter names and actionable messages without sensitive data leakage.
 
-### single responsibility principle (srp)
-class-level
-- each class will have one primary reason to change.
-- avoid “god” services (e.g., `EngineService` that does everything).
-- if a class needs multiple collaborators and starts to feel “manager-like”, split responsibilities.
+## Control Flow
+- Prefer guard clauses over nested branches.
+- Switch expressions are allowed when clearer.
+- Avoid boolean flags that significantly alter behavior; prefer strategy abstractions.
 
-method-level
-- each method will do one thing.
-- if a method name needs “and”, it is likely violating srp.
-- prefer:
-  - small methods with clear names
-  - composition over flags that change behavior
+## Async and Concurrency
+- Async methods end with `Async`.
+- Never block on async (`.Result`, `.Wait()` prohibited).
+- Pass `CancellationToken` through long-running call chains.
+- Protect shared mutable state with explicit synchronization.
 
-### cohesion and coupling
-- maximize internal cohesion: related operations stay together.
-- minimize coupling:
-  - depend on interfaces, not concretions
-  - inject dependencies (constructor injection)
-  - avoid static state
+## Dependency Injection
+- Use constructor injection.
+- Do not use service locator patterns.
+- Inject narrow interfaces; avoid kitchen-sink dependencies.
 
-### inheritance policy
-- prefer composition over inheritance.
-- use inheritance only when:
-  - there is a stable is-a relationship
-  - base class enforces invariants
-  - derived classes override small, well-defined variation points
-- avoid deep inheritance hierarchies (target: max 2–3 levels).
+## Logging and Observability
+- Log at boundaries and decision points, not inside hot loops.
+- Use structured logging.
+- Avoid logging raw user input unless required; sanitize/truncate when needed.
+- Prefer domain events for analytics over ad-hoc logs.
 
-### immutability preference
-- prefer immutable value objects (`record` or `readonly struct`) for data carriers.
-- mutable state lives in explicit state objects (e.g., `CourseProgress`) with controlled mutation.
+## DTO and Repository Rules
+DTOs:
+- Allowed only at boundaries (IO, persistence, external APIs).
+- Map DTOs to domain objects via explicit mappers/hydrators.
+- Do not pass DTOs deep into domain logic.
 
-## api design and layering
-- public surface area will be minimal.
-- internal implementation details will be `internal` by default.
-- define clear boundaries:
-  - domain: pure types, rules, invariants; no infrastructure concerns
-  - application: orchestration and use cases
-  - infrastructure: io, persistence, logging, external services
-  - presentation: cli, web, bots, adapters
-- never let infrastructure leak into domain (no references to json, http, db, file system in domain types).
+Repositories:
+- Do not duplicate query/filter logic across methods.
+- Do not have one public repository method call another public repository method.
+- Extract shared private helpers/query builders.
 
-## exceptions, validation, and guard clauses
-- validate inputs at boundaries (public methods, constructors, deserialization).
-- use guard clauses for invalid arguments.
-- do not use exceptions for normal control flow.
-- throw specific exceptions:
-  - `ArgumentNullException`, `ArgumentException`, `InvalidOperationException`
-- include parameter names in exceptions.
-- error messages will be actionable and not expose sensitive data.
+## Refactoring Hygiene
+- After refactors, remove dead code in touched files.
+- Delete helpers with no call sites in the same change.
+- Run build/tests after cleanup to detect regressions.
 
-## control flow standards
-- guard clauses are preferred to reduce nesting, but braces remain mandatory.
-- switch expressions are allowed when they improve clarity.
-- avoid boolean flags that significantly change behavior; prefer strategy objects.
+## Testability
+- Add unit tests for non-trivial classes.
+- Test pure domain logic without mocks.
+- Use mocks only at boundaries/infrastructure.
+- Keep tests deterministic and in Arrange-Act-Assert structure.
 
-## async and concurrency
-- async methods end with `Async`.
-- do not block on async (`.Result`, `.Wait()` are prohibited).
-- use `CancellationToken` for long-running operations and pass it through call chains.
-- do not share mutable state across threads without explicit synchronization.
+## Documentation and Comments
+- Do not add XML doc comments unless requested.
+- Add internal/private comments only when behavior is non-obvious.
+- Comments explain why, not what.
+- Do not leave TODOs without issue references.
 
-## dependency injection
-- use constructor injection.
-- do not use service locator patterns.
-- do not inject large “kitchen sink” services; inject narrowly-scoped interfaces.
+## Method Formatting
+- Separate distinct logical blocks with one empty line.
+- Do not add empty lines inside tightly coupled statements.
+- Prefer short, scannable blocks; extract private methods if methods grow.
+- Keep boolean conditions readable with intermediate variables when needed.
 
-## logging and observability
-- log at boundaries and decision points, not inside tight loops.
-- log structured data (properties) rather than concatenated strings.
-- avoid logging raw user input unless explicitly required; if needed, sanitize or truncate.
-- domain events are preferred for analytics over ad-hoc logs.
-
-## data transfer objects (dtos)
-- dtos are allowed only at boundaries (io, persistence, external APIs).
-- map dtos to domain objects via explicit mappers/hydrators.
-- do not pass dtos deep into domain logic.
-
-## repository implementation rules
-- avoid duplicating query/filter logic across repository methods.
-- do not have one public repository method call another public repository method.
-- extract shared private helpers (or private query builders) and reuse them from each public method.
-
-## refactoring hygiene
-- after each refactor, scan touched files for dead code and remove unused private methods/helpers.
-- if a helper no longer has call sites, delete it in the same change set.
-- run build/tests after cleanup to confirm no behavioral regression.
-
-## testability requirements
-- every non-trivial class will have unit tests.
-- pure domain logic will be tested without mocks.
-- use mocks only at boundaries and for infrastructure.
-- golden transcript tests will exist for prompt/regression-sensitive flows.
-- tests will use arrange-act-assert and be deterministic.
-
-## code documentation rules
-- do not add xml doc comments / xml descriptions unless explicitly requested.
-- internal/private members only get comments when non-obvious.
-- comments explain “why”, not “what”.
-- do not leave TODOs without an issue reference.
-
-## examples (mandatory brace style)
-
-good
+## Example Brace Style
+Good:
 ```csharp
 if (isValid)
 {
@@ -157,7 +134,8 @@ foreach (var item in items)
     Process(item);
 }
 ```
-bad
+
+Bad:
 ```csharp
 if (isValid) return Result.Success();
 
@@ -165,57 +143,19 @@ foreach (var item in items)
     Process(item);
 ```
 
-### prohibited patterns
+## Prohibited Patterns
+- Static mutable state (except narrowly scoped, thread-safe caches).
+- Reflection-based hidden auto-wiring without explicit constraints.
+- Utility dumping-ground classes.
+- Ambiguous method names like `Handle`, `Process`, `DoWork` without domain meaning.
+- Methods longer than ~30-40 lines without strong justification.
+- Classes longer than ~300-500 lines without strong justification.
 
-static mutable state (except narrowly-scoped caches with explicit thread safety)
-
-hidden magic: reflection-based auto-wiring without clear constraints
-
-“utility” classes with unrelated methods (dumping ground)
-
-ambiguous method names like Handle, Process, DoWork without domain meaning
-
-methods longer than ~30–40 lines without strong justification
-
-classes longer than ~300–500 lines without strong justification
-
-### pull request acceptance checklist (agent will self-check)
-
-- braces are used everywhere for control flow
-
-- each class has a single responsibility and a clear name
-
-- each method does one thing; no “and” methods
-
-- domain is free of infrastructure dependencies
-
-- public APIs are minimal and documented
-
-- unit tests exist for non-trivial behavior
-
-- logging is structured and does not leak sensitive data
-
-- no blocking on async
-
-## Method formatting and logical blocks
-
-- Within a method, separate distinct logical blocks using a single empty line.
-- A “logical block” is a contiguous group of statements that accomplish one micro-step, for example:
-  - input validation / guard clauses
-  - request construction
-  - calling external dependencies (IO, network, model calls)
-  - processing / normalization / classification
-  - decision and branching
-  - result construction and return
-
-- Do not insert empty lines inside tightly coupled constructs:
-  - inside a single `if` body (unless it contains multiple distinct micro-steps)
-  - between a declaration and its immediate use when it would reduce readability
-
-- Prefer extra whitespace over overly long blocks:
-  - keep each block short and visually scannable
-  - when a method grows, refactor blocks into private methods instead of removing blank lines
-
-- Keep boolean expressions readable:
-  - if a condition fits on one line without harming readability, keep it on one line
-  - if it becomes dense, split using intermediate variables or multiple lines with clear indentation
+## Pull Request Self-Check
+- Braces used for all control flow.
+- Classes and methods respect SRP.
+- Domain layer is infrastructure-free.
+- Public APIs remain minimal and documented.
+- Tests cover non-trivial behavior.
+- Logging is structured and safe.
+- No blocking async usage.

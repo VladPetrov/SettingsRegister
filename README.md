@@ -136,4 +136,3 @@ dotnet test BackOfficeSmall.sln
 - Application services orchestrate rules using only domain interfaces.
 - In-memory repositories enforce uniqueness constraints at boundary entry points.
 - Critical notification decision is centralized in mutation flow and derived from manifest metadata, not caller flags.
-- Documentation (`README.md`, `domain_model.puml`) is intentionally kept aligned with implementation.
