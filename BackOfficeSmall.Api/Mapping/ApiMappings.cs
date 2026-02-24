@@ -100,9 +100,9 @@ public static class ApiMappings
             permissions);
     }
 
-    public static ManifestSummaryDto ToSummaryDto(this ManifestValueObject manifest)
+    public static ManifestListItemDto ToListItemDto(this ManifestValueObject manifest)
     {
-        return new ManifestSummaryDto(
+        return new ManifestListItemDto(
             manifest.ManifestId,
             manifest.Name,
             manifest.Version,
@@ -111,17 +111,11 @@ public static class ApiMappings
 
     public static ConfigurationInstanceResponseDto ToDto(this ConfigurationInstance instance)
     {
-        IReadOnlyList<ConfigurationSettingColumnDto> columns = instance.Manifest.SettingDefinitions
-            .Select(definition => new ConfigurationSettingColumnDto(
-                definition.SettingKey,
-                definition.RequiresCriticalNotification))
-            .ToList();
-
-        IReadOnlyList<ConfigurationSettingsSummaryRowDto> summaryRows = instance.GetSettings()
-            .Select(row => new ConfigurationSettingsSummaryRowDto(
+        IReadOnlyList<ConfigurationSettingsRowDto> rows = instance.GetSettings()
+            .Select(row => new ConfigurationSettingsRowDto(
                 row.LayerIndex,
-                row.Cells
-                    .Select(cell => new ConfigurationSettingsSummaryCellDto(
+                row.Values
+                    .Select(cell => new ConfigurationValueDto(
                         cell.SettingKey,
                         cell.Value,
                         cell.IsExplicitValue,
@@ -136,8 +130,7 @@ public static class ApiMappings
             instance.ManifestId,
             instance.CreatedAtUtc,
             instance.CreatedBy,
-            columns,
-            summaryRows);
+            rows);
     }
 
     public static ConfigurationChangeResponseDto ToDto(this ConfigurationChange change)
@@ -186,3 +179,5 @@ public static class ApiMappings
         };
     }
 }
+
+

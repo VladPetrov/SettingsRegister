@@ -1,8 +1,10 @@
 namespace BackOfficeSmall.Api.Dtos.ConfigurationInstances;
 
-public sealed record ConfigurationSettingsSummaryCellDto(
+public sealed record ConfigurationValueDto(
     string SettingKey,
     string? Value,
     bool IsExplicitValue,
     bool CanOverride,
     bool RequiresCriticalNotification);
+
+

@@ -71,7 +71,7 @@ class ConfigurationInstance {
   +DateTime CreatedAtUtc
   +string CreatedBy
   +GetValue(string settingKey, int layerIndex)
-  +IReadOnlyList<ConfigurationSettingSummaryRow> GetSettings()
+  +IReadOnlyList<ConfigurationSettingRow> GetSettings()
   +SetValue(string settingKey, int layerIndex, string? value)
   +Validate()
 }
@@ -83,12 +83,12 @@ class SettingCell {
   +Validate()
 }
 
-class ConfigurationSettingSummaryRow {
+class ConfigurationSettingRow {
   +int LayerIndex
-  +IReadOnlyList<ConfigurationSettingSummaryCell> Cells
+  +IReadOnlyList<ConfigurationSettingValue> Values
 }
 
-class ConfigurationSettingSummaryCell {
+class ConfigurationSettingValue {
   +string SettingKey
   +string? Value
   +bool IsExplicitValue
@@ -165,8 +165,8 @@ ManifestDomainRoot "1" *-- "*" ManifestOverridePermission
 ManifestValueObject "1" *-- "*" ManifestSettingDefinition
 ManifestValueObject "1" *-- "*" ManifestOverridePermission
 ConfigurationInstance "1" *-- "*" SettingCell
-ConfigurationInstance "1" *-- "*" ConfigurationSettingSummaryRow
-ConfigurationSettingSummaryRow "1" *-- "*" ConfigurationSettingSummaryCell
+ConfigurationInstance "1" *-- "*" ConfigurationSettingRow
+ConfigurationSettingRow "1" *-- "*" ConfigurationSettingValue
 ConfigurationInstance "1" *-- "1" ManifestValueObject
 ConfigurationChange --> ConfigurationInstance
 ManifestEntity --> ManifestValueObject : hydrated to
@@ -219,3 +219,5 @@ Invariants:
 end note
 
 @enduml
+
+

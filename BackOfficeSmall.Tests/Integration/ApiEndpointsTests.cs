@@ -151,15 +151,15 @@ public sealed class ApiEndpointsTests
 
         using JsonDocument document = JsonDocument.Parse(body);
         JsonElement columns = document.RootElement.GetProperty("columns");
-        JsonElement summaryRows = document.RootElement.GetProperty("summaryRows");
+        JsonElement rows = document.RootElement.GetProperty("rows");
 
         Assert.Equal(1, columns.GetArrayLength());
-        Assert.Equal(2, summaryRows.GetArrayLength());
+        Assert.Equal(2, rows.GetArrayLength());
 
-        JsonElement layerZero = summaryRows[0];
-        JsonElement layerOne = summaryRows[1];
-        JsonElement layerZeroCell = layerZero.GetProperty("cells")[0];
-        JsonElement layerOneCell = layerOne.GetProperty("cells")[0];
+        JsonElement layerZero = rows[0];
+        JsonElement layerOne = rows[1];
+        JsonElement layerZeroCell = layerZero.GetProperty("values")[0];
+        JsonElement layerOneCell = layerOne.GetProperty("values")[0];
 
         Assert.Equal(0, layerZero.GetProperty("layerIndex").GetInt32());
         Assert.Equal(1, layerOne.GetProperty("layerIndex").GetInt32());
@@ -304,3 +304,5 @@ public sealed class ApiEndpointsTests
         return document.RootElement.GetProperty("configurationInstanceId").GetGuid();
     }
 }
+
+

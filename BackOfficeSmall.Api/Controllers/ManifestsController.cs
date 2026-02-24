@@ -41,14 +41,15 @@ public sealed class ManifestsController : AuthenticatedApiControllerBase
     }
 
     [HttpGet]
-    [ProducesResponseType(typeof(IReadOnlyList<ManifestSummaryDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(IReadOnlyList<ManifestListItemDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
     // TODO: pagination must be in a real app
-    public async Task<ActionResult<IReadOnlyList<ManifestSummaryDto>>> GetAllAsync([FromQuery] string? name, CancellationToken cancellationToken) 
+    public async Task<ActionResult<IReadOnlyList<ManifestListItemDto>>> GetAllAsync([FromQuery] string? name, CancellationToken cancellationToken) 
     {
         var manifests = await _manifestService.ListAsync(name, cancellationToken);
-        var payload = manifests.Select(manifest => manifest.ToSummaryDto()).ToList();
+        var payload = manifests.Select(manifest => manifest.ToListItemDto()).ToList();
 
         return Ok(payload);
     }
 }
+

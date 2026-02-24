@@ -40,14 +40,14 @@ public sealed class ConfigurationInstance
 
     public IReadOnlyList<SettingCell> Cells => _cells.AsReadOnly();
 
-    public IReadOnlyList<ConfigurationSettingSummaryRow> GetSettings()
+    public IReadOnlyList<ConfigurationSettingRow> GetSettings()
     {
-        List<ConfigurationSettingSummaryRow> rows = new(_manifest.LayerCount);
+        List<ConfigurationSettingRow> rows = new(_manifest.LayerCount);
 
         for (int layerIndex = 0; layerIndex < _manifest.LayerCount; layerIndex++)
         {
-            List<ConfigurationSettingSummaryCell> cells = BuildSummaryCellsForLayer(layerIndex);
-            rows.Add(new ConfigurationSettingSummaryRow(layerIndex, cells));
+            List<ConfigurationSettingValue> values = BuildValuesForLayer(layerIndex);
+            rows.Add(new ConfigurationSettingRow(layerIndex, values));
         }
 
         return rows;
@@ -146,26 +146,26 @@ public sealed class ConfigurationInstance
             candidate.LayerIndex == layerIndex);
     }
 
-    private List<ConfigurationSettingSummaryCell> BuildSummaryCellsForLayer(int layerIndex)
+    private List<ConfigurationSettingValue> BuildValuesForLayer(int layerIndex)
     {
-        List<ConfigurationSettingSummaryCell> cells = new(_manifest.SettingDefinitions.Count);
+        List<ConfigurationSettingValue> values = new(_manifest.SettingDefinitions.Count);
         foreach (ManifestSettingDefinition definition in _manifest.SettingDefinitions)
         {
             SettingCell? explicitCell = GetCell(definition.SettingKey, layerIndex);
-            string? summaryValue = ResolveSummaryValue(definition.SettingKey, layerIndex);
+            string? resolvedValue = ResolveValue(definition.SettingKey, layerIndex);
 
-            cells.Add(new ConfigurationSettingSummaryCell(
+            values.Add(new ConfigurationSettingValue(
                 definition.SettingKey,
-                summaryValue,
+                resolvedValue,
                 explicitCell is not null,
                 _manifest.CanOverride(definition.SettingKey, layerIndex),
                 definition.RequiresCriticalNotification));
         }
 
-        return cells;
+        return values;
     }
 
-    private string? ResolveSummaryValue(string settingKey, int layerIndex)
+    private string? ResolveValue(string settingKey, int layerIndex)
     {
         for (int summaryLayerIndex = layerIndex; summaryLayerIndex >= 0; summaryLayerIndex--)
         {
@@ -215,3 +215,5 @@ public sealed class ConfigurationInstance
         }
     }
 }
+
+

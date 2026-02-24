@@ -6,5 +6,5 @@ public sealed record ConfigurationInstanceResponseDto(
     Guid ManifestId,
     DateTime CreatedAtUtc,
     string CreatedBy,
-    IReadOnlyList<ConfigurationSettingColumnDto> Columns,
-    IReadOnlyList<ConfigurationSettingsSummaryRowDto> SummaryRows);
+    IReadOnlyList<ConfigurationSettingsRowDto> Rows);
+

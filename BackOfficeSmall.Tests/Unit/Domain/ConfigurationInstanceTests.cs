@@ -6,7 +6,7 @@ namespace BackOfficeSmall.Tests.Unit.Domain;
 public sealed class ConfigurationInstanceTests
 {
     [Fact]
-    public void GetSettings_ReturnsSummaryRowsWithInheritedValues()
+    public void GetSettings_ReturnsRowsWithInheritedValues()
     {
         ManifestValueObject manifest = CreateManifest();
         ConfigurationInstance instance = new(
@@ -20,17 +20,17 @@ public sealed class ConfigurationInstanceTests
                 new SettingCell("SafeFlag", 1, "enabled")
             ]);
 
-        IReadOnlyList<ConfigurationSettingSummaryRow> rows = instance.GetSettings();
+        IReadOnlyList<ConfigurationSettingRow> rows = instance.GetSettings();
 
         Assert.Equal(3, rows.Count);
-        Assert.All(rows, row => Assert.Equal(2, row.Cells.Count));
+        Assert.All(rows, row => Assert.Equal(2, row.Values.Count));
 
-        ConfigurationSettingSummaryCell featureLayerZero = rows[0].Cells.Single(cell => cell.SettingKey == "FeatureFlag");
-        ConfigurationSettingSummaryCell featureLayerOne = rows[1].Cells.Single(cell => cell.SettingKey == "FeatureFlag");
-        ConfigurationSettingSummaryCell featureLayerTwo = rows[2].Cells.Single(cell => cell.SettingKey == "FeatureFlag");
-        ConfigurationSettingSummaryCell safeLayerZero = rows[0].Cells.Single(cell => cell.SettingKey == "SafeFlag");
-        ConfigurationSettingSummaryCell safeLayerOne = rows[1].Cells.Single(cell => cell.SettingKey == "SafeFlag");
-        ConfigurationSettingSummaryCell safeLayerTwo = rows[2].Cells.Single(cell => cell.SettingKey == "SafeFlag");
+        ConfigurationSettingValue featureLayerZero = rows[0].Values.Single(cell => cell.SettingKey == "FeatureFlag");
+        ConfigurationSettingValue featureLayerOne = rows[1].Values.Single(cell => cell.SettingKey == "FeatureFlag");
+        ConfigurationSettingValue featureLayerTwo = rows[2].Values.Single(cell => cell.SettingKey == "FeatureFlag");
+        ConfigurationSettingValue safeLayerZero = rows[0].Values.Single(cell => cell.SettingKey == "SafeFlag");
+        ConfigurationSettingValue safeLayerOne = rows[1].Values.Single(cell => cell.SettingKey == "SafeFlag");
+        ConfigurationSettingValue safeLayerTwo = rows[2].Values.Single(cell => cell.SettingKey == "SafeFlag");
 
         Assert.Equal("on", featureLayerZero.Value);
         Assert.Equal("on", featureLayerOne.Value);
@@ -75,3 +75,5 @@ public sealed class ConfigurationInstanceTests
             ]);
     }
 }
+
+
