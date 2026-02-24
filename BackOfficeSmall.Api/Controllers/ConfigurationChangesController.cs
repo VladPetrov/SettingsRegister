@@ -12,11 +12,11 @@ namespace BackOfficeSmall.Api.Controllers;
 public sealed class ConfigurationChangesController : AuthenticatedApiControllerBase
 {
     private readonly IConfigurationChangeQueryService _configChangeQueryService;
-    private readonly IConfigurationInstanceService _configInstanceService;
+    private readonly IConfigurationService _configInstanceService;
 
     public ConfigurationChangesController(
         IConfigurationChangeQueryService configChangeQueryService,
-        IConfigurationInstanceService configInstanceService)
+        IConfigurationService configInstanceService)
     {
         _configChangeQueryService = configChangeQueryService ?? throw new ArgumentNullException(nameof(configChangeQueryService));
         _configInstanceService = configInstanceService ?? throw new ArgumentNullException(nameof(configInstanceService));

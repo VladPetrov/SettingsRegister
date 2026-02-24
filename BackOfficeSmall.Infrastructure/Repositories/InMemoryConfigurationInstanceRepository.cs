@@ -1,4 +1,5 @@
 using BackOfficeSmall.Domain.Models.Configuration;
+using BackOfficeSmall.Domain.Models.Manifest;
 using BackOfficeSmall.Domain.Repositories;
 
 namespace BackOfficeSmall.Infrastructure.Repositories;
@@ -154,6 +155,7 @@ public sealed class InMemoryConfigurationInstanceRepository : IConfigurationInst
             instance.ConfigurationInstanceId,
             instance.Name,
             instance.ManifestId,
+            ToManifestRecord(instance.Manifest),
             instance.CreatedAtUtc,
             instance.CreatedBy,
             cells);
@@ -168,19 +170,91 @@ public sealed class InMemoryConfigurationInstanceRepository : IConfigurationInst
         return new ConfigurationInstance(
             record.ConfigurationInstanceId,
             record.Name,
-            record.ManifestId,
+            ToManifest(record.Manifest),
             record.CreatedAtUtc,
             record.CreatedBy,
             cells);
+    }
+
+    private static ManifestRecord ToManifestRecord(ManifestValueObject manifest)
+    {
+        IReadOnlyList<ManifestSettingDefinitionRecord> settings = manifest.SettingDefinitions
+            .Select(definition => new ManifestSettingDefinitionRecord(
+                definition.SettingKey,
+                definition.RequiresCriticalNotification))
+            .ToList();
+
+        IReadOnlyList<ManifestOverridePermissionRecord> overridePermissions = manifest.OverridePermissions
+            .Select(permission => new ManifestOverridePermissionRecord(
+                permission.SettingKey,
+                permission.LayerIndex,
+                permission.CanOverride))
+            .ToList();
+
+        return new ManifestRecord(
+            manifest.ManifestId,
+            manifest.Name,
+            manifest.Version,
+            manifest.LayerCount,
+            manifest.CreatedAtUtc,
+            manifest.CreatedBy,
+            settings,
+            overridePermissions);
+    }
+
+    private static ManifestValueObject ToManifest(ManifestRecord record)
+    {
+        IReadOnlyList<ManifestSettingDefinition> settings = record.SettingDefinitions
+            .Select(definition => new ManifestSettingDefinition(
+                definition.SettingKey,
+                definition.RequiresCriticalNotification))
+            .ToList();
+
+        IReadOnlyList<ManifestOverridePermission> overridePermissions = record.OverridePermissions
+            .Select(permission => new ManifestOverridePermission(
+                permission.SettingKey,
+                permission.LayerIndex,
+                permission.CanOverride))
+            .ToList();
+
+        return new ManifestValueObject(
+            record.ManifestId,
+            record.Name,
+            record.Version,
+            record.LayerCount,
+            record.CreatedAtUtc,
+            record.CreatedBy,
+            settings,
+            overridePermissions);
     }
 
     private sealed record ConfigurationInstanceRecord(
         Guid ConfigurationInstanceId,
         string Name,
         Guid ManifestId,
+        ManifestRecord Manifest,
         DateTime CreatedAtUtc,
         string CreatedBy,
         IReadOnlyList<SettingCellRecord> Cells);
+
+    private sealed record ManifestRecord(
+        Guid ManifestId,
+        string Name,
+        int Version,
+        int LayerCount,
+        DateTime CreatedAtUtc,
+        string CreatedBy,
+        IReadOnlyList<ManifestSettingDefinitionRecord> SettingDefinitions,
+        IReadOnlyList<ManifestOverridePermissionRecord> OverridePermissions);
+
+    private sealed record ManifestSettingDefinitionRecord(
+        string SettingKey,
+        bool RequiresCriticalNotification);
+
+    private sealed record ManifestOverridePermissionRecord(
+        string SettingKey,
+        int LayerIndex,
+        bool CanOverride);
 
     private sealed record SettingCellRecord(string SettingKey, int LayerIndex, string? Value);
 }

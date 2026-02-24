@@ -1,21 +1,24 @@
+using BackOfficeSmall.Domain.Models.Manifest;
+
 namespace BackOfficeSmall.Domain.Models.Configuration;
 
 public sealed class ConfigurationInstance
 {
     private static readonly StringComparer SettingKeyComparer = StringComparer.OrdinalIgnoreCase;
     private readonly List<SettingCell> _cells;
+    private readonly ManifestValueObject _manifest;
 
     public ConfigurationInstance(
         Guid configInstanceId,
         string name,
-        Guid manifestId,
+        ManifestValueObject manifest,
         DateTime createdAtUtc,
         string createdBy,
         IEnumerable<SettingCell>? cells = null)
     {
         ConfigurationInstanceId = configInstanceId;
         Name = name;
-        ManifestId = manifestId;
+        _manifest = manifest ?? throw new ArgumentNullException(nameof(manifest));
         CreatedAtUtc = createdAtUtc;
         CreatedBy = createdBy;
         _cells = (cells ?? Array.Empty<SettingCell>()).ToList();
@@ -27,7 +30,9 @@ public sealed class ConfigurationInstance
 
     public string Name { get; }
 
-    public Guid ManifestId { get; }
+    public Guid ManifestId => _manifest.ManifestId;
+
+    public ManifestValueObject Manifest => _manifest;
 
     public DateTime CreatedAtUtc { get; }
 
@@ -57,6 +62,8 @@ public sealed class ConfigurationInstance
         {
             throw new ArgumentOutOfRangeException(nameof(layerIndex), "LayerIndex must be greater than or equal to zero.");
         }
+
+        ValidateCellAgainstManifest(settingKey, layerIndex);
 
         SettingCell? existingCell = GetCell(settingKey, layerIndex);
         if (string.IsNullOrWhiteSpace(value))
@@ -113,6 +120,7 @@ public sealed class ConfigurationInstance
         foreach (SettingCell cell in _cells)
         {
             cell.Validate();
+            ValidateCellAgainstManifest(cell.SettingKey, cell.LayerIndex);
         }
 
         ValidateCellUniqueness();
@@ -136,6 +144,28 @@ public sealed class ConfigurationInstance
                 throw new InvalidOperationException(
                     $"Duplicate cell for key '{cell.SettingKey}' and layer '{cell.LayerIndex}' is not allowed.");
             }
+        }
+    }
+
+    private void ValidateCellAgainstManifest(string settingKey, int layerIndex)
+    {
+        if (!_manifest.HasSetting(settingKey))
+        {
+            throw new InvalidOperationException(
+                $"Setting key '{settingKey}' does not exist in manifest '{_manifest.ManifestId}'.");
+        }
+
+        if (layerIndex < 0 || layerIndex >= _manifest.LayerCount)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(layerIndex),
+                $"LayerIndex '{layerIndex}' is outside allowed range 0..{_manifest.LayerCount - 1}.");
+        }
+
+        if (!_manifest.CanOverride(settingKey, layerIndex))
+        {
+            throw new InvalidOperationException(
+                $"Override is not allowed for setting '{settingKey}' at layer '{layerIndex}'.");
         }
     }
 }

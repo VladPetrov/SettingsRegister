@@ -7,7 +7,7 @@ namespace BackOfficeSmall.Api.Controllers;
 [Authorize]
 public abstract class AuthenticatedApiControllerBase : ControllerBase
 {
-    protected string? TryGetUserId()
+    private string? TryGetUserId()
     {
         string? userId = User.FindFirst("user_id")?.Value
             ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value
@@ -18,6 +18,16 @@ public abstract class AuthenticatedApiControllerBase : ControllerBase
             return null;
         }
 
+        return userId;
+    }
+
+    protected string GetUserId()
+    {
+        string? userId = TryGetUserId();
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            throw new InvalidOperationException("Authenticated user must have a user identifier claim.");
+        }
         return userId;
     }
 }

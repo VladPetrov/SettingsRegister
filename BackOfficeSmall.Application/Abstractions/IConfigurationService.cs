@@ -3,7 +3,7 @@ using BackOfficeSmall.Domain.Models.Configuration;
 
 namespace BackOfficeSmall.Application.Abstractions;
 
-public interface IConfigurationInstanceService
+public interface IConfigurationService
 {
     Task<ConfigurationInstance> CreateInstanceAsync(ConfigurationInstanceCreateRequest request, CancellationToken cancellationToken);
 

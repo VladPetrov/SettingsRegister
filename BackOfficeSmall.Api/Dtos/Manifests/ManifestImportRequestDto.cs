@@ -12,9 +12,7 @@ public sealed class ManifestImportRequestDto
 
     [Required]
     [MinLength(1)]
-    public IReadOnlyList<ManifestSettingDefinitionDto> SettingDefinitions { get; init; } =
-        Array.Empty<ManifestSettingDefinitionDto>();
+    public IReadOnlyList<ManifestSettingDefinitionDto> SettingDefinitions { get; init; } = Array.Empty<ManifestSettingDefinitionDto>();
 
-    public IReadOnlyList<ManifestOverridePermissionDto> OverridePermissions { get; init; } =
-        Array.Empty<ManifestOverridePermissionDto>();
+    public IReadOnlyList<ManifestOverridePermissionDto> OverridePermissions { get; init; } = Array.Empty<ManifestOverridePermissionDto>();
 }

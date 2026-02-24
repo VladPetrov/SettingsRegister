@@ -8,7 +8,7 @@ using BackOfficeSmall.Domain.Services;
 
 namespace BackOfficeSmall.Application.Services;
 
-public sealed class ConfigurationInstanceService : IConfigurationInstanceService
+public sealed class ConfigurationInstanceService : IConfigurationService
 {
     private readonly IManifestRepository _manifestRepository;
     private readonly IConfigurationInstanceRepository _configInstanceRepository;
@@ -38,7 +38,7 @@ public sealed class ConfigurationInstanceService : IConfigurationInstanceService
         ConfigurationInstance instance = new(
             Guid.NewGuid(),
             request.Name,
-            request.ManifestId,
+            manifest,
             _clock.UtcNow,
             request.CreatedBy);
 
@@ -46,8 +46,7 @@ public sealed class ConfigurationInstanceService : IConfigurationInstanceService
         {
             foreach (SettingCellInput cell in request.Cells)
             {
-                ValidateMutationAgainstManifest(manifest, cell.SettingKey, cell.LayerIndex);
-                instance.SetValue(cell.SettingKey, cell.LayerIndex, NormalizeValue(cell.Value));
+                TrySetValue(instance, cell.SettingKey, cell.LayerIndex, NormalizeValue(cell.Value));
             }
         }
 
@@ -113,9 +112,6 @@ public sealed class ConfigurationInstanceService : IConfigurationInstanceService
         ValidateSetCellRequest(request);
 
         ConfigurationInstance instance = await GetInstanceOrThrowAsync(instanceId, cancellationToken);
-        ManifestValueObject manifest = await GetManifestOrThrowAsync(instance.ManifestId, cancellationToken);
-
-        ValidateMutationAgainstManifest(manifest, request.SettingKey, request.LayerIndex);
 
         string? beforeValue = instance.GetValue(request.SettingKey, request.LayerIndex);
         string? afterValue = NormalizeValue(request.Value);
@@ -125,7 +121,7 @@ public sealed class ConfigurationInstanceService : IConfigurationInstanceService
             throw new ValidationException("Cannot delete a value that does not exist.");
         }
 
-        instance.SetValue(request.SettingKey, request.LayerIndex, afterValue);
+        TrySetValue(instance, request.SettingKey, request.LayerIndex, afterValue);
 
         try
         {
@@ -150,7 +146,7 @@ public sealed class ConfigurationInstanceService : IConfigurationInstanceService
 
         await _configChangeRepository.AddAsync(change, cancellationToken);
 
-        if (manifest.RequiresCriticalNotification(request.SettingKey))
+        if (instance.Manifest.RequiresCriticalNotification(request.SettingKey))
         {
             await _monitoringNotifier.NotifyCriticalChangeAsync(change, cancellationToken);
         }
@@ -204,26 +200,6 @@ public sealed class ConfigurationInstanceService : IConfigurationInstanceService
         }
     }
 
-    private void ValidateMutationAgainstManifest(ManifestValueObject manifest, string settingKey, int layerIndex)
-    {
-        if (!manifest.HasSetting(settingKey))
-        {
-            throw new ValidationException($"Setting key '{settingKey}' does not exist in manifest '{manifest.ManifestId}'.");
-        }
-
-        if (layerIndex < 0 || layerIndex >= manifest.LayerCount)
-        {
-            throw new ValidationException(
-                $"LayerIndex '{layerIndex}' is outside allowed range 0..{manifest.LayerCount - 1}.");
-        }
-
-        if (!manifest.CanOverride(settingKey, layerIndex))
-        {
-            throw new ValidationException(
-                $"Override is not allowed for setting '{settingKey}' at layer '{layerIndex}'.");
-        }
-    }
-
     private async Task<ManifestValueObject> GetManifestOrThrowAsync(Guid manifestId, CancellationToken cancellationToken)
     {
         ManifestValueObject? manifest = await _manifestRepository.GetByIdAsync(manifestId, cancellationToken);
@@ -269,5 +245,25 @@ public sealed class ConfigurationInstanceService : IConfigurationInstanceService
         }
 
         return value;
+    }
+
+    private static void TrySetValue(ConfigurationInstance instance, string settingKey, int layerIndex, string? value)
+    {
+        try
+        {
+            instance.SetValue(settingKey, layerIndex, value);
+        }
+        catch (ArgumentOutOfRangeException ex)
+        {
+            throw new ValidationException(ex.Message);
+        }
+        catch (ArgumentException ex)
+        {
+            throw new ValidationException(ex.Message);
+        }
+        catch (InvalidOperationException ex)
+        {
+            throw new ValidationException(ex.Message);
+        }
     }
 }

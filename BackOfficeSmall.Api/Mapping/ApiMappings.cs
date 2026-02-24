@@ -38,7 +38,7 @@ public static class ApiMappings
             permissions);
     }
 
-    public static ConfigurationInstanceCreateRequest ToApplication(this ConfigurationInstanceCreateRequestDto dto)
+    public static ConfigurationInstanceCreateRequest ToApplication(this ConfigurationInstanceCreateRequestDto dto, string userId)
     {
         IReadOnlyList<SettingCellInput>? cells = dto.Cells?.Select(cell => new SettingCellInput(
             cell.SettingKey,
@@ -48,7 +48,7 @@ public static class ApiMappings
         return new ConfigurationInstanceCreateRequest(
             dto.Name,
             dto.ManifestId,
-            dto.CreatedBy,
+            userId,
             cells);
     }
 

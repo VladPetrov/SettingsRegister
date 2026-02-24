@@ -10,7 +10,7 @@ The solution is strict-layered:
    - Manifest split:
      - `ManifestDomainRoot` (write-side root with controlled mutation APIs + `Validate()`)
      - `ManifestValueObject` (immutable read-side behavior object with `HasSetting`, `RequiresCriticalNotification`, `CanOverride`)
-   - Aggregate root: `ConfigurationInstance`
+- Aggregate root: `ConfigurationInstance`
    - Supporting domain types: `ManifestSettingDefinition`, `ManifestOverridePermission`, `SettingCell`, `ConfigurationChange`, `ConfigurationOperation`
    - Domain contracts: `IManifestRepository`, `IConfigurationInstanceRepository`, `IConfigurationChangeRepository`, `IMonitoringNotifier`
 2. `BackOfficeSmall.Application`
@@ -36,13 +36,14 @@ The solution is strict-layered:
 
 - Manifest write-side state is represented by `ManifestDomainRoot` with read-only collection exposure and explicit mutation methods.
 - Manifest behavior checks are performed through immutable `ManifestValueObject`.
+- `ConfigurationInstance` embeds `ManifestValueObject` and enforces manifest-bound cell mutation rules in-domain.
 - Manifest uniqueness: (`Name`, `Version`).
 - Configuration instance name is unique.
 - Configuration instance must reference an existing `ManifestId`.
 - Cells are unique per (`ConfigurationInstanceId`, `SettingKey`, `LayerIndex`).
 - Layer index must stay in `0..LayerCount-1`.
-- Setting key must exist in the referenced manifest.
-- Override is allowed only when manifest permission for (`SettingKey`, `LayerIndex`) allows it.
+- Setting key must exist in the instance manifest.
+- Override is allowed only when instance manifest permission for (`SettingKey`, `LayerIndex`) allows it.
 - `ConfigurationChange` is immutable and validates operation semantics:
   - `Add`: `AfterValue` required, `BeforeValue` absent
   - `Update`: both values required
@@ -134,6 +135,6 @@ dotnet test BackOfficeSmall.sln
 
 - Domain model is explicit and invariant-driven for auditability.
 - Manifest responsibilities are separated between domain root, value object, persistence entity, and file DTO.
-- Application services orchestrate rules using only domain interfaces.
+- Application services orchestrate use cases while domain objects enforce their own invariants.
 - In-memory repositories enforce uniqueness constraints at boundary entry points.
 - Critical notification decision is centralized in mutation flow and derived from manifest metadata, not caller flags.

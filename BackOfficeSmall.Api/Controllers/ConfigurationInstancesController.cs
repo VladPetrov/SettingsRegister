@@ -8,14 +8,14 @@ using Microsoft.AspNetCore.Mvc;
 namespace BackOfficeSmall.Api.Controllers;
 
 [ApiController]
-[Route("api/config-instances")]
+[Route("api/configuration")]
 public sealed class ConfigurationInstancesController : AuthenticatedApiControllerBase
 {
-    private readonly IConfigurationInstanceService _configInstanceService;
+    private readonly IConfigurationService _configurationService;
 
-    public ConfigurationInstancesController(IConfigurationInstanceService configInstanceService)
+    public ConfigurationInstancesController(IConfigurationService configurationService)
     {
-        _configInstanceService = configInstanceService ?? throw new ArgumentNullException(nameof(configInstanceService));
+        _configurationService = configurationService ?? throw new ArgumentNullException(nameof(configurationService));
     }
 
     [HttpPost]
@@ -25,15 +25,10 @@ public sealed class ConfigurationInstancesController : AuthenticatedApiControlle
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ConfigurationInstanceResponseDto>> CreateAsync(
-        [FromBody] ConfigurationInstanceCreateRequestDto request,
-        CancellationToken cancellationToken)
+    public async Task<ActionResult<ConfigurationInstanceResponseDto>> CreateAsync([FromBody] ConfigurationInstanceCreateRequestDto request, CancellationToken cancellationToken)
     {
-        ConfigurationInstance instance = await _configInstanceService.CreateInstanceAsync(
-            request.ToApplication(),
-            cancellationToken);
-
-        return Created($"/api/config-instances/{instance.ConfigurationInstanceId}", instance.ToDto());
+        var instance = await _configurationService.CreateInstanceAsync(request.ToApplication(GetUserId()), cancellationToken);
+        return Created($"/api/configuration/{instance.ConfigurationInstanceId}", instance.ToDto());
     }
 
     [HttpGet]
@@ -41,9 +36,8 @@ public sealed class ConfigurationInstancesController : AuthenticatedApiControlle
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<IReadOnlyList<ConfigurationInstanceResponseDto>>> ListAsync(CancellationToken cancellationToken)
     {
-        IReadOnlyList<ConfigurationInstance> instances =
-            await _configInstanceService.ListAsync(cancellationToken);
-        IReadOnlyList<ConfigurationInstanceResponseDto> payload = instances.Select(instance => instance.ToDto()).ToList();
+        var instances =  await _configurationService.ListAsync(cancellationToken);
+        var payload = instances.Select(instance => instance.ToDto()).ToList();
 
         return Ok(payload);
     }
@@ -53,11 +47,9 @@ public sealed class ConfigurationInstancesController : AuthenticatedApiControlle
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ConfigurationInstanceResponseDto>> GetByIdAsync(
-        Guid instanceId,
-        CancellationToken cancellationToken)
+    public async Task<ActionResult<ConfigurationInstanceResponseDto>> GetByIdAsync(Guid instanceId, CancellationToken cancellationToken)
     {
-        ConfigurationInstance instance = await _configInstanceService.GetByIdAsync(instanceId, cancellationToken);
+        var instance = await _configurationService.GetByIdAsync(instanceId, cancellationToken);
         return Ok(instance.ToDto());
     }
 
@@ -68,7 +60,7 @@ public sealed class ConfigurationInstancesController : AuthenticatedApiControlle
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> DeleteAsync(Guid instanceId, CancellationToken cancellationToken)
     {
-        await _configInstanceService.DeleteAsync(instanceId, cancellationToken);
+        await _configurationService.DeleteAsync(instanceId, cancellationToken);
         return NoContent();
     }
 
@@ -79,15 +71,9 @@ public sealed class ConfigurationInstancesController : AuthenticatedApiControlle
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ConfigurationChangeResponseDto>> SetCellValueAsync(
-        Guid instanceId,
-        [FromBody] SetCellValueRequestDto request,
-        CancellationToken cancellationToken)
+    public async Task<ActionResult<ConfigurationChangeResponseDto>> SetCellValueAsync(Guid instanceId, [FromBody] SetCellValueRequestDto request, CancellationToken cancellationToken)
     {
-        ConfigurationChange change = await _configInstanceService.SetCellValueAsync(
-            instanceId,
-            request.ToApplication(),
-            cancellationToken);
+        ConfigurationChange change = await _configurationService.SetCellValueAsync(instanceId, request.ToApplication(), cancellationToken);
 
         return Ok(change.ToDto());
     }

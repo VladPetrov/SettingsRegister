@@ -67,8 +67,10 @@ class ConfigurationInstance {
   +Guid ConfigurationInstanceId
   +string Name
   +Guid ManifestId
+  +ManifestValueObject Manifest
   +DateTime CreatedAtUtc
   +string CreatedBy
+  +GetValue(string settingKey, int layerIndex)
   +SetValue(string settingKey, int layerIndex, string? value)
   +Validate()
 }
@@ -149,13 +151,13 @@ ManifestDomainRoot "1" *-- "*" ManifestOverridePermission
 ManifestValueObject "1" *-- "*" ManifestSettingDefinition
 ManifestValueObject "1" *-- "*" ManifestOverridePermission
 ConfigurationInstance "1" *-- "*" SettingCell
-ConfigurationInstance --> ManifestValueObject : references by ManifestId
+ConfigurationInstance "1" *-- "1" ManifestValueObject
 ConfigurationChange --> ConfigurationInstance
 ManifestEntity --> ManifestValueObject : hydrated to
 ManifestDto --> ManifestDomainRoot : mapped to
 
 ManifestService --> IManifestRepository
-ConfigurationInstanceService --> IManifestRepository : validates structure/rules
+ConfigurationInstanceService --> IManifestRepository : resolves manifest for instance creation
 ConfigurationInstanceService --> IConfigurationInstanceRepository
 ConfigurationInstanceService --> IConfigurationChangeRepository : writes audit log
 ConfigurationInstanceService --> IMonitoringNotifier : on critical settings
@@ -183,7 +185,7 @@ end note
 note right of ConfigurationInstance
 Invariants:
 1) Name is unique.
-2) ManifestId must exist.
+2) Holds manifest behavior object for rule checks.
 3) Cells must match manifest keys and layer range.
 4) Override allowed only by manifest permissions.
 5) No duplicate (SettingKey, LayerIndex) cell.

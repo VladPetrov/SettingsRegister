@@ -25,19 +25,7 @@ public sealed class ManifestsController : AuthenticatedApiControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<ManifestResponseDto>> ImportAsync([FromBody] ManifestImportRequestDto request, CancellationToken cancellationToken)
     {
-        string? createdBy = TryGetUserId();
-        if (string.IsNullOrWhiteSpace(createdBy))
-        {
-            return Unauthorized(new ProblemDetails
-            {
-                Title = "Unauthorized",
-                Detail = "Token must contain user identifier claim.",
-                Status = StatusCodes.Status401Unauthorized
-            });
-        }
-
-        var manifest = await _manifestService.ImportManifestAsync(request.ToApplication(createdBy), cancellationToken);
-
+        var manifest = await _manifestService.ImportManifestAsync(request.ToApplication(GetUserId()), cancellationToken);
         return Created($"/api/manifests/{manifest.ManifestId}", manifest.ToDto());
     }
 
