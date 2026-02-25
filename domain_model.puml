@@ -160,6 +160,14 @@ interface IMonitoringNotifier {
   +NotifyCriticalChangeAsync(ConfigurationChange change)
 }
 
+interface IDomainLock {
+  +TryTakeLock(string key, TimeSpan timeout) : IDomainLockLease
+}
+
+interface IDomainLockLease {
+  +Dispose()
+}
+
 ManifestDomainRoot "1" *-- "*" ManifestSettingDefinition
 ManifestDomainRoot "1" *-- "*" ManifestOverridePermission
 ManifestValueObject "1" *-- "*" ManifestSettingDefinition
@@ -173,10 +181,12 @@ ManifestEntity --> ManifestValueObject : hydrated to
 ManifestDto --> ManifestDomainRoot : mapped to
 
 ManifestService --> IManifestRepository
+ManifestService --> IDomainLock : import serialization
 ConfigurationInstanceService --> IManifestRepository : resolves manifest for instance creation
 ConfigurationInstanceService --> IConfigurationInstanceRepository
 ConfigurationInstanceService --> IConfigurationChangeRepository : writes audit log
 ConfigurationInstanceService --> IMonitoringNotifier : on critical settings
+ConfigurationInstanceService --> IDomainLock : per-instance serialization
 ConfigurationChangeQueryService --> IConfigurationChangeRepository
 
 note right of ManifestDomainRoot

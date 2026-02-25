@@ -10,10 +10,13 @@ namespace BackOfficeSmall.Application.Services;
 
 public sealed class ConfigurationInstanceService : IConfigurationService
 {
+    private static readonly TimeSpan InstanceLockTimeout = TimeSpan.FromSeconds(30);
+
     private readonly IManifestRepository _manifestRepository;
     private readonly IConfigurationInstanceRepository _configInstanceRepository;
     private readonly IConfigurationChangeRepository _configChangeRepository;
     private readonly IMonitoringNotifier _monitoringNotifier;
+    private readonly IDomainLock _domainLock;
     private readonly ISystemClock _clock;
 
     public ConfigurationInstanceService(
@@ -21,12 +24,14 @@ public sealed class ConfigurationInstanceService : IConfigurationService
         IConfigurationInstanceRepository configInstanceRepository,
         IConfigurationChangeRepository configChangeRepository,
         IMonitoringNotifier monitoringNotifier,
+        IDomainLock domainLock,
         ISystemClock clock)
     {
         _manifestRepository = manifestRepository ?? throw new ArgumentNullException(nameof(manifestRepository));
         _configInstanceRepository = configInstanceRepository ?? throw new ArgumentNullException(nameof(configInstanceRepository));
         _configChangeRepository = configChangeRepository ?? throw new ArgumentNullException(nameof(configChangeRepository));
         _monitoringNotifier = monitoringNotifier ?? throw new ArgumentNullException(nameof(monitoringNotifier));
+        _domainLock = domainLock ?? throw new ArgumentNullException(nameof(domainLock));
         _clock = clock ?? throw new ArgumentNullException(nameof(clock));
     }
 
@@ -69,13 +74,10 @@ public sealed class ConfigurationInstanceService : IConfigurationService
             throw new ValidationException("ConfigurationInstanceId must be a non-empty GUID.");
         }
 
-        ConfigurationInstance? instance = await _configInstanceRepository.GetByIdAsync(instanceId, cancellationToken);
-        if (instance is null)
-        {
-            throw new EntityNotFoundException("ConfigurationInstance", instanceId.ToString());
-        }
-
-        return instance;
+        // This guaranties consistent reads
+        await using var instanceLock = await AcquireInstanceLockOrThrowAsync(instanceId, cancellationToken);
+        
+        return await GetInstanceOrThrowAsync(instanceId, cancellationToken);
     }
 
     public Task<IReadOnlyList<ConfigurationInstance>> ListAsync(CancellationToken cancellationToken)
@@ -97,15 +99,19 @@ public sealed class ConfigurationInstanceService : IConfigurationService
 
         request.Validate();
 
+        await using var instanceLock = await AcquireInstanceLockOrThrowAsync(instanceId, cancellationToken);
+       
         var instance = await _configInstanceRepository.GetByIdAsync(instanceId, cancellationToken);
+        
         if (instance is null)
         {
-            throw new EntityNotFoundException("ConfigurationInstance", instanceId.ToString());
+            return;
         }
 
         IReadOnlyList<SettingCell> existingCells = instance.Cells.ToList();
 
-        foreach (SettingCell cell in existingCells)
+        // TODO: this is wrong
+        foreach (var cell in existingCells)
         {
             ConfigurationChange change = new(
                 Guid.NewGuid(),
@@ -143,15 +149,11 @@ public sealed class ConfigurationInstanceService : IConfigurationService
 
         request.Validate();
 
-        ConfigurationInstance instance = await GetInstanceOrThrowAsync(instanceId, cancellationToken);
+        await using var instanceLock = await AcquireInstanceLockOrThrowAsync(instanceId, cancellationToken);
 
-        string? beforeValue = instance.GetValue(request.SettingKey, request.LayerIndex);
-        string? afterValue = NormalizeValue(request.Value);
-
-        if (beforeValue is null && afterValue is null)
-        {
-            throw new ValidationException("Cannot delete a value that does not exist.");
-        }
+        var instance = await GetInstanceOrThrowAsync(instanceId, cancellationToken);
+        var beforeValue = instance.GetValue(request.SettingKey, request.LayerIndex);
+        var afterValue = NormalizeValue(request.Value);
 
         TrySetValue(instance, request.SettingKey, request.LayerIndex, afterValue);
 
@@ -164,7 +166,8 @@ public sealed class ConfigurationInstanceService : IConfigurationService
             throw new ConflictException(ex.Message);
         }
 
-        ConfigurationOperation operation = ResolveOperation(beforeValue, afterValue);
+        var operation = ResolveOperation(beforeValue, afterValue);
+        
         ConfigurationChange change = new(
             Guid.NewGuid(),
             instance.ConfigurationInstanceId,
@@ -186,9 +189,22 @@ public sealed class ConfigurationInstanceService : IConfigurationService
         return change;
     }
 
+    private async Task<IDomainLockLease> AcquireInstanceLockOrThrowAsync(Guid instanceId, CancellationToken cancellationToken)
+    {
+        var instanceLock = await _domainLock.TryTakeLockAsync(instanceId.ToString(), InstanceLockTimeout, cancellationToken);
+        
+        if (instanceLock is null)
+        {
+            throw new ConflictException($"Could not acquire configuration instance lock for '{instanceId}'.");
+        }
+
+        return instanceLock;
+    }
+
     private async Task<ManifestValueObject> GetManifestOrThrowAsync(Guid manifestId, CancellationToken cancellationToken)
     {
-        ManifestValueObject? manifest = await _manifestRepository.GetByIdAsync(manifestId, cancellationToken);
+        var manifest = await _manifestRepository.GetByIdAsync(manifestId, cancellationToken);
+        
         if (manifest is null)
         {
             throw new EntityNotFoundException("Manifest", manifestId.ToString());
@@ -199,7 +215,8 @@ public sealed class ConfigurationInstanceService : IConfigurationService
 
     private async Task<ConfigurationInstance> GetInstanceOrThrowAsync(Guid instanceId, CancellationToken cancellationToken)
     {
-        ConfigurationInstance? instance = await _configInstanceRepository.GetByIdAsync(instanceId, cancellationToken);
+        var instance = await _configInstanceRepository.GetByIdAsync(instanceId, cancellationToken);
+
         if (instance is null)
         {
             throw new EntityNotFoundException("ConfigurationInstance", instanceId.ToString());
