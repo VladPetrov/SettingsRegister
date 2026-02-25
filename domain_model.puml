@@ -110,10 +110,53 @@ class ConfigurationChange {
   +Validate()
 }
 
+class MonitoringNotifierOutboxMessage {
+  +Guid Id
+  +string DedupeKey
+  +Guid ConfigurationChangeId
+  +Guid ConfigurationInstanceId
+  +string SettingKey
+  +int LayerIndex
+  +ConfigurationOperation Operation
+  +string? BeforeValue
+  +string? AfterValue
+  +string ChangedBy
+  +DateTime ChangedAtUtc
+  +MonitoringNotificationOutboxStatus Status
+  +int AttemptCount
+  +DateTime CreatedAtUtc
+  +DateTime? LastAttemptAtUtc
+  +DateTime? SentAtUtc
+  +string? LastError
+  +ToNotificationMessage()
+  +MarkSent(DateTime attemptedAtUtc)
+  +MarkFailed(DateTime attemptedAtUtc, string? error)
+}
+
+class MonitoringNotificationMessage {
+  +Guid OutboxMessageId
+  +string DedupeKey
+  +Guid ConfigurationChangeId
+  +Guid ConfigurationInstanceId
+  +string SettingKey
+  +int LayerIndex
+  +ConfigurationOperation Operation
+  +string? BeforeValue
+  +string? AfterValue
+  +string ChangedBy
+  +DateTime ChangedAtUtc
+}
+
 enum ConfigurationOperation {
   Add
   Update
   Delete
+}
+
+enum MonitoringNotificationOutboxStatus {
+  Pending
+  Sent
+  Failed
 }
 
 class ManifestService {
@@ -134,6 +177,11 @@ class ConfigurationInstanceService {
 class ConfigurationChangeQueryService {
   +GetChangeById(Guid id)
   +ListChanges(DateTime? fromUtc, DateTime? toUtc, ConfigurationOperation? operation)
+}
+
+class NotifierService {
+  +StartAsync(CancellationToken cancellationToken)
+  +NotifyChangesAsync(CancellationToken cancellationToken)
 }
 
 interface IManifestRepository {
@@ -157,8 +205,16 @@ interface IConfigurationChangeRepository {
   +List(DateTime? fromUtc, DateTime? toUtc, ConfigurationOperation? operation)
 }
 
+interface IMonitoringNotifierOutboxRepository {
+  +Add(MonitoringNotifierOutboxMessage outboxMessage)
+  +GetById(Guid id)
+  +List(MonitoringNotificationOutboxStatus? status)
+  +ListDispatchCandidates(int take)
+  +Update(MonitoringNotifierOutboxMessage outboxMessage)
+}
+
 interface IMonitoringNotifier {
-  +NotifyCriticalChangeAsync(ConfigurationChange change)
+  +SendAsync(MonitoringNotificationMessage message) : bool
 }
 
 interface IDomainLock {
@@ -178,6 +234,8 @@ ConfigurationInstance "1" *-- "*" ConfigurationSettingRow
 ConfigurationSettingRow "1" *-- "*" ConfigurationSettingValue
 ConfigurationInstance "1" *-- "1" ManifestValueObject
 ConfigurationChange --> ConfigurationInstance
+MonitoringNotifierOutboxMessage --> ConfigurationChange
+MonitoringNotifierOutboxMessage --> MonitoringNotificationMessage : maps to
 ManifestEntity --> ManifestValueObject : hydrated to
 ManifestDto --> ManifestDomainRoot : mapped to
 
@@ -186,9 +244,12 @@ ManifestService --> IDomainLock : import serialization
 ConfigurationInstanceService --> IManifestRepository : resolves manifest for instance creation
 ConfigurationInstanceService --> IConfigurationRepository
 ConfigurationInstanceService --> IConfigurationChangeRepository : writes audit log
-ConfigurationInstanceService --> IMonitoringNotifier : on critical settings
+ConfigurationInstanceService --> IMonitoringNotifierOutboxRepository : writes critical outbox intent
+ConfigurationInstanceService --> NotifierService : triggers one-shot drain
 ConfigurationInstanceService --> IDomainLock : per-instance serialization
 ConfigurationChangeQueryService --> IConfigurationChangeRepository
+NotifierService --> IMonitoringNotifierOutboxRepository : reads and updates outbox
+NotifierService --> IMonitoringNotifier : dispatches external transport
 
 note right of ManifestDomainRoot
 Responsibilities:
@@ -227,6 +288,13 @@ Invariants:
    - Update: BeforeValue and AfterValue required.
    - Delete: BeforeValue required, AfterValue absent.
 4) Critical notification is derived from manifest setting definition.
+end note
+
+note right of MonitoringNotifierOutboxMessage
+Responsibilities:
+1) Immutable notification intent snapshot tied to ConfigurationChange.
+2) Tracks delivery state machine: Pending -> Sent or Failed.
+3) Stores retry metadata and last transport error for resilient dispatch.
 end note
 
 @enduml

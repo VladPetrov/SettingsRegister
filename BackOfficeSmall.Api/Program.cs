@@ -89,6 +89,7 @@ builder.Services.AddSingleton<ICacheConfigurationRepository>(serviceProvider =>
     return new CachedConfigurationRepository(innerRepository, memoryCache, settings);
 });
 builder.Services.AddSingleton<InMemoryConfigurationChangeRepository>();
+builder.Services.AddSingleton<InMemoryMonitoringNotifierOutboxRepository>();
 builder.Services.AddScoped<IConfigurationWriteUnitOfWork, InMemoryConfigurationWriteUnitOfWork>();
 builder.Services.AddSingleton<IMonitoringNotifier, SimulatedMonitoringNotifier>();
 builder.Services.AddSingleton<IDomainLock>(appSettings.AppScaling ? new DistributedDomainLock() : new InProcessDomainLock());
@@ -99,6 +100,8 @@ builder.Services.AddScoped<IManifestService, ManifestService>();
 builder.Services.AddScoped<IConfigurationService, ConfigurationService>();
 builder.Services.AddScoped<IConfigurationChangeQueryService, ConfigurationChangeQueryService>();
 builder.Services.AddScoped<IAuthExchangeService, AuthExchangeService>();
+builder.Services.AddScoped<INotifierService, NotifierService>();
+builder.Services.AddHostedService<NotifierBackgroundWorker>();
 
 var app = builder.Build();
 
@@ -140,6 +143,7 @@ static void ValidateStartup(IServiceProvider services)
     scope.ServiceProvider.GetRequiredService<IManifestService>();
     scope.ServiceProvider.GetRequiredService<IConfigurationService>();
     scope.ServiceProvider.GetRequiredService<IConfigurationChangeQueryService>();
+    scope.ServiceProvider.GetRequiredService<INotifierService>();
     scope.ServiceProvider.GetRequiredService<IConfigurationWriteUnitOfWork>();
     scope.ServiceProvider.GetRequiredService<ICachedManifestRepository>();
     scope.ServiceProvider.GetRequiredService<ICacheConfigurationRepository>();

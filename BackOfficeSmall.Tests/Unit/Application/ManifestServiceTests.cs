@@ -92,10 +92,12 @@ public sealed class ManifestServiceTests
             memoryCache,
             settings);
         InMemoryConfigurationChangeRepository configurationChangeRepository = new();
+        InMemoryMonitoringNotifierOutboxRepository outboxRepository = new();
 
         return new InMemoryConfigurationWriteUnitOfWork(
             cachedManifestRepository,
             cachedConfigurationRepository,
-            configurationChangeRepository);
+            configurationChangeRepository,
+            outboxRepository);
     }
 }

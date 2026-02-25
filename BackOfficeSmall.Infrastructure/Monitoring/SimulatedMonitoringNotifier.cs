@@ -6,31 +6,31 @@ namespace BackOfficeSmall.Infrastructure.Monitoring;
 
 public sealed class SimulatedMonitoringNotifier : IMonitoringNotifier
 {
-    private readonly ConcurrentQueue<ConfigurationChange> _notifications = new();
+    private readonly ConcurrentQueue<MonitoringNotificationMessage> _notifications = new();
+    private volatile bool _alwaysFail;
 
-    public IReadOnlyCollection<ConfigurationChange> Notifications => _notifications.ToArray();
+    public IReadOnlyCollection<MonitoringNotificationMessage> Notifications => _notifications.ToArray();
 
-    public Task NotifyCriticalChangeAsync(ConfigurationChange change, CancellationToken cancellationToken)
+    public void SetAlwaysFail(bool alwaysFail)
+    {
+        _alwaysFail = alwaysFail;
+    }
+
+    public Task<bool> SendAsync(MonitoringNotificationMessage message, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        if (change is null)
+        if (message is null)
         {
-            throw new ArgumentNullException(nameof(change));
+            throw new ArgumentNullException(nameof(message));
         }
 
-        ConfigurationChange snapshot = new(
-            change.Id,
-            change.ConfigurationInstanceId,
-            change.SettingKey,
-            change.LayerIndex,
-            change.Operation,
-            change.BeforeValue,
-            change.AfterValue,
-            change.ChangedBy,
-            change.ChangedAtUtc);
+        if (_alwaysFail)
+        {
+            return Task.FromResult(false);
+        }
 
-        _notifications.Enqueue(snapshot);
-        return Task.CompletedTask;
+        _notifications.Enqueue(message);
+        return Task.FromResult(true);
     }
 }

@@ -1,0 +1,24 @@
+using BackOfficeSmall.Application.Abstractions;
+
+namespace BackOfficeSmall.Tests.TestDoubles;
+
+internal sealed class FakeNotifierService : INotifierService
+{
+    public int StartCalls { get; private set; }
+
+    public int NotifyChangesCalls { get; private set; }
+
+    public Task StartAsync(CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        StartCalls++;
+        return Task.CompletedTask;
+    }
+
+    public Task NotifyChangesAsync(CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        NotifyChangesCalls++;
+        return Task.CompletedTask;
+    }
+}

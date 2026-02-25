@@ -13,10 +13,9 @@ namespace BackOfficeSmall.Tests.Unit.Application;
 public sealed class ConfigurationServiceTests
 {
     [Fact]
-    public async Task CreateInstanceAsync_WithCriticalInitialCell_PersistsAddChangeAndSendsNotification()
+    public async Task CreateInstanceAsync_WithCriticalInitialCell_PersistsAddChangeAndCreatesOutboxMessage()
     {
-        FakeMonitoringNotifier notifier = new();
-        var context = await CreateServiceAsync(notifier);
+        var context = await CreateServiceAsync();
         ConfigurationService service = context.Service;
         InMemoryConfigurationWriteUnitOfWork unitOfWork = context.UnitOfWork;
         ManifestValueObject manifest = context.Manifest;
@@ -43,15 +42,21 @@ public sealed class ConfigurationServiceTests
         Assert.Equal(instance.ConfigurationInstanceId, changes[0].ConfigurationInstanceId);
         Assert.Equal("FeatureFlag", changes[0].SettingKey);
         Assert.Equal("on", changes[0].AfterValue);
-        Assert.Single(notifier.Notifications);
-        Assert.Equal(changes[0].Id, notifier.Notifications[0].Id);
+
+        IReadOnlyList<MonitoringNotifierOutboxMessage> outboxMessages = await unitOfWork
+            .MonitoringNotifierOutboxRepository
+            .ListAsync(null, CancellationToken.None);
+
+        Assert.Single(outboxMessages);
+        Assert.Equal(MonitoringNotificationOutboxStatus.Pending, outboxMessages[0].Status);
+        Assert.Equal(changes[0].Id, outboxMessages[0].ConfigurationChangeId);
+        Assert.Equal(MonitoringNotifierOutboxMessage.BuildDedupeKey(changes[0].Id), outboxMessages[0].DedupeKey);
     }
 
     [Fact]
-    public async Task CreateInstanceAsync_WithNonCriticalInitialCell_PersistsAddChangeAndDoesNotNotify()
+    public async Task CreateInstanceAsync_WithNonCriticalInitialCell_DoesNotCreateOutboxMessage()
     {
-        FakeMonitoringNotifier notifier = new();
-        var context = await CreateServiceAsync(notifier);
+        var context = await CreateServiceAsync();
         ConfigurationService service = context.Service;
         InMemoryConfigurationWriteUnitOfWork unitOfWork = context.UnitOfWork;
         ManifestValueObject manifest = context.Manifest;
@@ -76,10 +81,15 @@ public sealed class ConfigurationServiceTests
         Assert.Single(changes);
         Assert.Equal("NonCritical", changes[0].SettingKey);
         Assert.Equal(ConfigurationOperation.Add, changes[0].Operation);
-        Assert.Empty(notifier.Notifications);
+
+        IReadOnlyList<MonitoringNotifierOutboxMessage> outboxMessages = await unitOfWork
+            .MonitoringNotifierOutboxRepository
+            .ListAsync(null, CancellationToken.None);
+
+        Assert.Empty(outboxMessages);
     }
 
-    private static async Task<TestContext> CreateServiceAsync(FakeMonitoringNotifier notifier)
+    private static async Task<TestContext> CreateServiceAsync()
     {
         ApplicationSettings settings = new();
         MemoryCache memoryCache = new(new MemoryCacheOptions());
@@ -92,11 +102,13 @@ public sealed class ConfigurationServiceTests
             memoryCache,
             settings);
         InMemoryConfigurationChangeRepository configurationChangeRepository = new();
+        InMemoryMonitoringNotifierOutboxRepository outboxRepository = new();
 
         InMemoryConfigurationWriteUnitOfWork unitOfWork = new(
             cachedManifestRepository,
             cachedConfigurationRepository,
-            configurationChangeRepository);
+            configurationChangeRepository,
+            outboxRepository);
 
         ManifestDomainRoot manifestDomainRoot = new()
         {
@@ -126,7 +138,7 @@ public sealed class ConfigurationServiceTests
 
         ConfigurationService service = new(
             unitOfWork,
-            notifier,
+            new FakeNotifierService(),
             new FakeDomainLock(),
             new FakeSystemClock(DateTime.SpecifyKind(new DateTime(2026, 2, 25, 11, 0, 0), DateTimeKind.Utc)));
 

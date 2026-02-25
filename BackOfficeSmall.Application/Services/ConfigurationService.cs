@@ -13,18 +13,18 @@ public sealed class ConfigurationService : IConfigurationService
     private static readonly TimeSpan InstanceLockTimeout = TimeSpan.FromSeconds(30);
 
     private readonly IConfigurationWriteUnitOfWork _configurationWriteUnitOfWork;
-    private readonly IMonitoringNotifier _monitoringNotifier;
+    private readonly INotifierService _notifierService;
     private readonly IDomainLock _domainLock;
     private readonly ISystemClock _clock;
 
     public ConfigurationService(
         IConfigurationWriteUnitOfWork configurationWriteUnitOfWork,
-        IMonitoringNotifier monitoringNotifier,
+        INotifierService notifierService,
         IDomainLock domainLock,
         ISystemClock clock)
     {
         _configurationWriteUnitOfWork = configurationWriteUnitOfWork ?? throw new ArgumentNullException(nameof(configurationWriteUnitOfWork));
-        _monitoringNotifier = monitoringNotifier ?? throw new ArgumentNullException(nameof(monitoringNotifier));
+        _notifierService = notifierService ?? throw new ArgumentNullException(nameof(notifierService));
         _domainLock = domainLock ?? throw new ArgumentNullException(nameof(domainLock));
         _clock = clock ?? throw new ArgumentNullException(nameof(clock));
     }
@@ -58,6 +58,7 @@ public sealed class ConfigurationService : IConfigurationService
             foreach (ConfigurationChange change in createChanges)
             {
                 await _configurationWriteUnitOfWork.ConfigurationChangeRepository.AddAsync(change, cancellationToken);
+                await AddOutboxMessageWhenCriticalAsync(instance.Manifest, change, cancellationToken);
             }
 
             await _configurationWriteUnitOfWork.CommitAsync(cancellationToken);
@@ -67,13 +68,7 @@ public sealed class ConfigurationService : IConfigurationService
             throw new ConflictException(ex.Message);
         }
 
-        foreach (ConfigurationChange change in createChanges)
-        {
-            if (instance.Manifest.RequiresCriticalNotification(change.SettingKey))
-            {
-                await _monitoringNotifier.NotifyCriticalChangeAsync(change, cancellationToken);
-            }
-        }
+        await TriggerNotifierDrainAsync(cancellationToken);
 
         return instance;
     }
@@ -119,13 +114,14 @@ public sealed class ConfigurationService : IConfigurationService
             return;
         }
 
-        IReadOnlyList<ConfigurationChange> changes = BuildCellChanges(instance, request.DeletedBy, ConfigurationOperation.Delete);
+        var changes = BuildCellChanges(instance, request.DeletedBy, ConfigurationOperation.Delete);
 
         try
         {
             foreach (ConfigurationChange change in changes)
             {
                 await _configurationWriteUnitOfWork.ConfigurationChangeRepository.AddAsync(change, cancellationToken);
+                await AddOutboxMessageWhenCriticalAsync(instance.Manifest, change, cancellationToken);
             }
 
             await _configurationWriteUnitOfWork.ConfigurationRepository.DeleteAsync(instanceId, cancellationToken);
@@ -136,13 +132,7 @@ public sealed class ConfigurationService : IConfigurationService
             throw new ConflictException(ex.Message);
         }
 
-        foreach (ConfigurationChange change in changes)
-        {
-            if (instance.Manifest.RequiresCriticalNotification(change.SettingKey))
-            {
-                await _monitoringNotifier.NotifyCriticalChangeAsync(change, cancellationToken);
-            }
-        }
+        await TriggerNotifierDrainAsync(cancellationToken);
     }
 
     public async Task<ConfigurationChange> SetValueAsync(Guid instanceId, SetCellValueRequest request, CancellationToken cancellationToken)
@@ -161,12 +151,12 @@ public sealed class ConfigurationService : IConfigurationService
 
         await using var instanceLock = await AcquireInstanceLockOrThrowAsync(instanceId, cancellationToken);
 
-        ConfigurationInstance instance = await GetInstanceOrThrowAsync(instanceId, _configurationWriteUnitOfWork.ConfigurationRepository, cancellationToken);
+        var instance = await GetInstanceOrThrowAsync(instanceId, _configurationWriteUnitOfWork.ConfigurationRepository, cancellationToken);
         string? beforeValue = instance.GetValue(request.SettingKey, request.LayerIndex);
         string? afterValue = NormalizeValue(request.Value);
 
         TrySetValue(instance, request.SettingKey, request.LayerIndex, afterValue);
-        ConfigurationOperation operation = ResolveOperation(beforeValue, afterValue);
+        var operation = ResolveOperation(beforeValue, afterValue);
 
         ConfigurationChange change = new(
             Guid.NewGuid(),
@@ -183,6 +173,7 @@ public sealed class ConfigurationService : IConfigurationService
         {
             await _configurationWriteUnitOfWork.ConfigurationRepository.UpdateAsync(instance, cancellationToken);
             await _configurationWriteUnitOfWork.ConfigurationChangeRepository.AddAsync(change, cancellationToken);
+            await AddOutboxMessageWhenCriticalAsync(instance.Manifest, change, cancellationToken);
             await _configurationWriteUnitOfWork.CommitAsync(cancellationToken);
         }
         catch (InvalidOperationException ex)
@@ -190,10 +181,7 @@ public sealed class ConfigurationService : IConfigurationService
             throw new ConflictException(ex.Message);
         }
 
-        if (instance.Manifest.RequiresCriticalNotification(request.SettingKey))
-        {
-            await _monitoringNotifier.NotifyCriticalChangeAsync(change, cancellationToken);
-        }
+        await TriggerNotifierDrainAsync(cancellationToken);
 
         return change;
     }
@@ -319,6 +307,32 @@ public sealed class ConfigurationService : IConfigurationService
         catch (InvalidOperationException ex)
         {
             throw new ValidationException(ex.Message);
+        }
+    }
+
+    private async Task AddOutboxMessageWhenCriticalAsync(ManifestValueObject manifest, ConfigurationChange change, CancellationToken cancellationToken)
+    {
+        if (!manifest.RequiresCriticalNotification(change.SettingKey))
+        {
+            return;
+        }
+
+        var outboxMessage = MonitoringNotifierOutboxMessage.CreatePending(change, _clock.UtcNow);
+        await _configurationWriteUnitOfWork.MonitoringNotifierOutboxRepository.AddAsync(outboxMessage, cancellationToken);
+    }
+
+    private async Task TriggerNotifierDrainAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _notifierService.NotifyChangesAsync(cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch
+        {
         }
     }
 }

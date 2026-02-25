@@ -1,6 +1,6 @@
 # Configuration Change Tracker API
 
-ASP.NET Core Web API for importing versioned manifests, creating manifest-bound configuration instances, tracking immutable config changes, and notifying a simulated external monitor for critical changes.
+ASP.NET Core Web API for importing versioned manifests, creating manifest-bound configuration instances, tracking immutable config changes, and delivering critical-change notifications through an outbox pipeline.
 
 ## Architecture
 
@@ -12,12 +12,13 @@ The solution is strict-layered:
      - `ManifestValueObject` (immutable read-side behavior object with `HasSetting`, `RequiresCriticalNotification`, `CanOverride`)
 - Aggregate root: `ConfigurationInstance`
    - Supporting domain types: `ManifestSettingDefinition`, `ManifestOverridePermission`, `SettingCell`, `ConfigurationChange`, `ConfigurationOperation`
-   - Domain contracts: `IManifestRepository`, `IConfigurationRepository`, `IConfigurationChangeRepository`, `IMonitoringNotifier`
+   - Domain contracts: `IManifestRepository`, `IConfigurationRepository`, `IConfigurationChangeRepository`, `IMonitoringNotifierOutboxRepository`, `IMonitoringNotifier`
 2. `BackOfficeSmall.Application`
    - Use-case orchestration services:
      - `ManifestService` (import + retrieval by id/list)
-     - `ConfigurationInstanceService` (instance CRUD + cell mutation)
+     - `ConfigurationInstanceService` (instance CRUD + cell mutation + outbox intent writes for critical changes)
      - `ConfigurationChangeQueryService` (query by id and filters)
+     - `NotifierService` (background polling + one-shot outbox dispatch)
      - `AuthExchangeService` (development token exchange endpoint behavior)
    - Application contracts/requests and application exceptions
 3. `BackOfficeSmall.Infrastructure`
@@ -27,7 +28,8 @@ The solution is strict-layered:
      - `CachedConfigurationRepository`
    - Persistence model `ManifestEntity` (no `Validate()`)
    - Hydration component `ManifestValueObjectHydrator` for mapping entity -> value object
-   - Simulated async monitoring notifier (`SimulatedMonitoringNotifier`)
+   - In-memory outbox persistence for notification intents
+   - Simulated monitoring transport (`SimulatedMonitoringNotifier`) with send success/failure return
 4. `BackOfficeSmall.Api`
    - REST controllers, DTOs, mapping, validation, `ProblemDetails` error middleware, `/health`
    - `ManifestFileDto` JSON contract for file deserialization (structure only; no file-import workflow yet)
@@ -53,11 +55,12 @@ The solution is strict-layered:
   - `Delete`: `BeforeValue` required, `AfterValue` absent
 - `ConfigurationChange` references `ConfigurationInstanceId`; manifest context is derived from the instance.
 - Critical notification is derived from manifest setting definition metadata.
+- Critical notification delivery uses transactional outbox semantics: configuration write, `ConfigurationChange`, and outbox intent are committed together.
 
 ## Assumptions
 
 - Persistence is in-memory only.
-- Monitoring integration is simulated, async, injectable, and retry-free.
+- Monitoring transport is simulated and at-least-once; delivery reliability is handled by outbox retries.
 - Application runtime settings are bound from `appsettings*.json` into immutable `ApplicationSettings` and `AuthSettings`, then registered in DI.
 - `Application:AppScaling` controls lock strategy:
   - `false` (default): `InProcessDomainLock`
@@ -143,3 +146,4 @@ dotnet test BackOfficeSmall.sln
 - Application services orchestrate use cases while domain objects enforce their own invariants.
 - In-memory repositories enforce uniqueness constraints at boundary entry points.
 - Critical notification decision is centralized in mutation flow and derived from manifest metadata, not caller flags.
+- Outbox + dispatcher split ensures write consistency and resilient eventual delivery without inline external calls.

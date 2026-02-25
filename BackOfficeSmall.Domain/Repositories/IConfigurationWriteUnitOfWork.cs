@@ -8,5 +8,7 @@ public interface IConfigurationWriteUnitOfWork : IDisposable, IAsyncDisposable
 
     IConfigurationChangeRepository ConfigurationChangeRepository { get; }
 
+    IMonitoringNotifierOutboxRepository MonitoringNotifierOutboxRepository { get; }
+
     Task CommitAsync(CancellationToken cancellationToken);
 }

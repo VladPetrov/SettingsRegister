@@ -4,5 +4,5 @@ namespace BackOfficeSmall.Domain.Services;
 
 public interface IMonitoringNotifier
 {
-    Task NotifyCriticalChangeAsync(ConfigurationChange change, CancellationToken cancellationToken);
+    Task<bool> SendAsync(MonitoringNotificationMessage message, CancellationToken cancellationToken);
 }

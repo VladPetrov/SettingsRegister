@@ -9,11 +9,13 @@ public sealed class InMemoryConfigurationWriteUnitOfWork : IConfigurationWriteUn
     public InMemoryConfigurationWriteUnitOfWork(
         ICachedManifestRepository manifestRepository,
         ICacheConfigurationRepository configurationRepository,
-        InMemoryConfigurationChangeRepository configurationChangeRepository)
+        InMemoryConfigurationChangeRepository configurationChangeRepository,
+        InMemoryMonitoringNotifierOutboxRepository monitoringNotifierOutboxRepository)
     {
         ManifestRepository = manifestRepository ?? throw new ArgumentNullException(nameof(manifestRepository));
         ConfigurationRepository = configurationRepository ?? throw new ArgumentNullException(nameof(configurationRepository));
         ConfigurationChangeRepository = configurationChangeRepository ?? throw new ArgumentNullException(nameof(configurationChangeRepository));
+        MonitoringNotifierOutboxRepository = monitoringNotifierOutboxRepository ?? throw new ArgumentNullException(nameof(monitoringNotifierOutboxRepository));
     }
 
     public IManifestRepository ManifestRepository { get; }
@@ -21,6 +23,8 @@ public sealed class InMemoryConfigurationWriteUnitOfWork : IConfigurationWriteUn
     public IConfigurationRepository ConfigurationRepository { get; }
 
     public IConfigurationChangeRepository ConfigurationChangeRepository { get; }
+
+    public IMonitoringNotifierOutboxRepository MonitoringNotifierOutboxRepository { get; }
 
     public Task CommitAsync(CancellationToken cancellationToken)
     {
