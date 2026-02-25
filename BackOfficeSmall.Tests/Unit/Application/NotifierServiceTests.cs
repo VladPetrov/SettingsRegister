@@ -11,22 +11,27 @@ namespace BackOfficeSmall.Tests.Unit.Application;
 public sealed class NotifierServiceTests
 {
     [Fact]
-    public async Task NotifyChangesAsync_WhenTransportFails_MarksMessageFailedAndRetriesOnNextCall()
+    public async Task NotifyChangesAsync_WhenTransportFails_MarksMessageFailedAndRetriesOnNextSignal()
     {
         FakeMonitoringNotifier transport = new();
         transport.EnqueueResult(false);
         transport.EnqueueResult(false);
 
+        FakeDomainLock domainLock = new();
         FakeSystemClock clock = new(DateTime.SpecifyKind(new DateTime(2026, 2, 25, 13, 0, 0), DateTimeKind.Utc));
         InMemoryConfigurationWriteUnitOfWork unitOfWork = CreateUnitOfWork();
-        NotifierService service = new(unitOfWork, transport, clock);
+        NotifierService service = new(unitOfWork, transport, domainLock, clock);
 
         ConfigurationChange change = CreateChange(Guid.NewGuid());
         MonitoringNotifierOutboxMessage outboxMessage = MonitoringNotifierOutboxMessage.CreatePending(change, clock.UtcNow);
         await unitOfWork.MonitoringNotifierOutboxRepository.AddAsync(outboxMessage, CancellationToken.None);
         await unitOfWork.CommitAsync(CancellationToken.None);
 
+        using CancellationTokenSource cts = new();
+        Task loopTask = service.StartAsync(cts.Token);
+
         await service.NotifyChangesAsync(CancellationToken.None);
+        await WaitForAttemptCountAsync(unitOfWork, outboxMessage.Id, 1);
 
         MonitoringNotifierOutboxMessage? firstAttempt = await unitOfWork.MonitoringNotifierOutboxRepository.GetByIdAsync(outboxMessage.Id, CancellationToken.None);
         Assert.NotNull(firstAttempt);
@@ -36,6 +41,7 @@ public sealed class NotifierServiceTests
 
         clock.Set(DateTime.SpecifyKind(new DateTime(2026, 2, 25, 13, 5, 0), DateTimeKind.Utc));
         await service.NotifyChangesAsync(CancellationToken.None);
+        await WaitForAttemptCountAsync(unitOfWork, outboxMessage.Id, 2);
 
         MonitoringNotifierOutboxMessage? secondAttempt = await unitOfWork.MonitoringNotifierOutboxRepository.GetByIdAsync(outboxMessage.Id, CancellationToken.None);
         Assert.NotNull(secondAttempt);
@@ -43,6 +49,43 @@ public sealed class NotifierServiceTests
         Assert.Equal(2, secondAttempt.AttemptCount);
         Assert.NotNull(secondAttempt.LastAttemptAtUtc);
         Assert.Equal(2, transport.Notifications.Count);
+        Assert.Equal("monitoring-notifier-outbox-dispatch", domainLock.LastKey);
+        Assert.Equal(TimeSpan.FromSeconds(1), domainLock.LastTimeout);
+
+        cts.Cancel();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await loopTask);
+    }
+
+    [Fact]
+    public async Task NotifyChangesAsync_WhenDispatchLockNotAcquired_SkipsTick()
+    {
+        FakeMonitoringNotifier transport = new();
+        FakeDomainLock domainLock = new(false);
+        FakeSystemClock clock = new(DateTime.SpecifyKind(new DateTime(2026, 2, 25, 13, 0, 0), DateTimeKind.Utc));
+        InMemoryConfigurationWriteUnitOfWork unitOfWork = CreateUnitOfWork();
+        NotifierService service = new(unitOfWork, transport, domainLock, clock);
+
+        ConfigurationChange change = CreateChange(Guid.NewGuid());
+        MonitoringNotifierOutboxMessage outboxMessage = MonitoringNotifierOutboxMessage.CreatePending(change, clock.UtcNow);
+        await unitOfWork.MonitoringNotifierOutboxRepository.AddAsync(outboxMessage, CancellationToken.None);
+        await unitOfWork.CommitAsync(CancellationToken.None);
+
+        using CancellationTokenSource cts = new();
+        Task loopTask = service.StartAsync(cts.Token);
+
+        await service.NotifyChangesAsync(CancellationToken.None);
+        await WaitForLockAttemptAsync(domainLock);
+
+        MonitoringNotifierOutboxMessage? unchanged = await unitOfWork.MonitoringNotifierOutboxRepository.GetByIdAsync(outboxMessage.Id, CancellationToken.None);
+        Assert.NotNull(unchanged);
+        Assert.Equal(MonitoringNotificationOutboxStatus.Pending, unchanged.Status);
+        Assert.Equal(0, unchanged.AttemptCount);
+        Assert.Empty(transport.Notifications);
+        Assert.Equal("monitoring-notifier-outbox-dispatch", domainLock.LastKey);
+        Assert.Equal(TimeSpan.FromSeconds(1), domainLock.LastTimeout);
+
+        cts.Cancel();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await loopTask);
     }
 
     private static InMemoryConfigurationWriteUnitOfWork CreateUnitOfWork()
@@ -79,5 +122,41 @@ public sealed class NotifierServiceTests
             "on",
             "tester",
             DateTime.SpecifyKind(new DateTime(2026, 2, 25, 12, 0, 0), DateTimeKind.Utc));
+    }
+
+    private static async Task WaitForAttemptCountAsync(
+        InMemoryConfigurationWriteUnitOfWork unitOfWork,
+        Guid outboxId,
+        int expectedAttemptCount)
+    {
+        DateTime timeoutAt = DateTime.UtcNow.AddSeconds(5);
+        while (DateTime.UtcNow < timeoutAt)
+        {
+            MonitoringNotifierOutboxMessage? current = await unitOfWork.MonitoringNotifierOutboxRepository.GetByIdAsync(outboxId, CancellationToken.None);
+            if (current is not null && current.AttemptCount >= expectedAttemptCount)
+            {
+                return;
+            }
+
+            await Task.Delay(25);
+        }
+
+        throw new TimeoutException($"Expected attempt count '{expectedAttemptCount}' was not reached in time.");
+    }
+
+    private static async Task WaitForLockAttemptAsync(FakeDomainLock domainLock)
+    {
+        DateTime timeoutAt = DateTime.UtcNow.AddSeconds(5);
+        while (DateTime.UtcNow < timeoutAt)
+        {
+            if (domainLock.LastKey is not null)
+            {
+                return;
+            }
+
+            await Task.Delay(25);
+        }
+
+        throw new TimeoutException("Expected notifier dispatch lock attempt was not observed in time.");
     }
 }

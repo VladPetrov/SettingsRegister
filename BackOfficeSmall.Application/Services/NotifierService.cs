@@ -7,20 +7,26 @@ namespace BackOfficeSmall.Application.Services;
 
 public sealed class NotifierService : INotifierService
 {
-    private static readonly TimeSpan PollInterval = TimeSpan.FromSeconds(2);
+    private const string DispatchLockKey = "monitoring-notifier-outbox-dispatch";
+    private static readonly TimeSpan DispatchLockTimeout = TimeSpan.FromSeconds(1);
+    private static readonly TimeSpan RetryScanInterval = TimeSpan.FromSeconds(30);
     private const int DispatchBatchSize = 100;
 
     private readonly IConfigurationWriteUnitOfWork _configurationWriteUnitOfWork;
     private readonly IMonitoringNotifier _monitoringNotifier;
+    private readonly IDomainLock _domainLock;
     private readonly ISystemClock _clock;
+    private readonly SemaphoreSlim _dispatchSignal = new(0, 1);
 
     public NotifierService(
         IConfigurationWriteUnitOfWork configurationWriteUnitOfWork,
         IMonitoringNotifier monitoringNotifier,
+        IDomainLock domainLock,
         ISystemClock clock)
     {
         _configurationWriteUnitOfWork = configurationWriteUnitOfWork ?? throw new ArgumentNullException(nameof(configurationWriteUnitOfWork));
         _monitoringNotifier = monitoringNotifier ?? throw new ArgumentNullException(nameof(monitoringNotifier));
+        _domainLock = domainLock ?? throw new ArgumentNullException(nameof(domainLock));
         _clock = clock ?? throw new ArgumentNullException(nameof(clock));
     }
 
@@ -28,21 +34,36 @@ public sealed class NotifierService : INotifierService
     {
         while (!cancellationToken.IsCancellationRequested)
         {
-            await NotifyChangesAsync(cancellationToken);
-            await Task.Delay(PollInterval, cancellationToken);
+            _ = await _dispatchSignal.WaitAsync(RetryScanInterval, cancellationToken);
+            await DrainOnceAsync(cancellationToken);
         }
     }
 
-    public async Task NotifyChangesAsync(CancellationToken cancellationToken)
+    public void NotifyChanges()
     {
-        IReadOnlyList<MonitoringNotifierOutboxMessage> candidates = await _configurationWriteUnitOfWork.MonitoringNotifierOutboxRepository.ListDispatchCandidatesAsync(DispatchBatchSize, cancellationToken);
+         TriggerDispatchSignal();
+    }
+
+    private async Task DrainOnceAsync(CancellationToken cancellationToken)
+    {
+        // prevent call overlap in case of scaling or concurrency access 
+        await using IDomainLockLease? lockLease = await _domainLock.TryTakeLockAsync(DispatchLockKey, DispatchLockTimeout, cancellationToken);
+
+        //skip tick
+        if (lockLease is null)
+        {
+            return;
+        }
+
+        IReadOnlyList<MonitoringNotifierOutboxMessage> candidates = await _configurationWriteUnitOfWork.MonitoringNotifierOutboxRepository.ListDispatchCandidatesAsync(
+            DispatchBatchSize,
+            cancellationToken);
 
         if (candidates.Count == 0)
         {
             return;
         }
 
-        // if DispatchBatchSize > 1, this is at list once delivery, id DispatchBatchSize == it is just once
         foreach (MonitoringNotifierOutboxMessage candidate in candidates)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -86,5 +107,15 @@ public sealed class NotifierService : INotifierService
         }
 
         await _configurationWriteUnitOfWork.MonitoringNotifierOutboxRepository.UpdateAsync(candidate, cancellationToken);
+    }
+
+    private void TriggerDispatchSignal()
+    {
+        if (_dispatchSignal.CurrentCount > 0)
+        {
+            return;
+        }
+
+        _dispatchSignal.Release();
     }
 }

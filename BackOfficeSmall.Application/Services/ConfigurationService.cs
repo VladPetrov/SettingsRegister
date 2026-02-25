@@ -68,7 +68,7 @@ public sealed class ConfigurationService : IConfigurationService
             throw new ConflictException(ex.Message);
         }
 
-        await TriggerNotifierDrainAsync(cancellationToken);
+        _notifierService.NotifyChanges();
 
         return instance;
     }
@@ -132,7 +132,7 @@ public sealed class ConfigurationService : IConfigurationService
             throw new ConflictException(ex.Message);
         }
 
-        await TriggerNotifierDrainAsync(cancellationToken);
+        _notifierService.NotifyChanges();
     }
 
     public async Task<ConfigurationChange> SetValueAsync(Guid instanceId, SetCellValueRequest request, CancellationToken cancellationToken)
@@ -181,7 +181,7 @@ public sealed class ConfigurationService : IConfigurationService
             throw new ConflictException(ex.Message);
         }
 
-        await TriggerNotifierDrainAsync(cancellationToken);
+        _notifierService.NotifyChanges();
 
         return change;
     }
@@ -319,20 +319,5 @@ public sealed class ConfigurationService : IConfigurationService
 
         var outboxMessage = MonitoringNotifierOutboxMessage.CreatePending(change, _clock.UtcNow);
         await _configurationWriteUnitOfWork.MonitoringNotifierOutboxRepository.AddAsync(outboxMessage, cancellationToken);
-    }
-
-    private async Task TriggerNotifierDrainAsync(CancellationToken cancellationToken)
-    {
-        try
-        {
-            await _notifierService.NotifyChangesAsync(cancellationToken);
-        }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
-            throw;
-        }
-        catch
-        {
-        }
     }
 }

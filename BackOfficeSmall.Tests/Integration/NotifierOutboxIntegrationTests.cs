@@ -45,10 +45,14 @@ public sealed class NotifierOutboxIntegrationTests
         Assert.Equal(MonitoringNotificationOutboxStatus.Pending, pendingBefore[0].Status);
 
         FakeMonitoringNotifier transport = new();
-        NotifierService notifierService = new(unitOfWork, transport, clock);
+        NotifierService notifierService = new(unitOfWork, transport, new FakeDomainLock(), clock);
+
+        using CancellationTokenSource cts = new();
+        Task loopTask = notifierService.StartAsync(cts.Token);
 
         clock.Set(DateTime.SpecifyKind(new DateTime(2026, 2, 25, 14, 1, 0), DateTimeKind.Utc));
         await notifierService.NotifyChangesAsync(CancellationToken.None);
+        await WaitForOutboxStatusAsync(unitOfWork, pendingBefore[0].Id, MonitoringNotificationOutboxStatus.Sent);
 
         MonitoringNotifierOutboxMessage? sent = await unitOfWork
             .MonitoringNotifierOutboxRepository
@@ -60,6 +64,9 @@ public sealed class NotifierOutboxIntegrationTests
         Assert.NotNull(sent.SentAtUtc);
         Assert.Single(transport.Notifications);
         Assert.Equal(sent.DedupeKey, transport.Notifications[0].DedupeKey);
+
+        cts.Cancel();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await loopTask);
     }
 
     private static InMemoryConfigurationWriteUnitOfWork CreateUnitOfWork()
@@ -109,5 +116,25 @@ public sealed class NotifierOutboxIntegrationTests
         await unitOfWork.ManifestRepository.AddAsync(manifestDomainRoot, CancellationToken.None);
         await unitOfWork.CommitAsync(CancellationToken.None);
         return ManifestValueObject.FromDomainRoot(manifestDomainRoot);
+    }
+
+    private static async Task WaitForOutboxStatusAsync(
+        InMemoryConfigurationWriteUnitOfWork unitOfWork,
+        Guid outboxId,
+        MonitoringNotificationOutboxStatus expectedStatus)
+    {
+        DateTime timeoutAt = DateTime.UtcNow.AddSeconds(5);
+        while (DateTime.UtcNow < timeoutAt)
+        {
+            MonitoringNotifierOutboxMessage? current = await unitOfWork.MonitoringNotifierOutboxRepository.GetByIdAsync(outboxId, CancellationToken.None);
+            if (current is not null && current.Status == expectedStatus)
+            {
+                return;
+            }
+
+            await Task.Delay(25);
+        }
+
+        throw new TimeoutException($"Expected outbox status '{expectedStatus}' was not reached in time.");
     }
 }
