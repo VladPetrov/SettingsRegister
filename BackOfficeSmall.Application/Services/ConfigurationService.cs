@@ -49,14 +49,30 @@ public sealed class ConfigurationService : IConfigurationService
             }
         }
 
+        IReadOnlyList<ConfigurationChange> createChanges = BuildCellChanges(instance, request.CreatedBy, ConfigurationOperation.Add);
+
         try
         {
             await _configurationWriteUnitOfWork.ConfigurationRepository.AddAsync(instance, cancellationToken);
+
+            foreach (ConfigurationChange change in createChanges)
+            {
+                await _configurationWriteUnitOfWork.ConfigurationChangeRepository.AddAsync(change, cancellationToken);
+            }
+
             await _configurationWriteUnitOfWork.CommitAsync(cancellationToken);
         }
         catch (InvalidOperationException ex)
         {
             throw new ConflictException(ex.Message);
+        }
+
+        foreach (ConfigurationChange change in createChanges)
+        {
+            if (instance.Manifest.RequiresCriticalNotification(change.SettingKey))
+            {
+                await _monitoringNotifier.NotifyCriticalChangeAsync(change, cancellationToken);
+            }
         }
 
         return instance;
@@ -103,7 +119,7 @@ public sealed class ConfigurationService : IConfigurationService
             return;
         }
 
-        IReadOnlyList<ConfigurationChange> changes = BuildDeleteChanges(instance, request.DeletedBy);
+        IReadOnlyList<ConfigurationChange> changes = BuildCellChanges(instance, request.DeletedBy, ConfigurationOperation.Delete);
 
         try
         {
@@ -206,23 +222,41 @@ public sealed class ConfigurationService : IConfigurationService
         return manifest;
     }
 
-    private IReadOnlyList<ConfigurationChange> BuildDeleteChanges(ConfigurationInstance instance, string deletedBy)
+    private IReadOnlyList<ConfigurationChange> BuildCellChanges(ConfigurationInstance instance, string changedBy, ConfigurationOperation operation)
     {
+        if (operation != ConfigurationOperation.Add && operation != ConfigurationOperation.Delete)
+        {
+            throw new ArgumentOutOfRangeException(nameof(operation), "Only Add or Delete operations are supported.");
+        }
+
         List<ConfigurationChange> changes = new();
-        IReadOnlyList<SettingCell> existingCells = instance.Cells.ToList();
         DateTime changedAtUtc = _clock.UtcNow;
 
-        foreach (SettingCell cell in existingCells)
+        foreach (SettingCell cell in instance.Cells)
         {
+            string? beforeValue;
+            string? afterValue;
+
+            if (operation == ConfigurationOperation.Add)
+            {
+                beforeValue = null;
+                afterValue = cell.Value;
+            }
+            else
+            {
+                beforeValue = cell.Value;
+                afterValue = null;
+            }
+
             ConfigurationChange change = new(
                 Guid.NewGuid(),
                 instance.ConfigurationInstanceId,
                 cell.SettingKey,
                 cell.LayerIndex,
-                ConfigurationOperation.Delete,
-                cell.Value,
-                null,
-                deletedBy,
+                operation,
+                beforeValue,
+                afterValue,
+                changedBy,
                 changedAtUtc);
 
             changes.Add(change);
