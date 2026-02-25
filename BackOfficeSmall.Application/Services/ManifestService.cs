@@ -11,18 +11,18 @@ namespace BackOfficeSmall.Application.Services;
 
 public sealed class ManifestService : IManifestService
 {
-    private readonly IManifestRepository _manifestRepository;
+    private readonly IConfigurationWriteUnitOfWork _configurationWriteUnitOfWork;
     private readonly IDomainLock _domainLock;
     private readonly ISystemClock _clock;
     private readonly TimeSpan _manifestImportLockTimeout;
 
     public ManifestService(
-        IManifestRepository manifestRepository,
+        IConfigurationWriteUnitOfWork configurationWriteUnitOfWork,
         IDomainLock domainLock,
         ISystemClock clock,
         ApplicationSettings applicationSettings)
     {
-        _manifestRepository = manifestRepository ?? throw new ArgumentNullException(nameof(manifestRepository));
+        _configurationWriteUnitOfWork = configurationWriteUnitOfWork ?? throw new ArgumentNullException(nameof(configurationWriteUnitOfWork));
         _domainLock = domainLock ?? throw new ArgumentNullException(nameof(domainLock));
         _clock = clock ?? throw new ArgumentNullException(nameof(clock));
 
@@ -58,7 +58,7 @@ public sealed class ManifestService : IManifestService
             throw new ConflictException($"Could not acquire manifest import lock for '{request.Name}'.");
         }
 
-        var manifests = await _manifestRepository.ListAsync(request.Name, cancellationToken);
+        var manifests = await _configurationWriteUnitOfWork.ManifestRepository.ListAsync(request.Name, cancellationToken);
         
         var latestVersion = manifests.OrderByDescending(manifest => manifest.Version).FirstOrDefault();
 
@@ -69,7 +69,8 @@ public sealed class ManifestService : IManifestService
 
         try
         {
-            await _manifestRepository.AddAsync(manifest, cancellationToken);
+            await _configurationWriteUnitOfWork.ManifestRepository.AddAsync(manifest, cancellationToken);
+            await _configurationWriteUnitOfWork.CommitAsync(cancellationToken);
         }
         catch (InvalidOperationException ex)
         {
@@ -86,7 +87,7 @@ public sealed class ManifestService : IManifestService
             throw new ValidationException("ManifestId must be a non-empty GUID.");
         }
 
-        ManifestValueObject? manifest = await _manifestRepository.GetByIdAsync(manifestId, cancellationToken);
+        ManifestValueObject? manifest = await _configurationWriteUnitOfWork.ManifestRepository.GetByIdAsync(manifestId, cancellationToken);
         if (manifest is null)
         {
             throw new EntityNotFoundException("Manifest", manifestId.ToString());
@@ -95,8 +96,8 @@ public sealed class ManifestService : IManifestService
         return manifest;
     }
 
-    public Task<IReadOnlyList<ManifestValueObject>> ListAsync(string? name, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<ManifestValueObject>> ListAsync(string? name, CancellationToken cancellationToken)
     {
-        return _manifestRepository.ListAsync(name, cancellationToken);
+        return await _configurationWriteUnitOfWork.ManifestRepository.ListAsync(name, cancellationToken);
     }
 }

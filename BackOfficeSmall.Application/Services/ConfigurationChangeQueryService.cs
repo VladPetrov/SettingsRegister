@@ -7,11 +7,11 @@ namespace BackOfficeSmall.Application.Services;
 
 public sealed class ConfigurationChangeQueryService : IConfigurationChangeQueryService
 {
-    private readonly IConfigurationChangeRepository _configChangeRepository;
+    private readonly IConfigurationWriteUnitOfWork _configurationWriteUnitOfWork;
 
-    public ConfigurationChangeQueryService(IConfigurationChangeRepository configChangeRepository)
+    public ConfigurationChangeQueryService(IConfigurationWriteUnitOfWork configurationWriteUnitOfWork)
     {
-        _configChangeRepository = configChangeRepository ?? throw new ArgumentNullException(nameof(configChangeRepository));
+        _configurationWriteUnitOfWork = configurationWriteUnitOfWork ?? throw new ArgumentNullException(nameof(configurationWriteUnitOfWork));
     }
 
     public async Task<ConfigurationChange> GetChangeByIdAsync(Guid id, CancellationToken cancellationToken)
@@ -21,7 +21,7 @@ public sealed class ConfigurationChangeQueryService : IConfigurationChangeQueryS
             throw new ValidationException("ConfigurationChange Id must be a non-empty GUID.");
         }
 
-        ConfigurationChange? change = await _configChangeRepository.GetByIdAsync(id, cancellationToken);
+        ConfigurationChange? change = await _configurationWriteUnitOfWork.ConfigurationChangeRepository.GetByIdAsync(id, cancellationToken);
         if (change is null)
         {
             throw new EntityNotFoundException("ConfigurationChange", id.ToString());
@@ -30,14 +30,14 @@ public sealed class ConfigurationChangeQueryService : IConfigurationChangeQueryS
         return change;
     }
 
-    public Task<IReadOnlyList<ConfigurationChange>> ListChangesAsync(
+    public async Task<IReadOnlyList<ConfigurationChange>> ListChangesAsync(
         DateTime? fromUtc,
         DateTime? toUtc,
         ConfigurationOperation? operation,
         CancellationToken cancellationToken)
     {
         ValidateDateRange(fromUtc, toUtc);
-        return _configChangeRepository.ListAsync(fromUtc, toUtc, operation, cancellationToken);
+        return await _configurationWriteUnitOfWork.ConfigurationChangeRepository.ListAsync(fromUtc, toUtc, operation, cancellationToken);
     }
 
     private static void ValidateDateRange(DateTime? fromUtc, DateTime? toUtc)

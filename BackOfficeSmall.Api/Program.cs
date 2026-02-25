@@ -70,10 +70,26 @@ builder.Services
     });
 builder.Services.AddAuthorization();
 
-RegisterManifestRepositoryCacheDecorator(builder.Services);
-RegisterConfigurationRepositoryCacheDecorator(builder.Services);
-builder.Services.AddSingleton<IConfigurationChangeRepository, InMemoryConfigurationChangeRepository>();
-builder.Services.AddSingleton<IConfigurationWriteUnitOfWorkFactory, InMemoryConfigurationWriteUnitOfWorkFactory>();
+builder.Services.AddSingleton<ICachedManifestRepository>(serviceProvider =>
+{
+    //Had to resolve dependencies manually as repos are not registered in IoC 
+    var memoryCache = serviceProvider.GetRequiredService<IMemoryCache>();
+    var settings = serviceProvider.GetRequiredService<ICachedManifestRepositorySettings>();
+    IManifestRepository innerRepository = new InMemoryManifestRepository();
+
+    return new CachedManifestRepository(innerRepository, memoryCache, settings);
+});
+builder.Services.AddSingleton<ICacheConfigurationRepository>(serviceProvider =>
+{
+    //Had to resolve dependencies manually as repos are not registered in IoC 
+    var memoryCache = serviceProvider.GetRequiredService<IMemoryCache>();
+    var settings = serviceProvider.GetRequiredService<IConfigurationCachedSettings>();
+    IConfigurationRepository innerRepository = new InMemoryConfigurationInstanceRepository();
+
+    return new CachedConfigurationRepository(innerRepository, memoryCache, settings);
+});
+builder.Services.AddSingleton<InMemoryConfigurationChangeRepository>();
+builder.Services.AddScoped<IConfigurationWriteUnitOfWork, InMemoryConfigurationWriteUnitOfWork>();
 builder.Services.AddSingleton<IMonitoringNotifier, SimulatedMonitoringNotifier>();
 builder.Services.AddSingleton<IDomainLock>(appSettings.AppScaling ? new DistributedDomainLock() : new InProcessDomainLock());
 builder.Services.AddSingleton<ISystemClock, SystemClock>();
@@ -124,60 +140,13 @@ static void ValidateStartup(IServiceProvider services)
     scope.ServiceProvider.GetRequiredService<IManifestService>();
     scope.ServiceProvider.GetRequiredService<IConfigurationService>();
     scope.ServiceProvider.GetRequiredService<IConfigurationChangeQueryService>();
-    scope.ServiceProvider.GetRequiredService<IConfigurationWriteUnitOfWorkFactory>();
+    scope.ServiceProvider.GetRequiredService<IConfigurationWriteUnitOfWork>();
+    scope.ServiceProvider.GetRequiredService<ICachedManifestRepository>();
+    scope.ServiceProvider.GetRequiredService<ICacheConfigurationRepository>();
     scope.ServiceProvider.GetRequiredService<IAuthExchangeService>();
     scope.ServiceProvider.GetRequiredService<IDomainLock>();
     scope.ServiceProvider.GetRequiredService<ApplicationSettings>();
     scope.ServiceProvider.GetRequiredService<AuthSettings>();
-}
-
-// TODO: Make me look better
-static void RegisterManifestRepositoryCacheDecorator(IServiceCollection services)
-{
-    if (services is null)
-    {
-        throw new ArgumentNullException(nameof(services));
-    }
-
-    services.AddKeyedSingleton<IManifestRepository, InMemoryManifestRepository>(CachedManifestRepository.InnerManifestRepositoryKey);
-
-    services.AddSingleton<ICachedManifestRepository>(serviceProvider =>
-    {
-        var innerRepository = serviceProvider.GetRequiredKeyedService<IManifestRepository>(CachedManifestRepository.InnerManifestRepositoryKey);
-        var memoryCache = serviceProvider.GetRequiredService<IMemoryCache>();
-        var settings = serviceProvider.GetRequiredService<ICachedManifestRepositorySettings>();
-
-        return new CachedManifestRepository(innerRepository, memoryCache, settings);
-    });
-
-    services.AddSingleton<IManifestRepository>(serviceProvider =>
-    {
-        return serviceProvider.GetRequiredService<ICachedManifestRepository>();
-    });
-}
-
-static void RegisterConfigurationRepositoryCacheDecorator(IServiceCollection services)
-{
-    if (services is null)
-    {
-        throw new ArgumentNullException(nameof(services));
-    }
-
-    services.AddKeyedSingleton<IConfigurationRepository, InMemoryConfigurationInstanceRepository>(CachedConfigurationRepository.InnerConfigurationRepositoryKey);
-
-    services.AddSingleton<ICacheConfigurationRepository>(serviceProvider =>
-    {
-        var innerRepository = serviceProvider.GetRequiredKeyedService<IConfigurationRepository>(CachedConfigurationRepository.InnerConfigurationRepositoryKey);
-        var memoryCache = serviceProvider.GetRequiredService<IMemoryCache>();
-        var settings = serviceProvider.GetRequiredService<IConfigurationCachedSettings>();
-
-        return new CachedConfigurationRepository(innerRepository, memoryCache, settings);
-    });
-
-    services.AddSingleton<IConfigurationRepository>(serviceProvider =>
-    {
-        return serviceProvider.GetRequiredService<ICacheConfigurationRepository>();
-    });
 }
 
 public partial class Program

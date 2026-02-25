@@ -3,8 +3,10 @@ using BackOfficeSmall.Application.Configuration;
 using BackOfficeSmall.Application.Exceptions;
 using BackOfficeSmall.Application.Services;
 using BackOfficeSmall.Domain.Models.Manifest;
+using BackOfficeSmall.Domain.Repositories;
 using BackOfficeSmall.Infrastructure.Repositories;
 using BackOfficeSmall.Tests.TestDoubles;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace BackOfficeSmall.Tests.Unit.Application;
 
@@ -17,12 +19,13 @@ public sealed class ManifestServiceTests
     {
         FakeSystemClock clock = new(DateTime.SpecifyKind(new DateTime(2026, 2, 22, 10, 0, 0), DateTimeKind.Utc));
         FakeDomainLock domainLock = new();
-        InMemoryManifestRepository manifestRepository = new();
         ApplicationSettings applicationSettings = new()
         {
             ManifestImportLockTimeoutSeconds = ImportLockTimeoutSeconds
         };
-        ManifestService service = new(manifestRepository, domainLock, clock, applicationSettings);
+        using MemoryCache memoryCache = new(new MemoryCacheOptions());
+        IConfigurationWriteUnitOfWork unitOfWork = CreateUnitOfWork(memoryCache, applicationSettings);
+        ManifestService service = new(unitOfWork, domainLock, clock, applicationSettings);
 
         ManifestImportRequest request = CreateManifestRequest("Main", "tester");
 
@@ -46,12 +49,13 @@ public sealed class ManifestServiceTests
     {
         FakeSystemClock clock = new(DateTime.SpecifyKind(new DateTime(2026, 2, 22, 10, 0, 0), DateTimeKind.Utc));
         FakeDomainLock domainLock = new(false);
-        InMemoryManifestRepository manifestRepository = new();
         ApplicationSettings applicationSettings = new()
         {
             ManifestImportLockTimeoutSeconds = ImportLockTimeoutSeconds
         };
-        ManifestService service = new(manifestRepository, domainLock, clock, applicationSettings);
+        using MemoryCache memoryCache = new(new MemoryCacheOptions());
+        IConfigurationWriteUnitOfWork unitOfWork = CreateUnitOfWork(memoryCache, applicationSettings);
+        ManifestService service = new(unitOfWork, domainLock, clock, applicationSettings);
 
         ManifestImportRequest request = CreateManifestRequest("Main", "tester");
 
@@ -75,5 +79,23 @@ public sealed class ManifestServiceTests
                 new ManifestOverridePermissionInput("FeatureFlag", 0, CanOverride: true),
                 new ManifestOverridePermissionInput("FeatureFlag", 1, CanOverride: true)
             });
+    }
+
+    private static IConfigurationWriteUnitOfWork CreateUnitOfWork(MemoryCache memoryCache, ApplicationSettings settings)
+    {
+        ICachedManifestRepository cachedManifestRepository = new CachedManifestRepository(
+            new InMemoryManifestRepository(),
+            memoryCache,
+            settings);
+        ICacheConfigurationRepository cachedConfigurationRepository = new CachedConfigurationRepository(
+            new InMemoryConfigurationInstanceRepository(),
+            memoryCache,
+            settings);
+        InMemoryConfigurationChangeRepository configurationChangeRepository = new();
+
+        return new InMemoryConfigurationWriteUnitOfWork(
+            cachedManifestRepository,
+            cachedConfigurationRepository,
+            configurationChangeRepository);
     }
 }

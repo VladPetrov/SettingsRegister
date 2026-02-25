@@ -1,7 +1,9 @@
 namespace BackOfficeSmall.Domain.Repositories;
 
-public interface IConfigurationWriteUnitOfWork : IAsyncDisposable
+public interface IConfigurationWriteUnitOfWork : IDisposable, IAsyncDisposable
 {
+    IManifestRepository ManifestRepository { get; }
+
     IConfigurationRepository ConfigurationRepository { get; }
 
     IConfigurationChangeRepository ConfigurationChangeRepository { get; }

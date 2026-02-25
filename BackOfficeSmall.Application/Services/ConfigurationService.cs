@@ -12,24 +12,18 @@ public sealed class ConfigurationService : IConfigurationService
 {
     private static readonly TimeSpan InstanceLockTimeout = TimeSpan.FromSeconds(30);
 
-    private readonly IManifestRepository _manifestRepository;
-    private readonly IConfigurationRepository _configInstanceRepository;
-    private readonly IConfigurationWriteUnitOfWorkFactory _configurationWriteUnitOfWorkFactory;
+    private readonly IConfigurationWriteUnitOfWork _configurationWriteUnitOfWork;
     private readonly IMonitoringNotifier _monitoringNotifier;
     private readonly IDomainLock _domainLock;
     private readonly ISystemClock _clock;
 
     public ConfigurationService(
-        IManifestRepository manifestRepository,
-        IConfigurationRepository configInstanceRepository,
-        IConfigurationWriteUnitOfWorkFactory configurationWriteUnitOfWorkFactory,
+        IConfigurationWriteUnitOfWork configurationWriteUnitOfWork,
         IMonitoringNotifier monitoringNotifier,
         IDomainLock domainLock,
         ISystemClock clock)
     {
-        _manifestRepository = manifestRepository ?? throw new ArgumentNullException(nameof(manifestRepository));
-        _configInstanceRepository = configInstanceRepository ?? throw new ArgumentNullException(nameof(configInstanceRepository));
-        _configurationWriteUnitOfWorkFactory = configurationWriteUnitOfWorkFactory ?? throw new ArgumentNullException(nameof(configurationWriteUnitOfWorkFactory));
+        _configurationWriteUnitOfWork = configurationWriteUnitOfWork ?? throw new ArgumentNullException(nameof(configurationWriteUnitOfWork));
         _monitoringNotifier = monitoringNotifier ?? throw new ArgumentNullException(nameof(monitoringNotifier));
         _domainLock = domainLock ?? throw new ArgumentNullException(nameof(domainLock));
         _clock = clock ?? throw new ArgumentNullException(nameof(clock));
@@ -57,7 +51,8 @@ public sealed class ConfigurationService : IConfigurationService
 
         try
         {
-            await _configInstanceRepository.AddAsync(instance, cancellationToken);
+            await _configurationWriteUnitOfWork.ConfigurationRepository.AddAsync(instance, cancellationToken);
+            await _configurationWriteUnitOfWork.CommitAsync(cancellationToken);
         }
         catch (InvalidOperationException ex)
         {
@@ -76,13 +71,13 @@ public sealed class ConfigurationService : IConfigurationService
 
         // This guaranties consistent reads
         await using var instanceLock = await AcquireInstanceLockOrThrowAsync(instanceId, cancellationToken);
-        
-        return await GetInstanceOrThrowAsync(instanceId, _configInstanceRepository, cancellationToken);
+
+        return await GetInstanceOrThrowAsync(instanceId, _configurationWriteUnitOfWork.ConfigurationRepository, cancellationToken);
     }
 
-    public Task<IReadOnlyList<ConfigurationInstance>> ListAsync(CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<ConfigurationInstance>> ListAsync(CancellationToken cancellationToken)
     {
-        return _configInstanceRepository.ListAsync(cancellationToken);
+        return await _configurationWriteUnitOfWork.ConfigurationRepository.ListAsync(cancellationToken);
     }
 
     public async Task DeleteAsync(Guid instanceId, DeleteConfigurationInstanceRequest request, CancellationToken cancellationToken)
@@ -101,8 +96,7 @@ public sealed class ConfigurationService : IConfigurationService
 
         await using var instanceLock = await AcquireInstanceLockOrThrowAsync(instanceId, cancellationToken);
        
-        await using IConfigurationWriteUnitOfWork unitOfWork = _configurationWriteUnitOfWorkFactory.Create();
-        ConfigurationInstance? instance = await unitOfWork.ConfigurationRepository.GetByIdAsync(instanceId, cancellationToken);
+        var instance = await _configurationWriteUnitOfWork.ConfigurationRepository.GetByIdAsync(instanceId, cancellationToken);
 
         if (instance is null)
         {
@@ -115,11 +109,11 @@ public sealed class ConfigurationService : IConfigurationService
         {
             foreach (ConfigurationChange change in changes)
             {
-                await unitOfWork.ConfigurationChangeRepository.AddAsync(change, cancellationToken);
+                await _configurationWriteUnitOfWork.ConfigurationChangeRepository.AddAsync(change, cancellationToken);
             }
 
-            await unitOfWork.ConfigurationRepository.DeleteAsync(instanceId, cancellationToken);
-            await unitOfWork.CommitAsync(cancellationToken);
+            await _configurationWriteUnitOfWork.ConfigurationRepository.DeleteAsync(instanceId, cancellationToken);
+            await _configurationWriteUnitOfWork.CommitAsync(cancellationToken);
         }
         catch (InvalidOperationException ex)
         {
@@ -151,11 +145,7 @@ public sealed class ConfigurationService : IConfigurationService
 
         await using var instanceLock = await AcquireInstanceLockOrThrowAsync(instanceId, cancellationToken);
 
-        await using IConfigurationWriteUnitOfWork unitOfWork = _configurationWriteUnitOfWorkFactory.Create();
-        ConfigurationInstance instance = await GetInstanceOrThrowAsync(
-            instanceId,
-            unitOfWork.ConfigurationRepository,
-            cancellationToken);
+        ConfigurationInstance instance = await GetInstanceOrThrowAsync(instanceId, _configurationWriteUnitOfWork.ConfigurationRepository, cancellationToken);
         string? beforeValue = instance.GetValue(request.SettingKey, request.LayerIndex);
         string? afterValue = NormalizeValue(request.Value);
 
@@ -175,9 +165,9 @@ public sealed class ConfigurationService : IConfigurationService
 
         try
         {
-            await unitOfWork.ConfigurationRepository.UpdateAsync(instance, cancellationToken);
-            await unitOfWork.ConfigurationChangeRepository.AddAsync(change, cancellationToken);
-            await unitOfWork.CommitAsync(cancellationToken);
+            await _configurationWriteUnitOfWork.ConfigurationRepository.UpdateAsync(instance, cancellationToken);
+            await _configurationWriteUnitOfWork.ConfigurationChangeRepository.AddAsync(change, cancellationToken);
+            await _configurationWriteUnitOfWork.CommitAsync(cancellationToken);
         }
         catch (InvalidOperationException ex)
         {
@@ -206,7 +196,7 @@ public sealed class ConfigurationService : IConfigurationService
 
     private async Task<ManifestValueObject> GetManifestOrThrowAsync(Guid manifestId, CancellationToken cancellationToken)
     {
-        var manifest = await _manifestRepository.GetByIdAsync(manifestId, cancellationToken);
+        var manifest = await _configurationWriteUnitOfWork.ManifestRepository.GetByIdAsync(manifestId, cancellationToken);
         
         if (manifest is null)
         {
@@ -241,10 +231,7 @@ public sealed class ConfigurationService : IConfigurationService
         return changes;
     }
 
-    private async Task<ConfigurationInstance> GetInstanceOrThrowAsync(
-        Guid instanceId,
-        IConfigurationRepository configurationRepository,
-        CancellationToken cancellationToken)
+    private async Task<ConfigurationInstance> GetInstanceOrThrowAsync(Guid instanceId, IConfigurationRepository configurationRepository, CancellationToken cancellationToken)
     {
         var instance = await configurationRepository.GetByIdAsync(instanceId, cancellationToken);
 
