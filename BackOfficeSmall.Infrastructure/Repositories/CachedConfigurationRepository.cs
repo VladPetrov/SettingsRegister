@@ -81,9 +81,7 @@ public sealed class CachedConfigurationRepository : ICacheConfigurationRepositor
 
         if (settings.ConfigurationCacheExpirationSeconds <= 0)
         {
-            throw new ArgumentOutOfRangeException(
-                nameof(settings.ConfigurationCacheExpirationSeconds),
-                "ConfigurationCacheExpirationSeconds must be greater than zero.");
+            throw new ArgumentOutOfRangeException(nameof(settings.ConfigurationCacheExpirationSeconds), "ConfigurationCacheExpirationSeconds must be greater than zero.");
         }
 
         return TimeSpan.FromSeconds(settings.ConfigurationCacheExpirationSeconds);
