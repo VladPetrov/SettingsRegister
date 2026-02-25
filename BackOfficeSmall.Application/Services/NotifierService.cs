@@ -57,6 +57,7 @@ public sealed class NotifierService : INotifierService
             return;
         }
 
+        // if DispatchBatchSize == 1, this is just once delivery, but slow, if DispatchBatchSize > 1 at least once delivery, but fast.
         IReadOnlyList<MonitoringNotifierOutboxMessage> candidates = await _configurationWriteUnitOfWork.MonitoringNotifierOutboxRepository.ListDispatchCandidatesAsync(
             DispatchBatchSize,
             cancellationToken);
