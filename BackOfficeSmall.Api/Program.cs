@@ -73,13 +73,14 @@ builder.Services.AddAuthorization();
 RegisterManifestRepositoryCacheDecorator(builder.Services);
 RegisterConfigurationRepositoryCacheDecorator(builder.Services);
 builder.Services.AddSingleton<IConfigurationChangeRepository, InMemoryConfigurationChangeRepository>();
+builder.Services.AddSingleton<IConfigurationWriteUnitOfWorkFactory, InMemoryConfigurationWriteUnitOfWorkFactory>();
 builder.Services.AddSingleton<IMonitoringNotifier, SimulatedMonitoringNotifier>();
 builder.Services.AddSingleton<IDomainLock>(appSettings.AppScaling ? new DistributedDomainLock() : new InProcessDomainLock());
 builder.Services.AddSingleton<ISystemClock, SystemClock>();
 builder.Services.AddSingleton<IApplicationEnvironment, HostApplicationEnvironment>();
 
 builder.Services.AddScoped<IManifestService, ManifestService>();
-builder.Services.AddScoped<IConfigurationService, ConfigurationInstanceService>();
+builder.Services.AddScoped<IConfigurationService, ConfigurationService>();
 builder.Services.AddScoped<IConfigurationChangeQueryService, ConfigurationChangeQueryService>();
 builder.Services.AddScoped<IAuthExchangeService, AuthExchangeService>();
 
@@ -123,6 +124,7 @@ static void ValidateStartup(IServiceProvider services)
     scope.ServiceProvider.GetRequiredService<IManifestService>();
     scope.ServiceProvider.GetRequiredService<IConfigurationService>();
     scope.ServiceProvider.GetRequiredService<IConfigurationChangeQueryService>();
+    scope.ServiceProvider.GetRequiredService<IConfigurationWriteUnitOfWorkFactory>();
     scope.ServiceProvider.GetRequiredService<IAuthExchangeService>();
     scope.ServiceProvider.GetRequiredService<IDomainLock>();
     scope.ServiceProvider.GetRequiredService<ApplicationSettings>();

@@ -8,28 +8,28 @@ using BackOfficeSmall.Domain.Services;
 
 namespace BackOfficeSmall.Application.Services;
 
-public sealed class ConfigurationInstanceService : IConfigurationService
+public sealed class ConfigurationService : IConfigurationService
 {
     private static readonly TimeSpan InstanceLockTimeout = TimeSpan.FromSeconds(30);
 
     private readonly IManifestRepository _manifestRepository;
     private readonly IConfigurationRepository _configInstanceRepository;
-    private readonly IConfigurationChangeRepository _configChangeRepository;
+    private readonly IConfigurationWriteUnitOfWorkFactory _configurationWriteUnitOfWorkFactory;
     private readonly IMonitoringNotifier _monitoringNotifier;
     private readonly IDomainLock _domainLock;
     private readonly ISystemClock _clock;
 
-    public ConfigurationInstanceService(
+    public ConfigurationService(
         IManifestRepository manifestRepository,
         IConfigurationRepository configInstanceRepository,
-        IConfigurationChangeRepository configChangeRepository,
+        IConfigurationWriteUnitOfWorkFactory configurationWriteUnitOfWorkFactory,
         IMonitoringNotifier monitoringNotifier,
         IDomainLock domainLock,
         ISystemClock clock)
     {
         _manifestRepository = manifestRepository ?? throw new ArgumentNullException(nameof(manifestRepository));
         _configInstanceRepository = configInstanceRepository ?? throw new ArgumentNullException(nameof(configInstanceRepository));
-        _configChangeRepository = configChangeRepository ?? throw new ArgumentNullException(nameof(configChangeRepository));
+        _configurationWriteUnitOfWorkFactory = configurationWriteUnitOfWorkFactory ?? throw new ArgumentNullException(nameof(configurationWriteUnitOfWorkFactory));
         _monitoringNotifier = monitoringNotifier ?? throw new ArgumentNullException(nameof(monitoringNotifier));
         _domainLock = domainLock ?? throw new ArgumentNullException(nameof(domainLock));
         _clock = clock ?? throw new ArgumentNullException(nameof(clock));
@@ -77,7 +77,7 @@ public sealed class ConfigurationInstanceService : IConfigurationService
         // This guaranties consistent reads
         await using var instanceLock = await AcquireInstanceLockOrThrowAsync(instanceId, cancellationToken);
         
-        return await GetInstanceOrThrowAsync(instanceId, cancellationToken);
+        return await GetInstanceOrThrowAsync(instanceId, _configInstanceRepository, cancellationToken);
     }
 
     public Task<IReadOnlyList<ConfigurationInstance>> ListAsync(CancellationToken cancellationToken)
@@ -101,38 +101,38 @@ public sealed class ConfigurationInstanceService : IConfigurationService
 
         await using var instanceLock = await AcquireInstanceLockOrThrowAsync(instanceId, cancellationToken);
        
-        var instance = await _configInstanceRepository.GetByIdAsync(instanceId, cancellationToken);
-        
+        await using IConfigurationWriteUnitOfWork unitOfWork = _configurationWriteUnitOfWorkFactory.Create();
+        ConfigurationInstance? instance = await unitOfWork.ConfigurationRepository.GetByIdAsync(instanceId, cancellationToken);
+
         if (instance is null)
         {
             return;
         }
 
-        IReadOnlyList<SettingCell> existingCells = instance.Cells.ToList();
+        IReadOnlyList<ConfigurationChange> changes = BuildDeleteChanges(instance, request.DeletedBy);
 
-        // TODO: this is wrong
-        foreach (var cell in existingCells)
+        try
         {
-            ConfigurationChange change = new(
-                Guid.NewGuid(),
-                instance.ConfigurationInstanceId,
-                cell.SettingKey,
-                cell.LayerIndex,
-                ConfigurationOperation.Delete,
-                cell.Value,
-                null,
-                request.DeletedBy,
-                _clock.UtcNow);
+            foreach (ConfigurationChange change in changes)
+            {
+                await unitOfWork.ConfigurationChangeRepository.AddAsync(change, cancellationToken);
+            }
 
-            await _configChangeRepository.AddAsync(change, cancellationToken);
+            await unitOfWork.ConfigurationRepository.DeleteAsync(instanceId, cancellationToken);
+            await unitOfWork.CommitAsync(cancellationToken);
+        }
+        catch (InvalidOperationException ex)
+        {
+            throw new ConflictException(ex.Message);
+        }
 
-            if (instance.Manifest.RequiresCriticalNotification(cell.SettingKey))
+        foreach (ConfigurationChange change in changes)
+        {
+            if (instance.Manifest.RequiresCriticalNotification(change.SettingKey))
             {
                 await _monitoringNotifier.NotifyCriticalChangeAsync(change, cancellationToken);
             }
         }
-
-        await _configInstanceRepository.DeleteAsync(instanceId, cancellationToken);
     }
 
     public async Task<ConfigurationChange> SetValueAsync(Guid instanceId, SetCellValueRequest request, CancellationToken cancellationToken)
@@ -151,23 +151,17 @@ public sealed class ConfigurationInstanceService : IConfigurationService
 
         await using var instanceLock = await AcquireInstanceLockOrThrowAsync(instanceId, cancellationToken);
 
-        var instance = await GetInstanceOrThrowAsync(instanceId, cancellationToken);
-        var beforeValue = instance.GetValue(request.SettingKey, request.LayerIndex);
-        var afterValue = NormalizeValue(request.Value);
+        await using IConfigurationWriteUnitOfWork unitOfWork = _configurationWriteUnitOfWorkFactory.Create();
+        ConfigurationInstance instance = await GetInstanceOrThrowAsync(
+            instanceId,
+            unitOfWork.ConfigurationRepository,
+            cancellationToken);
+        string? beforeValue = instance.GetValue(request.SettingKey, request.LayerIndex);
+        string? afterValue = NormalizeValue(request.Value);
 
         TrySetValue(instance, request.SettingKey, request.LayerIndex, afterValue);
+        ConfigurationOperation operation = ResolveOperation(beforeValue, afterValue);
 
-        try
-        {
-            await _configInstanceRepository.UpdateAsync(instance, cancellationToken);
-        }
-        catch (InvalidOperationException ex)
-        {
-            throw new ConflictException(ex.Message);
-        }
-
-        var operation = ResolveOperation(beforeValue, afterValue);
-        
         ConfigurationChange change = new(
             Guid.NewGuid(),
             instance.ConfigurationInstanceId,
@@ -179,7 +173,16 @@ public sealed class ConfigurationInstanceService : IConfigurationService
             request.ChangedBy,
             _clock.UtcNow);
 
-        await _configChangeRepository.AddAsync(change, cancellationToken);
+        try
+        {
+            await unitOfWork.ConfigurationRepository.UpdateAsync(instance, cancellationToken);
+            await unitOfWork.ConfigurationChangeRepository.AddAsync(change, cancellationToken);
+            await unitOfWork.CommitAsync(cancellationToken);
+        }
+        catch (InvalidOperationException ex)
+        {
+            throw new ConflictException(ex.Message);
+        }
 
         if (instance.Manifest.RequiresCriticalNotification(request.SettingKey))
         {
@@ -213,9 +216,37 @@ public sealed class ConfigurationInstanceService : IConfigurationService
         return manifest;
     }
 
-    private async Task<ConfigurationInstance> GetInstanceOrThrowAsync(Guid instanceId, CancellationToken cancellationToken)
+    private IReadOnlyList<ConfigurationChange> BuildDeleteChanges(ConfigurationInstance instance, string deletedBy)
     {
-        var instance = await _configInstanceRepository.GetByIdAsync(instanceId, cancellationToken);
+        List<ConfigurationChange> changes = new();
+        IReadOnlyList<SettingCell> existingCells = instance.Cells.ToList();
+        DateTime changedAtUtc = _clock.UtcNow;
+
+        foreach (SettingCell cell in existingCells)
+        {
+            ConfigurationChange change = new(
+                Guid.NewGuid(),
+                instance.ConfigurationInstanceId,
+                cell.SettingKey,
+                cell.LayerIndex,
+                ConfigurationOperation.Delete,
+                cell.Value,
+                null,
+                deletedBy,
+                changedAtUtc);
+
+            changes.Add(change);
+        }
+
+        return changes;
+    }
+
+    private async Task<ConfigurationInstance> GetInstanceOrThrowAsync(
+        Guid instanceId,
+        IConfigurationRepository configurationRepository,
+        CancellationToken cancellationToken)
+    {
+        var instance = await configurationRepository.GetByIdAsync(instanceId, cancellationToken);
 
         if (instance is null)
         {
