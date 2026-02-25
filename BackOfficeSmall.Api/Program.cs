@@ -83,7 +83,7 @@ builder.Services.AddScoped<IConfigurationService, ConfigurationInstanceService>(
 builder.Services.AddScoped<IConfigurationChangeQueryService, ConfigurationChangeQueryService>();
 builder.Services.AddScoped<IAuthExchangeService, AuthExchangeService>();
 
-WebApplication app = builder.Build();
+var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
@@ -101,7 +101,7 @@ app.MapControllers();
 //TODO: this does not look good
 app.MapGet("/health", async (HealthCheckService healthCheckService, CancellationToken cancellationToken) =>
 {
-    HealthReport report = await healthCheckService.CheckHealthAsync(cancellationToken);
+    var report = await healthCheckService.CheckHealthAsync(cancellationToken);
 
     if (report.Status == HealthStatus.Unhealthy)
     {
@@ -118,7 +118,7 @@ app.Run();
 
 static void ValidateStartup(IServiceProvider services)
 {
-    using IServiceScope scope = services.CreateScope();
+    using var scope = services.CreateScope();
 
     scope.ServiceProvider.GetRequiredService<IManifestService>();
     scope.ServiceProvider.GetRequiredService<IConfigurationService>();

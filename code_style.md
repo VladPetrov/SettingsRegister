@@ -12,7 +12,7 @@
 2. One statement per line.
 3. Avoid deep nesting; prefer guard clauses and early returns.
 4. File-scoped namespaces are allowed if consistent across the repository.
-5. Prefer `var` for locals; use explicit type only when clarity materially improves.
+5. Prefer `var` for locals by default; use explicit type only when clarity materially improves.
 
 ## Naming
 - Types: `PascalCase`.

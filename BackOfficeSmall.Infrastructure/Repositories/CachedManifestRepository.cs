@@ -32,12 +32,12 @@ public sealed class CachedManifestRepository : ICachedManifestRepository
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        if (_memoryCache.TryGetValue(manifestId, out ManifestValueObject? cachedManifest))
+        if (_memoryCache.TryGetValue<ManifestValueObject>(manifestId, out var cachedManifest))
         {
             return cachedManifest;
         }
 
-        ManifestValueObject? manifest = await _innerRepository.GetByIdAsync(manifestId, cancellationToken);
+        var manifest = await _innerRepository.GetByIdAsync(manifestId, cancellationToken);
 
         if (manifest is null)
         {

@@ -33,7 +33,7 @@ public sealed class CachedConfigurationRepository : ICacheConfigurationRepositor
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        if (_memoryCache.TryGetValue(instanceId, out ConfigurationInstance? cachedInstance))
+        if (_memoryCache.TryGetValue<ConfigurationInstance>(instanceId, out var cachedInstance))
         {
             if (cachedInstance is null)
             {
