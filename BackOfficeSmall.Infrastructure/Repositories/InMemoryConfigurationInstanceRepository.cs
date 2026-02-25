@@ -4,7 +4,7 @@ using BackOfficeSmall.Domain.Repositories;
 
 namespace BackOfficeSmall.Infrastructure.Repositories;
 
-public sealed class InMemoryConfigurationInstanceRepository : IConfigurationInstanceRepository
+public sealed class InMemoryConfigurationInstanceRepository : IConfigurationRepository
 {
     private static readonly StringComparer SettingKeyComparer = StringComparer.OrdinalIgnoreCase;
     private readonly object _syncRoot = new();

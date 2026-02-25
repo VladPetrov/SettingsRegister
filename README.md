@@ -12,7 +12,7 @@ The solution is strict-layered:
      - `ManifestValueObject` (immutable read-side behavior object with `HasSetting`, `RequiresCriticalNotification`, `CanOverride`)
 - Aggregate root: `ConfigurationInstance`
    - Supporting domain types: `ManifestSettingDefinition`, `ManifestOverridePermission`, `SettingCell`, `ConfigurationChange`, `ConfigurationOperation`
-   - Domain contracts: `IManifestRepository`, `IConfigurationInstanceRepository`, `IConfigurationChangeRepository`, `IMonitoringNotifier`
+   - Domain contracts: `IManifestRepository`, `IConfigurationRepository`, `IConfigurationChangeRepository`, `IMonitoringNotifier`
 2. `BackOfficeSmall.Application`
    - Use-case orchestration services:
      - `ManifestService` (import + retrieval by id/list)
@@ -61,6 +61,7 @@ The solution is strict-layered:
   - `true`: simulated `DistributedDomainLock` (placeholder for DB-backed distributed lock in real deployments)
 - `Application:ManifestImportLockTimeoutSeconds` configures manifest import lock acquisition timeout (default `30` seconds).
 - `Application:ManifestByIdCacheSlidingExpirationSeconds` configures local in-memory sliding expiration for manifest `GetByIdAsync` caching (default `300` seconds).
+- `Application:ConfigurationByIdCacheSlidingExpirationSeconds` configures local in-memory sliding expiration for configuration instance `GetByIdAsync` caching (default `300` seconds).
 - `/api/auth/exchange` is enabled in `Development` only; in non-development environments it returns `501 Not Implemented`.
 - UTC is required for date filters (`fromUtc`, `toUtc`) when provided.
 - API does not expose domain entities directly; DTO mapping is explicit.

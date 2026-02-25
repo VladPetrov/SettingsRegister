@@ -40,6 +40,21 @@ public sealed class ConfigurationInstance
 
     public IReadOnlyList<SettingCell> Cells => _cells.AsReadOnly();
 
+    public ConfigurationInstance Clone()
+    {
+        IReadOnlyList<SettingCell> clonedCells = _cells
+            .Select(cell => new SettingCell(cell.SettingKey, cell.LayerIndex, cell.Value))
+            .ToList();
+
+        return new ConfigurationInstance(
+            ConfigurationInstanceId,
+            Name,
+            _manifest,
+            CreatedAtUtc,
+            CreatedBy,
+            clonedCells);
+    }
+
     public IReadOnlyList<ConfigurationSettingRow> GetSettings()
     {
         List<ConfigurationSettingRow> rows = new(_manifest.LayerCount);

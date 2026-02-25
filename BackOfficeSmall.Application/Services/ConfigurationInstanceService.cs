@@ -13,7 +13,7 @@ public sealed class ConfigurationInstanceService : IConfigurationService
     private static readonly TimeSpan InstanceLockTimeout = TimeSpan.FromSeconds(30);
 
     private readonly IManifestRepository _manifestRepository;
-    private readonly IConfigurationInstanceRepository _configInstanceRepository;
+    private readonly IConfigurationRepository _configInstanceRepository;
     private readonly IConfigurationChangeRepository _configChangeRepository;
     private readonly IMonitoringNotifier _monitoringNotifier;
     private readonly IDomainLock _domainLock;
@@ -21,7 +21,7 @@ public sealed class ConfigurationInstanceService : IConfigurationService
 
     public ConfigurationInstanceService(
         IManifestRepository manifestRepository,
-        IConfigurationInstanceRepository configInstanceRepository,
+        IConfigurationRepository configInstanceRepository,
         IConfigurationChangeRepository configChangeRepository,
         IMonitoringNotifier monitoringNotifier,
         IDomainLock domainLock,

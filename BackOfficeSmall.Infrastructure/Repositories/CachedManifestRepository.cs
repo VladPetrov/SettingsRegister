@@ -72,13 +72,13 @@ public sealed class CachedManifestRepository : ICachedManifestRepository
             throw new ArgumentNullException(nameof(settings));
         }
 
-        if (settings.ManifestByIdCacheSlidingExpirationSeconds <= 0)
+        if (settings.ManifestCacheExpirationSeconds <= 0)
         {
             throw new ArgumentOutOfRangeException(
-                nameof(settings.ManifestByIdCacheSlidingExpirationSeconds),
+                nameof(settings.ManifestCacheExpirationSeconds),
                 "ManifestByIdCacheSlidingExpirationSeconds must be greater than zero.");
         }
 
-        return TimeSpan.FromSeconds(settings.ManifestByIdCacheSlidingExpirationSeconds);
+        return TimeSpan.FromSeconds(settings.ManifestCacheExpirationSeconds);
     }
 }

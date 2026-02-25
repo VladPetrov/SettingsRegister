@@ -52,6 +52,29 @@ public sealed class ConfigurationInstanceTests
         Assert.True(safeLayerTwo.CanOverride);
     }
 
+    [Fact]
+    public void Clone_ReturnsIndependentCopy()
+    {
+        ManifestValueObject manifest = CreateManifest();
+        ConfigurationInstance original = new(
+            Guid.NewGuid(),
+            "Instance-A",
+            manifest,
+            DateTime.SpecifyKind(new DateTime(2026, 2, 24, 9, 0, 0), DateTimeKind.Utc),
+            "tester",
+            [
+                new SettingCell("FeatureFlag", 0, "on")
+            ]);
+
+        ConfigurationInstance clone = original.Clone();
+        clone.SetValue("FeatureFlag", 0, "off");
+
+        Assert.NotSame(original, clone);
+        Assert.Equal(original.ConfigurationInstanceId, clone.ConfigurationInstanceId);
+        Assert.Equal("on", original.GetValue("FeatureFlag", 0));
+        Assert.Equal("off", clone.GetValue("FeatureFlag", 0));
+    }
+
     private static ManifestValueObject CreateManifest()
     {
         return new ManifestValueObject(

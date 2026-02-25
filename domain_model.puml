@@ -73,6 +73,7 @@ class ConfigurationInstance {
   +GetValue(string settingKey, int layerIndex)
   +IReadOnlyList<ConfigurationSettingRow> GetSettings()
   +SetValue(string settingKey, int layerIndex, string? value)
+  +Clone()
   +Validate()
 }
 
@@ -142,7 +143,7 @@ interface IManifestRepository {
   +List(string? name) : IReadOnlyList<ManifestValueObject>
 }
 
-interface IConfigurationInstanceRepository {
+interface IConfigurationRepository {
   +Add(ConfigurationInstance instance)
   +GetById(Guid instanceId)
   +List()
@@ -183,7 +184,7 @@ ManifestDto --> ManifestDomainRoot : mapped to
 ManifestService --> IManifestRepository
 ManifestService --> IDomainLock : import serialization
 ConfigurationInstanceService --> IManifestRepository : resolves manifest for instance creation
-ConfigurationInstanceService --> IConfigurationInstanceRepository
+ConfigurationInstanceService --> IConfigurationRepository
 ConfigurationInstanceService --> IConfigurationChangeRepository : writes audit log
 ConfigurationInstanceService --> IMonitoringNotifier : on critical settings
 ConfigurationInstanceService --> IDomainLock : per-instance serialization

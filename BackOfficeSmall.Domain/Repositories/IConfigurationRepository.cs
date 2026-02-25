@@ -2,7 +2,7 @@ using BackOfficeSmall.Domain.Models.Configuration;
 
 namespace BackOfficeSmall.Domain.Repositories;
 
-public interface IConfigurationInstanceRepository
+public interface IConfigurationRepository
 {
     Task AddAsync(ConfigurationInstance instance, CancellationToken cancellationToken);
 

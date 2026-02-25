@@ -114,7 +114,7 @@ public sealed class CacheManifestRepositoryTests
             MemoryCache = new MemoryCache(new MemoryCacheOptions());
             Settings = new ApplicationSettings
             {
-                ManifestByIdCacheSlidingExpirationSeconds = slidingExpirationSeconds
+                ManifestCacheExpirationSeconds = slidingExpirationSeconds
             };
         }
 
