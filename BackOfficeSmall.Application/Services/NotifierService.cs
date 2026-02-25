@@ -8,6 +8,8 @@ namespace BackOfficeSmall.Application.Services;
 public sealed class NotifierService : INotifierService
 {
     private const string DispatchLockKey = "monitoring-notifier-outbox-dispatch";
+
+    //TODO: inject settings
     private static readonly TimeSpan DispatchLockTimeout = TimeSpan.FromSeconds(1);
     private static readonly TimeSpan RetryScanInterval = TimeSpan.FromSeconds(30);
     private const int DispatchBatchSize = 100;

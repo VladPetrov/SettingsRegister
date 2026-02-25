@@ -30,7 +30,7 @@ public sealed class NotifierServiceTests
         using CancellationTokenSource cts = new();
         Task loopTask = service.StartAsync(cts.Token);
 
-        await service.NotifyChangesAsync(CancellationToken.None);
+        service.NotifyChanges();
         await WaitForAttemptCountAsync(unitOfWork, outboxMessage.Id, 1);
 
         MonitoringNotifierOutboxMessage? firstAttempt = await unitOfWork.MonitoringNotifierOutboxRepository.GetByIdAsync(outboxMessage.Id, CancellationToken.None);
@@ -40,7 +40,7 @@ public sealed class NotifierServiceTests
         Assert.NotNull(firstAttempt.LastAttemptAtUtc);
 
         clock.Set(DateTime.SpecifyKind(new DateTime(2026, 2, 25, 13, 5, 0), DateTimeKind.Utc));
-        await service.NotifyChangesAsync(CancellationToken.None);
+        service.NotifyChanges();
         await WaitForAttemptCountAsync(unitOfWork, outboxMessage.Id, 2);
 
         MonitoringNotifierOutboxMessage? secondAttempt = await unitOfWork.MonitoringNotifierOutboxRepository.GetByIdAsync(outboxMessage.Id, CancellationToken.None);
@@ -73,7 +73,7 @@ public sealed class NotifierServiceTests
         using CancellationTokenSource cts = new();
         Task loopTask = service.StartAsync(cts.Token);
 
-        await service.NotifyChangesAsync(CancellationToken.None);
+        service.NotifyChanges();
         await WaitForLockAttemptAsync(domainLock);
 
         MonitoringNotifierOutboxMessage? unchanged = await unitOfWork.MonitoringNotifierOutboxRepository.GetByIdAsync(outboxMessage.Id, CancellationToken.None);

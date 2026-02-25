@@ -15,10 +15,8 @@ internal sealed class FakeNotifierService : INotifierService
         return Task.CompletedTask;
     }
 
-    public Task NotifyChangesAsync(CancellationToken cancellationToken)
+    public void NotifyChanges()
     {
-        cancellationToken.ThrowIfCancellationRequested();
         NotifyChangesCalls++;
-        return Task.CompletedTask;
     }
 }

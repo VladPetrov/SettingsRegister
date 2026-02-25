@@ -51,7 +51,7 @@ public sealed class NotifierOutboxIntegrationTests
         Task loopTask = notifierService.StartAsync(cts.Token);
 
         clock.Set(DateTime.SpecifyKind(new DateTime(2026, 2, 25, 14, 1, 0), DateTimeKind.Utc));
-        await notifierService.NotifyChangesAsync(CancellationToken.None);
+        notifierService.NotifyChanges();
         await WaitForOutboxStatusAsync(unitOfWork, pendingBefore[0].Id, MonitoringNotificationOutboxStatus.Sent);
 
         MonitoringNotifierOutboxMessage? sent = await unitOfWork
