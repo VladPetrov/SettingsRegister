@@ -11,7 +11,7 @@ public sealed class CachedManifestRepository : ICachedManifestRepository
     
     private readonly IManifestRepository _innerRepository;
     private readonly IMemoryCache _memoryCache;
-    private readonly TimeSpan _manifestByIdCacheSlidingExpiration;
+    private readonly TimeSpan _manifestCacheExpiration;
 
     public CachedManifestRepository(
         IManifestRepository innerRepository,
@@ -20,7 +20,7 @@ public sealed class CachedManifestRepository : ICachedManifestRepository
     {
         _innerRepository = innerRepository ?? throw new ArgumentNullException(nameof(innerRepository));
         _memoryCache = memoryCache ?? throw new ArgumentNullException(nameof(memoryCache));
-        _manifestByIdCacheSlidingExpiration = BuildManifestByIdCacheSlidingExpiration(settings);
+        _manifestCacheExpiration = BuildManifestCacheExpiration(settings);
     }
 
     public Task AddAsync(ManifestDomainRoot manifest, CancellationToken cancellationToken)
@@ -49,7 +49,7 @@ public sealed class CachedManifestRepository : ICachedManifestRepository
             manifest,
             new MemoryCacheEntryOptions
             {
-                SlidingExpiration = _manifestByIdCacheSlidingExpiration
+                SlidingExpiration = _manifestCacheExpiration
             });
 
         return manifest;
@@ -65,7 +65,7 @@ public sealed class CachedManifestRepository : ICachedManifestRepository
         return _innerRepository.ListAsync(name, cancellationToken);
     }
 
-    private static TimeSpan BuildManifestByIdCacheSlidingExpiration(ICachedManifestRepositorySettings settings)
+    private static TimeSpan BuildManifestCacheExpiration(ICachedManifestRepositorySettings settings)
     {
         if (settings is null)
         {
@@ -76,7 +76,7 @@ public sealed class CachedManifestRepository : ICachedManifestRepository
         {
             throw new ArgumentOutOfRangeException(
                 nameof(settings.ManifestCacheExpirationSeconds),
-                "ManifestByIdCacheSlidingExpirationSeconds must be greater than zero.");
+                "ManifestCacheExpirationSeconds must be greater than zero.");
         }
 
         return TimeSpan.FromSeconds(settings.ManifestCacheExpirationSeconds);

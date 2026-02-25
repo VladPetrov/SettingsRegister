@@ -60,8 +60,8 @@ The solution is strict-layered:
   - `false` (default): `InProcessDomainLock`
   - `true`: simulated `DistributedDomainLock` (placeholder for DB-backed distributed lock in real deployments)
 - `Application:ManifestImportLockTimeoutSeconds` configures manifest import lock acquisition timeout (default `30` seconds).
-- `Application:ManifestByIdCacheSlidingExpirationSeconds` configures local in-memory sliding expiration for manifest `GetByIdAsync` caching (default `300` seconds).
-- `Application:ConfigurationByIdCacheSlidingExpirationSeconds` configures local in-memory sliding expiration for configuration instance `GetByIdAsync` caching (default `300` seconds).
+- `Application:ManifestCacheExpirationSeconds` configures local in-memory sliding expiration for manifest `GetByIdAsync` caching (default `300` seconds).
+- `Application:ConfigurationCacheExpirationSeconds` configures local in-memory sliding expiration for configuration instance `GetByIdAsync` caching (default `300` seconds).
 - `/api/auth/exchange` is enabled in `Development` only; in non-development environments it returns `501 Not Implemented`.
 - UTC is required for date filters (`fromUtc`, `toUtc`) when provided.
 - API does not expose domain entities directly; DTO mapping is explicit.

@@ -11,7 +11,7 @@ public sealed class CachedConfigurationRepository : ICacheConfigurationRepositor
 
     private readonly IConfigurationRepository _innerRepository;
     private readonly IMemoryCache _memoryCache;
-    private readonly TimeSpan _configurationByIdCacheSlidingExpiration;
+    private readonly TimeSpan _configurationCacheExpiration;
 
     public CachedConfigurationRepository(
         IConfigurationRepository innerRepository,
@@ -20,7 +20,7 @@ public sealed class CachedConfigurationRepository : ICacheConfigurationRepositor
     {
         _innerRepository = innerRepository ?? throw new ArgumentNullException(nameof(innerRepository));
         _memoryCache = memoryCache ?? throw new ArgumentNullException(nameof(memoryCache));
-        _configurationByIdCacheSlidingExpiration = BuildConfigurationByIdCacheSlidingExpiration(settings);
+        _configurationCacheExpiration = BuildConfigurationCacheExpiration(settings);
     }
 
     public async Task AddAsync(ConfigurationInstance instance, CancellationToken cancellationToken)
@@ -50,7 +50,7 @@ public sealed class CachedConfigurationRepository : ICacheConfigurationRepositor
             return null;
         }
 
-        _memoryCache.Set(instanceId, instance.Clone(), new MemoryCacheEntryOptions{ SlidingExpiration = _configurationByIdCacheSlidingExpiration });
+        _memoryCache.Set(instanceId, instance.Clone(), new MemoryCacheEntryOptions { SlidingExpiration = _configurationCacheExpiration });
 
         return instance.Clone();
     }
@@ -72,7 +72,7 @@ public sealed class CachedConfigurationRepository : ICacheConfigurationRepositor
         await _innerRepository.DeleteAsync(instanceId, cancellationToken);
     }
 
-    private static TimeSpan BuildConfigurationByIdCacheSlidingExpiration(IConfigurationCachedSettings settings)
+    private static TimeSpan BuildConfigurationCacheExpiration(IConfigurationCachedSettings settings)
     {
         if (settings is null)
         {
@@ -81,7 +81,9 @@ public sealed class CachedConfigurationRepository : ICacheConfigurationRepositor
 
         if (settings.ConfigurationCacheExpirationSeconds <= 0)
         {
-            throw new ArgumentOutOfRangeException(nameof(settings.ConfigurationCacheExpirationSeconds), "ConfigurationByIdCacheSlidingExpirationSeconds must be greater than zero.");
+            throw new ArgumentOutOfRangeException(
+                nameof(settings.ConfigurationCacheExpirationSeconds),
+                "ConfigurationCacheExpirationSeconds must be greater than zero.");
         }
 
         return TimeSpan.FromSeconds(settings.ConfigurationCacheExpirationSeconds);
