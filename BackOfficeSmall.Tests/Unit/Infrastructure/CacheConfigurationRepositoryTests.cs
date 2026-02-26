@@ -138,6 +138,12 @@ public sealed class CacheConfigurationRepositoryTests
         public int UpdateAsyncCallCount { get; private set; }
         public int DeleteAsyncCallCount { get; private set; }
 
+        public Task CheckConnectionAsync(CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return Task.CompletedTask;
+        }
+
         public Task AddAsync(ConfigurationInstance instance, CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();

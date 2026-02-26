@@ -9,6 +9,12 @@ public sealed class InMemoryMonitoringNotifierOutboxRepository : IMonitoringNoti
     private readonly Dictionary<Guid, MonitoringNotifierOutboxRecord> _recordsById = new();
     private readonly Dictionary<string, Guid> _dedupeIndex = new(StringComparer.OrdinalIgnoreCase);
 
+    public Task CheckConnectionAsync(CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        return Task.CompletedTask;
+    }
+
     public Task AddAsync(MonitoringNotifierOutboxMessage outboxMessage, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();

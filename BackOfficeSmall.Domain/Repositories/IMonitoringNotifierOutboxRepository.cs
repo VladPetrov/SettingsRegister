@@ -4,6 +4,8 @@ namespace BackOfficeSmall.Domain.Repositories;
 
 public interface IMonitoringNotifierOutboxRepository
 {
+    Task CheckConnectionAsync(CancellationToken cancellationToken);
+
     Task AddAsync(MonitoringNotifierOutboxMessage outboxMessage, CancellationToken cancellationToken);
 
     Task<MonitoringNotifierOutboxMessage?> GetByIdAsync(Guid id, CancellationToken cancellationToken);

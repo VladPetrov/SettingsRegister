@@ -24,6 +24,19 @@ public sealed class CachedConfigurationChangeRepository : IConfigurationChangeRe
     public async Task AddAsync(ConfigurationChange change, CancellationToken cancellationToken)
     {
         await _innerRepository.AddAsync(change, cancellationToken);
+
+        _memoryCache.Set(
+            change.Id,
+            change,
+            new MemoryCacheEntryOptions
+            {
+                SlidingExpiration = _cacheExpiration
+            });
+    }
+
+    public Task CheckConnectionAsync(CancellationToken cancellationToken)
+    {
+        return _innerRepository.CheckConnectionAsync(cancellationToken);
     }
 
     public async Task<ConfigurationChange?> GetByIdAsync(Guid id, CancellationToken cancellationToken)

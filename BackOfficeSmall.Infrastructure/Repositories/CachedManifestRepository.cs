@@ -28,6 +28,11 @@ public sealed class CachedManifestRepository : ICachedManifestRepository
         return _innerRepository.AddAsync(manifest, cancellationToken);
     }
 
+    public Task CheckConnectionAsync(CancellationToken cancellationToken)
+    {
+        return _innerRepository.CheckConnectionAsync(cancellationToken);
+    }
+
     public async Task<ManifestValueObject?> GetByIdAsync(Guid manifestId, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();

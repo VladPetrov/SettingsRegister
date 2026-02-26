@@ -4,6 +4,8 @@ namespace BackOfficeSmall.Domain.Repositories;
 
 public interface IConfigurationChangeRepository
 {
+    Task CheckConnectionAsync(CancellationToken cancellationToken);
+
     Task AddAsync(ConfigurationChange change, CancellationToken cancellationToken);
 
     Task<ConfigurationChange?> GetByIdAsync(Guid id, CancellationToken cancellationToken);

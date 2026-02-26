@@ -11,6 +11,12 @@ public sealed class InMemoryConfigurationInstanceRepository : IConfigurationRepo
     private readonly Dictionary<Guid, ConfigurationInstanceRecord> _instancesById = new();
     private readonly Dictionary<string, Guid> _instanceNameIndex = new(StringComparer.OrdinalIgnoreCase);
 
+    public Task CheckConnectionAsync(CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        return Task.CompletedTask;
+    }
+
     public Task AddAsync(ConfigurationInstance instance, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();

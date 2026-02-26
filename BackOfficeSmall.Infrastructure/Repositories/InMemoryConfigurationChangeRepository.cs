@@ -8,6 +8,12 @@ public sealed class InMemoryConfigurationChangeRepository : IConfigurationChange
     private readonly object _syncRoot = new();
     private readonly Dictionary<Guid, ConfigurationChangeRecord> _changesById = new();
 
+    public Task CheckConnectionAsync(CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        return Task.CompletedTask;
+    }
+
     public Task AddAsync(ConfigurationChange change, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();

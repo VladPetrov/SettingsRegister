@@ -12,6 +12,12 @@ public sealed class InMemoryManifestRepository : IManifestRepository
     private readonly Dictionary<Guid, ManifestEntity> _manifestsById = new();
     private readonly Dictionary<string, Guid> _manifestKeyIndex = new(StringComparer.OrdinalIgnoreCase);
 
+    public Task CheckConnectionAsync(CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        return Task.CompletedTask;
+    }
+
     public Task AddAsync(ManifestDomainRoot manifest, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();

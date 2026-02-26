@@ -4,6 +4,8 @@ namespace BackOfficeSmall.Domain.Repositories;
 
 public interface IConfigurationRepository
 {
+    Task CheckConnectionAsync(CancellationToken cancellationToken);
+
     Task AddAsync(ConfigurationInstance instance, CancellationToken cancellationToken);
 
     Task<ConfigurationInstance?> GetByIdAsync(Guid instanceId, CancellationToken cancellationToken);

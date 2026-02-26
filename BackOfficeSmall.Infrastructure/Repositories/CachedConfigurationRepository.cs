@@ -29,6 +29,11 @@ public sealed class CachedConfigurationRepository : ICacheConfigurationRepositor
         _memoryCache.Remove(instance.ConfigurationId);
     }
 
+    public Task CheckConnectionAsync(CancellationToken cancellationToken)
+    {
+        return _innerRepository.CheckConnectionAsync(cancellationToken);
+    }
+
     public async Task<ConfigurationInstance?> GetByIdAsync(Guid instanceId, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();

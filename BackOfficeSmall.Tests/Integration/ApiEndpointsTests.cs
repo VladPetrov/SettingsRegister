@@ -3,6 +3,8 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using BackOfficeSmall.Domain.Models.Configuration;
+using BackOfficeSmall.Domain.Models.Manifest;
+using BackOfficeSmall.Infrastructure.Repositories;
 using BackOfficeSmall.Domain.Services;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -44,6 +46,27 @@ public sealed class ApiEndpointsTests
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Contains("Degraded", body);
+    }
+
+    [Fact]
+    public async Task HealthEndpoint_WhenManifestRepositoryProbeFails_ReturnsUnhealthy()
+    {
+        await using WebApplicationFactory<Program> factory = new WebApplicationFactory<Program>()
+            .WithWebHostBuilder(builder =>
+            {
+                builder.UseEnvironment("Production");
+                builder.ConfigureServices(services =>
+                {
+                    services.AddSingleton<ICachedManifestRepository, FailingManifestRepository>();
+                });
+            });
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage response = await client.GetAsync("/health");
+        string body = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+        Assert.Contains("Unhealthy", body);
     }
 
     [Fact]
@@ -456,6 +479,35 @@ public sealed class ApiEndpointsTests
         {
             cancellationToken.ThrowIfCancellationRequested();
             return Task.FromResult(false);
+        }
+    }
+
+    private sealed class FailingManifestRepository : ICachedManifestRepository
+    {
+        public Task CheckConnectionAsync(CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            throw new InvalidOperationException("Repository connection failed.");
+        }
+
+        public Task AddAsync(ManifestDomainRoot manifest, CancellationToken cancellationToken)
+        {
+            throw new NotSupportedException();
+        }
+
+        public Task<ManifestValueObject?> GetByIdAsync(Guid manifestId, CancellationToken cancellationToken)
+        {
+            throw new InvalidOperationException("Repository connection failed.");
+        }
+
+        public Task<IReadOnlyList<ManifestValueObject>> ListAsync(CancellationToken cancellationToken)
+        {
+            throw new InvalidOperationException("Repository connection failed.");
+        }
+
+        public Task<IReadOnlyList<ManifestValueObject>> ListAsync(string? name, CancellationToken cancellationToken)
+        {
+            throw new InvalidOperationException("Repository connection failed.");
         }
     }
 }

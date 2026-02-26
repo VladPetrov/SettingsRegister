@@ -54,7 +54,12 @@ builder.Services.AddSwaggerGen(options =>
 });
 builder.Services
     .AddHealthChecks()
+    .AddCheck<ManifestRepositoryHealthCheck>("manifest-repository")
+    .AddCheck<ConfigurationRepositoryHealthCheck>("configuration-repository")
+    .AddCheck<ConfigurationChangeRepositoryHealthCheck>("configuration-change-repository")
+    .AddCheck<MonitoringNotifierOutboxRepositoryHealthCheck>("monitoring-notifier-outbox-repository")
     .AddCheck<MonitoringNotifierHealthCheck>("monitoring-notifier");
+
 builder.Services.AddSingleton(appSettings);
 builder.Services.AddSingleton<ICachedManifestRepositorySettings>(appSettings);
 builder.Services.AddSingleton<IConfigurationCachedSettings>(appSettings);

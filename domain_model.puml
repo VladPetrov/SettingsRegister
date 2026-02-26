@@ -191,6 +191,7 @@ class OutboxDispatchService {
 }
 
 interface IManifestRepository {
+  +CheckConnectionAsync(CancellationToken cancellationToken)
   +Add(ManifestDomainRoot manifest)
   +GetById(Guid manifestId) : ManifestValueObject
   +List() : IReadOnlyList<ManifestValueObject>
@@ -198,6 +199,7 @@ interface IManifestRepository {
 }
 
 interface IConfigurationRepository {
+  +CheckConnectionAsync(CancellationToken cancellationToken)
   +Add(ConfigurationInstance instance)
   +GetById(Guid instanceId)
   +List()
@@ -206,12 +208,14 @@ interface IConfigurationRepository {
 }
 
 interface IConfigurationChangeRepository {
+  +CheckConnectionAsync(CancellationToken cancellationToken)
   +Add(ConfigurationChange change)
   +GetById(Guid id)
   +List(DateTime? fromUtc, DateTime? toUtc, ConfigurationOperation? operation, DateTime? afterChangedAtUtc, Guid? afterId, int take)
 }
 
 interface IMonitoringNotifierOutboxRepository {
+  +CheckConnectionAsync(CancellationToken cancellationToken)
   +Add(MonitoringNotifierOutboxMessage outboxMessage)
   +GetById(Guid id)
   +List(MonitoringNotificationOutboxStatus? status)

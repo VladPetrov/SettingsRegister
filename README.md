@@ -107,8 +107,14 @@ The solution is strict-layered:
 
 ### Operational
 - `GET /health`
-  - Includes monitoring notifier availability check.
-  - Returns overall `Degraded` when notifier connectivity probe fails.
+  - Includes probes for:
+    - Manifest repository
+    - Configuration repository
+    - Configuration change repository
+    - Monitoring outbox repository
+    - Monitoring notifier availability
+  - Repository probe failures are treated as critical and return overall `Unhealthy` (`503`).
+  - Monitoring notifier availability probe failures return `Degraded` unless another critical probe is unhealthy.
 
 ## Error Contract
 

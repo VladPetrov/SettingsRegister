@@ -82,6 +82,12 @@ public sealed class CacheManifestRepositoryTests
 
         public int GetByIdAsyncCallCount { get; private set; }
 
+        public Task CheckConnectionAsync(CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return Task.CompletedTask;
+        }
+
         public Task AddAsync(ManifestDomainRoot manifest, CancellationToken cancellationToken)
         {
             throw new NotSupportedException();
