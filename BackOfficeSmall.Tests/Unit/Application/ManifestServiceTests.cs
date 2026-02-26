@@ -54,7 +54,7 @@ public sealed class ManifestServiceTests
             100,
             CancellationToken.None);
         Assert.Equal(2, changes.Count);
-        Assert.All(changes, change => Assert.Equal("__manifest_import__", change.Name));
+        Assert.All(changes, change => Assert.Equal(request.Name, change.Name));
         Assert.All(changes, change => Assert.Equal(ConfigurationOperation.Add, change.Operation));
         Assert.All(changes, change => Assert.Equal(ConfigurationChangeEventType.ManifestImport, change.EventType));
 
