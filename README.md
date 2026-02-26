@@ -94,7 +94,7 @@ The solution is strict-layered:
 
 ### Configuration Change
 - `GET /api/config-changes?pageSize=<1..200>&cursor=<opaque-cursor>&operation=<Add|Update|Delete>&fromUtc=<utc-z>&toUtc=<utc-z>`
-  - `pageSize` is required.
+  - `pageSize` is optional; default is `50`.
   - `cursor` is optional for the first page.
   - Returns `{ items: [...], nextCursor: "..." }`.
 - `GET /api/config-changes/{id}`

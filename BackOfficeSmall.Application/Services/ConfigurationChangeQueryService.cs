@@ -8,6 +8,10 @@ namespace BackOfficeSmall.Application.Services;
 
 public sealed class ConfigurationChangeQueryService : IConfigurationChangeQueryService
 {
+    //TODO: must be part of app config settings.
+    private const int DefaultPageSize = 50;
+    private const int MaxPageSize = 200;
+
     private readonly IConfigurationWriteUnitOfWork _configurationWriteUnitOfWork;
 
     public ConfigurationChangeQueryService(IConfigurationWriteUnitOfWork configurationWriteUnitOfWork)
@@ -32,22 +36,19 @@ public sealed class ConfigurationChangeQueryService : IConfigurationChangeQueryS
     }
 
     public async Task<ConfigurationChangePage> ListChangesAsync(
-        DateTime? fromUtc,
-        DateTime? toUtc,
-        ConfigurationOperation? operation,
-        string? cursor,
-        int pageSize,
-        CancellationToken cancellationToken)
+        DateTime? fromUtc = null,
+        DateTime? toUtc = null,
+        ConfigurationOperation? operation = null,
+        string? cursor = null,
+        int? pageSize = null,
+        CancellationToken cancellationToken = default)
     {
         ValidateDateRange(fromUtc, toUtc);
 
-        if (pageSize <= 0)
-        {
-            throw new ValidationException("pageSize must be greater than zero.");
-        }
+        var resolvedPageSize = ResolvePageSize(pageSize);
 
         var cursorState = CursorState.DecodeCursor(cursor);
-        var requestedCount = pageSize + 1;
+        var requestedCount = resolvedPageSize + 1;
 
         var changes = await _configurationWriteUnitOfWork.ConfigurationChangeRepository.ListAsync(
             fromUtc,
@@ -58,12 +59,12 @@ public sealed class ConfigurationChangeQueryService : IConfigurationChangeQueryS
             requestedCount,
             cancellationToken);
 
-        if (changes.Count <= pageSize)
+        if (changes.Count <= resolvedPageSize)
         {
             return new ConfigurationChangePage(changes, null);
         }
 
-        var pageItems = changes.Take(pageSize).ToList();
+        var pageItems = changes.Take(resolvedPageSize).ToList();
         var lastItem = pageItems.Last();
         var nextCursor = new CursorState(lastItem.ChangedAtUtc, lastItem.Id).EncodeCursor();
 
@@ -86,5 +87,25 @@ public sealed class ConfigurationChangeQueryService : IConfigurationChangeQueryS
         {
             throw new ValidationException("fromUtc must be less than or equal to toUtc.");
         }
+    }
+
+    private static int ResolvePageSize(int? pageSize)
+    {
+        if (!pageSize.HasValue)
+        {
+            return DefaultPageSize;
+        }
+
+        if (pageSize.Value <= 0)
+        {
+            throw new ValidationException("pageSize must be greater than zero.");
+        }
+
+        if (pageSize.Value > MaxPageSize)
+        {
+            throw new ValidationException($"pageSize must be less than or equal to {MaxPageSize}.");
+        }
+
+        return pageSize.Value;
     }
 }

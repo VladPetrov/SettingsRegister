@@ -8,10 +8,10 @@ public interface IConfigurationChangeQueryService
     Task<ConfigurationChange> GetChangeByIdAsync(Guid id, CancellationToken cancellationToken);
 
     Task<ConfigurationChangePage> ListChangesAsync(
-        DateTime? fromUtc,
-        DateTime? toUtc,
-        ConfigurationOperation? operation,
-        string? cursor,
-        int pageSize,
-        CancellationToken cancellationToken);
+        DateTime? fromUtc = null,
+        DateTime? toUtc = null,
+        ConfigurationOperation? operation = null,
+        string? cursor = null,
+        int? pageSize = null,
+        CancellationToken cancellationToken = default);
 }

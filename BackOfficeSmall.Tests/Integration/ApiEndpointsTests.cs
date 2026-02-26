@@ -91,7 +91,7 @@ public sealed class ApiEndpointsTests
         Assert.Equal(HttpStatusCode.OK, getByIdResponse.StatusCode);
         Assert.Contains(changeId.ToString(), getByIdBody, StringComparison.OrdinalIgnoreCase);
 
-        HttpResponseMessage listResponse = await client.GetAsync("/api/config-changes?operation=Add&pageSize=10");
+        HttpResponseMessage listResponse = await client.GetAsync("/api/config-changes?operation=Add");
         string listBody = await listResponse.Content.ReadAsStringAsync();
         Assert.Equal(HttpStatusCode.OK, listResponse.StatusCode);
 

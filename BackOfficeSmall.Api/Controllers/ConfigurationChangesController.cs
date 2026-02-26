@@ -29,7 +29,7 @@ public sealed class ConfigurationChangesController : AuthenticatedApiControllerB
         [FromQuery] DateTimeOffset? toUtc,
         [FromQuery] ConfigurationOperationDto? operation,
         [FromQuery] string? cursor,
-        [FromQuery, System.ComponentModel.DataAnnotations.Range(1, 200)] int pageSize,
+        [FromQuery] int? pageSize,
         CancellationToken cancellationToken)
     {
         DateTime? normalizedFromUtc = NormalizeUtcQueryDate(fromUtc, nameof(fromUtc));

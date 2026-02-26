@@ -182,7 +182,7 @@ class ConfigurationInstanceService {
 
 class ConfigurationChangeQueryService {
   +GetChangeById(Guid id)
-  +ListChanges(DateTime? fromUtc, DateTime? toUtc, ConfigurationOperation? operation, string? cursor, int pageSize)
+  +ListChanges(DateTime? fromUtc, DateTime? toUtc, ConfigurationOperation? operation, string? cursor, int? pageSize)
 }
 
 class OutboxDispatchService {
