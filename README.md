@@ -107,6 +107,8 @@ The solution is strict-layered:
 
 ### Operational
 - `GET /health`
+  - Includes monitoring notifier availability check.
+  - Returns overall `Degraded` when notifier connectivity probe fails.
 
 ## Error Contract
 

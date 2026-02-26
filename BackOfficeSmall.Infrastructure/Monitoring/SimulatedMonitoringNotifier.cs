@@ -11,4 +11,10 @@ public sealed class SimulatedMonitoringNotifier : IMonitoringNotifier
 
         return Task.FromResult(true);
     }
+
+    public Task<bool> IsAvailableAsync(CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        return Task.FromResult(true);
+    }
 }

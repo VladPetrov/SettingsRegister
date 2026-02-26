@@ -221,6 +221,7 @@ interface IMonitoringNotifierOutboxRepository {
 
 interface IMonitoringNotifier {
   +SendAsync(MonitoringNotificationMessage message) : bool
+  +IsAvailableAsync() : bool
 }
 
 interface IDomainLock {

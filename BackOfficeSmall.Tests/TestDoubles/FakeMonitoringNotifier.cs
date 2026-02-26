@@ -10,6 +10,8 @@ internal sealed class FakeMonitoringNotifier : IMonitoringNotifier
 
     public IReadOnlyList<MonitoringNotificationMessage> Notifications => _notifications;
 
+    public bool IsAvailable { get; set; } = true;
+
     public void EnqueueResult(bool result)
     {
         _resultQueue.Enqueue(result);
@@ -32,5 +34,11 @@ internal sealed class FakeMonitoringNotifier : IMonitoringNotifier
         }
 
         return Task.FromResult(_resultQueue.Dequeue());
+    }
+
+    public Task<bool> IsAvailableAsync(CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        return Task.FromResult(IsAvailable);
     }
 }

@@ -2,8 +2,11 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
+using BackOfficeSmall.Domain.Models.Configuration;
+using BackOfficeSmall.Domain.Services;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace BackOfficeSmall.Tests.Integration;
 
@@ -20,6 +23,27 @@ public sealed class ApiEndpointsTests
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Contains("Healthy", body);
+    }
+
+    [Fact]
+    public async Task HealthEndpoint_WhenNotifierIsUnavailable_ReturnsDegraded()
+    {
+        await using WebApplicationFactory<Program> factory = new WebApplicationFactory<Program>()
+            .WithWebHostBuilder(builder =>
+            {
+                builder.UseEnvironment("Development");
+                builder.ConfigureServices(services =>
+                {
+                    services.AddSingleton<IMonitoringNotifier, UnavailableMonitoringNotifier>();
+                });
+            });
+        using HttpClient client = factory.CreateClient();
+
+        HttpResponseMessage response = await client.GetAsync("/health");
+        string body = await response.Content.ReadAsStringAsync();
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("Degraded", body);
     }
 
     [Fact]
@@ -418,6 +442,21 @@ public sealed class ApiEndpointsTests
 
         using JsonDocument document = JsonDocument.Parse(body);
         return document.RootElement.GetProperty("configurationId").GetGuid();
+    }
+
+    private sealed class UnavailableMonitoringNotifier : IMonitoringNotifier
+    {
+        public Task<bool> SendAsync(MonitoringNotificationMessage message, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return Task.FromResult(false);
+        }
+
+        public Task<bool> IsAvailableAsync(CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return Task.FromResult(false);
+        }
     }
 }
 

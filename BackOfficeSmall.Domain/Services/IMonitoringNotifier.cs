@@ -5,4 +5,6 @@ namespace BackOfficeSmall.Domain.Services;
 public interface IMonitoringNotifier
 {
     Task<bool> SendAsync(MonitoringNotificationMessage message, CancellationToken cancellationToken);
+
+    Task<bool> IsAvailableAsync(CancellationToken cancellationToken);
 }

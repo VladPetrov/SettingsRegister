@@ -52,7 +52,9 @@ builder.Services.AddSwaggerGen(options =>
         }
     });
 });
-builder.Services.AddHealthChecks();
+builder.Services
+    .AddHealthChecks()
+    .AddCheck<MonitoringNotifierHealthCheck>("monitoring-notifier");
 builder.Services.AddSingleton(appSettings);
 builder.Services.AddSingleton<ICachedManifestRepositorySettings>(appSettings);
 builder.Services.AddSingleton<IConfigurationCachedSettings>(appSettings);
