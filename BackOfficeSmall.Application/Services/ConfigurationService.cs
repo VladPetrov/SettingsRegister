@@ -13,13 +13,13 @@ public sealed class ConfigurationService : IConfigurationService
     private static readonly TimeSpan InstanceLockTimeout = TimeSpan.FromSeconds(30);
 
     private readonly IConfigurationWriteUnitOfWork _configurationWriteUnitOfWork;
-    private readonly INotifierService _notifierService;
+    private readonly IOutboxDispatchService _notifierService;
     private readonly IDomainLock _domainLock;
     private readonly ISystemClock _clock;
 
     public ConfigurationService(
         IConfigurationWriteUnitOfWork configurationWriteUnitOfWork,
-        INotifierService notifierService,
+        IOutboxDispatchService notifierService,
         IDomainLock domainLock,
         ISystemClock clock)
     {

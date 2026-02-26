@@ -138,7 +138,7 @@ public sealed class ConfigurationServiceTests
 
         ConfigurationService service = new(
             unitOfWork,
-            new FakeNotifierService(),
+            new FakeOutboxDispatchService(),
             new FakeDomainLock(),
             new FakeSystemClock(DateTime.SpecifyKind(new DateTime(2026, 2, 25, 11, 0, 0), DateTimeKind.Utc)));
 

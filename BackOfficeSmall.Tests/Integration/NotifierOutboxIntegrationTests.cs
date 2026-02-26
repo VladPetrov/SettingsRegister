@@ -21,7 +21,7 @@ public sealed class NotifierOutboxIntegrationTests
 
         ConfigurationService configurationService = new(
             unitOfWork,
-            new FakeNotifierService(),
+            new FakeOutboxDispatchService(),
             new FakeDomainLock(),
             clock);
 
@@ -45,7 +45,7 @@ public sealed class NotifierOutboxIntegrationTests
         Assert.Equal(MonitoringNotificationOutboxStatus.Pending, pendingBefore[0].Status);
 
         FakeMonitoringNotifier transport = new();
-        NotifierService notifierService = new(unitOfWork, transport, new FakeDomainLock(), clock);
+        OutboxDispatchService notifierService = new(unitOfWork, transport, new FakeDomainLock(), clock);
 
         using CancellationTokenSource cts = new();
         Task loopTask = notifierService.StartAsync(cts.Token);

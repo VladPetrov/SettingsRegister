@@ -1,6 +1,6 @@
 namespace BackOfficeSmall.Application.Abstractions;
 
-public interface INotifierService
+public interface IOutboxDispatchService
 {
     Task StartAsync(CancellationToken cancellationToken);
 

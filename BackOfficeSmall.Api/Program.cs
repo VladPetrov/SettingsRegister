@@ -106,7 +106,7 @@ builder.Services.AddScoped<IManifestService, ManifestService>();
 builder.Services.AddScoped<IConfigurationService, ConfigurationService>();
 builder.Services.AddScoped<IConfigurationChangeQueryService, ConfigurationChangeQueryService>();
 builder.Services.AddScoped<IAuthExchangeService, AuthExchangeService>();
-builder.Services.AddScoped<INotifierService, NotifierService>();
+builder.Services.AddScoped<IOutboxDispatchService, OutboxDispatchService>();
 builder.Services.AddHostedService<NotifierBackgroundWorker>();
 
 var app = builder.Build();
@@ -149,7 +149,7 @@ static void ValidateStartup(IServiceProvider services)
     scope.ServiceProvider.GetRequiredService<IManifestService>();
     scope.ServiceProvider.GetRequiredService<IConfigurationService>();
     scope.ServiceProvider.GetRequiredService<IConfigurationChangeQueryService>();
-    scope.ServiceProvider.GetRequiredService<INotifierService>();
+    scope.ServiceProvider.GetRequiredService<IOutboxDispatchService>();
     scope.ServiceProvider.GetRequiredService<IConfigurationWriteUnitOfWork>();
     scope.ServiceProvider.GetRequiredService<ICachedManifestRepository>();
     scope.ServiceProvider.GetRequiredService<ICacheConfigurationRepository>();

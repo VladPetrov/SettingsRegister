@@ -2,7 +2,7 @@ using BackOfficeSmall.Application.Abstractions;
 
 namespace BackOfficeSmall.Tests.TestDoubles;
 
-internal sealed class FakeNotifierService : INotifierService
+internal sealed class FakeOutboxDispatchService : IOutboxDispatchService
 {
     public int StartCalls { get; private set; }
 

@@ -5,7 +5,7 @@ using BackOfficeSmall.Domain.Services;
 
 namespace BackOfficeSmall.Application.Services;
 
-public sealed class NotifierService : INotifierService
+public sealed class OutboxDispatchService : IOutboxDispatchService
 {
     private const string DispatchLockKey = "monitoring-notifier-outbox-dispatch";
 
@@ -20,7 +20,7 @@ public sealed class NotifierService : INotifierService
     private readonly ISystemClock _clock;
     private readonly SemaphoreSlim _dispatchSignal = new(0, 1);
 
-    public NotifierService(
+    public OutboxDispatchService(
         IConfigurationWriteUnitOfWork configurationWriteUnitOfWork,
         IMonitoringNotifier monitoringNotifier,
         IDomainLock domainLock,
@@ -51,7 +51,7 @@ public sealed class NotifierService : INotifierService
         // prevent call overlap in case of scaling or concurrency access 
         await using IDomainLockLease? lockLease = await _domainLock.TryTakeLockAsync(DispatchLockKey, DispatchLockTimeout, cancellationToken);
 
-        //skip tick
+        //skip tick if already locked by other instance, to avoid multiple instance dispatching at the same time 
         if (lockLease is null)
         {
             return;

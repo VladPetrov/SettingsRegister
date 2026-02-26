@@ -14,7 +14,7 @@ public sealed class NotifierBackgroundWorker : BackgroundService
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         using IServiceScope scope = _serviceScopeFactory.CreateScope();
-        INotifierService notifierService = scope.ServiceProvider.GetRequiredService<INotifierService>();
+        IOutboxDispatchService notifierService = scope.ServiceProvider.GetRequiredService<IOutboxDispatchService>();
 
         await notifierService.StartAsync(stoppingToken);
     }

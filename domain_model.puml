@@ -185,7 +185,7 @@ class ConfigurationChangeQueryService {
   +ListChanges(DateTime? fromUtc, DateTime? toUtc, ConfigurationOperation? operation)
 }
 
-class NotifierService {
+class OutboxDispatchService {
   +StartAsync(CancellationToken cancellationToken)
   +NotifyChanges()
 }
@@ -248,17 +248,17 @@ ManifestDto --> ManifestDomainRoot : mapped to
 ManifestService --> IManifestRepository
 ManifestService --> IConfigurationChangeRepository : writes audit log
 ManifestService --> IMonitoringNotifierOutboxRepository : writes critical outbox intent
-ManifestService --> NotifierService : triggers one-shot signal
+ManifestService --> OutboxDispatchService : triggers one-shot signal
 ManifestService --> IDomainLock : import serialization
 ConfigurationInstanceService --> IManifestRepository : resolves manifest for instance creation
 ConfigurationInstanceService --> IConfigurationRepository
 ConfigurationInstanceService --> IConfigurationChangeRepository : writes audit log
 ConfigurationInstanceService --> IMonitoringNotifierOutboxRepository : writes critical outbox intent
-ConfigurationInstanceService --> NotifierService : triggers one-shot drain
+ConfigurationInstanceService --> OutboxDispatchService : triggers one-shot drain
 ConfigurationInstanceService --> IDomainLock : per-instance serialization
 ConfigurationChangeQueryService --> IConfigurationChangeRepository
-NotifierService --> IMonitoringNotifierOutboxRepository : reads and updates outbox
-NotifierService --> IMonitoringNotifier : dispatches external transport
+OutboxDispatchService --> IMonitoringNotifierOutboxRepository : reads and updates outbox
+OutboxDispatchService --> IMonitoringNotifier : dispatches external transport
 
 note right of ManifestDomainRoot
 Responsibilities:

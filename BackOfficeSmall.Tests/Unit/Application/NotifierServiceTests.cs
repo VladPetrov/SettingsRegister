@@ -20,7 +20,7 @@ public sealed class NotifierServiceTests
         FakeDomainLock domainLock = new();
         FakeSystemClock clock = new(DateTime.SpecifyKind(new DateTime(2026, 2, 25, 13, 0, 0), DateTimeKind.Utc));
         InMemoryConfigurationWriteUnitOfWork unitOfWork = CreateUnitOfWork();
-        NotifierService service = new(unitOfWork, transport, domainLock, clock);
+        OutboxDispatchService service = new(unitOfWork, transport, domainLock, clock);
 
         ConfigurationChange change = CreateChange(Guid.NewGuid());
         MonitoringNotifierOutboxMessage outboxMessage = MonitoringNotifierOutboxMessage.CreatePending(change, clock.UtcNow);
@@ -63,7 +63,7 @@ public sealed class NotifierServiceTests
         FakeDomainLock domainLock = new(false);
         FakeSystemClock clock = new(DateTime.SpecifyKind(new DateTime(2026, 2, 25, 13, 0, 0), DateTimeKind.Utc));
         InMemoryConfigurationWriteUnitOfWork unitOfWork = CreateUnitOfWork();
-        NotifierService service = new(unitOfWork, transport, domainLock, clock);
+        OutboxDispatchService service = new(unitOfWork, transport, domainLock, clock);
 
         ConfigurationChange change = CreateChange(Guid.NewGuid());
         MonitoringNotifierOutboxMessage outboxMessage = MonitoringNotifierOutboxMessage.CreatePending(change, clock.UtcNow);

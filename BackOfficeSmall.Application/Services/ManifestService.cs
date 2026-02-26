@@ -13,14 +13,14 @@ namespace BackOfficeSmall.Application.Services;
 public sealed class ManifestService : IManifestService
 {
     private readonly IConfigurationWriteUnitOfWork _configurationWriteUnitOfWork;
-    private readonly INotifierService _notifierService;
+    private readonly IOutboxDispatchService _notifierService;
     private readonly IDomainLock _domainLock;
     private readonly ISystemClock _clock;
     private readonly TimeSpan _manifestImportLockTimeout;
 
     public ManifestService(
         IConfigurationWriteUnitOfWork configurationWriteUnitOfWork,
-        INotifierService notifierService,
+        IOutboxDispatchService notifierService,
         IDomainLock domainLock,
         ISystemClock clock,
         ApplicationSettings applicationSettings)

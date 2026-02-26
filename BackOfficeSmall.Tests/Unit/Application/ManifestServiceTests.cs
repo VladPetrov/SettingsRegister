@@ -19,7 +19,7 @@ public sealed class ManifestServiceTests
     {
         FakeSystemClock clock = new(DateTime.SpecifyKind(new DateTime(2026, 2, 22, 10, 0, 0), DateTimeKind.Utc));
         FakeDomainLock domainLock = new();
-        FakeNotifierService notifierService = new();
+        FakeOutboxDispatchService notifierService = new();
         ApplicationSettings applicationSettings = new()
         {
             ManifestImportLockTimeoutSeconds = ImportLockTimeoutSeconds
@@ -66,7 +66,7 @@ public sealed class ManifestServiceTests
     {
         FakeSystemClock clock = new(DateTime.SpecifyKind(new DateTime(2026, 2, 22, 10, 0, 0), DateTimeKind.Utc));
         FakeDomainLock domainLock = new(false);
-        FakeNotifierService notifierService = new();
+        FakeOutboxDispatchService notifierService = new();
         ApplicationSettings applicationSettings = new()
         {
             ManifestImportLockTimeoutSeconds = ImportLockTimeoutSeconds

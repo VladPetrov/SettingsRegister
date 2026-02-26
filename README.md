@@ -18,7 +18,7 @@ The solution is strict-layered:
      - `ManifestService` (import + retrieval by id/list)
      - `ConfigurationInstanceService` (instance CRUD + cell mutation + outbox intent writes for critical changes)
      - `ConfigurationChangeQueryService` (query by id and filters)
-     - `NotifierService` (background polling + one-shot outbox dispatch)
+     - `OutboxDispatchService` (background polling + one-shot outbox dispatch)
      - `AuthExchangeService` (development token exchange endpoint behavior)
    - Application contracts/requests and application exceptions
 3. `BackOfficeSmall.Infrastructure`
