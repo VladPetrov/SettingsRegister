@@ -13,6 +13,7 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
+using System.Text.Json.Serialization;
 using System.Text;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
@@ -23,7 +24,12 @@ AuthSettings authSettings = builder.Configuration
     .GetSection(AuthSettings.SectionName)
     .Get<AuthSettings>() ?? new AuthSettings();
 
-builder.Services.AddControllers();
+builder.Services
+    .AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddOpenApi();
 builder.Services.AddMemoryCache();
