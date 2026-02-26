@@ -61,15 +61,6 @@ public static class ApiMappings
             userId);
     }
 
-    public static SetCellValueRequest ToApplication(this CreateConfigurationChangeRequestDto dto)
-    {
-        return new SetCellValueRequest(
-            dto.SettingKey,
-            dto.LayerIndex,
-            dto.Value,
-            dto.ChangedBy);
-    }
-
     public static ManifestResponseDto ToDto(this ManifestValueObject manifest)
     {
         IReadOnlyList<ManifestSettingDefinitionDto> settings = manifest.SettingDefinitions

@@ -90,7 +90,6 @@ The solution is strict-layered:
 - `PUT /api/config-instances/{instanceId}/cells`
 
 ### Configuration Change
-- `POST /api/config-changes`
 - `GET /api/config-changes`
 - `GET /api/config-changes/{id}`
 

@@ -23,7 +23,7 @@ public sealed class ApiEndpointsTests
     }
 
     [Fact]
-    public async Task ConfigurationChangesEndpoints_CreateListAndGet_ById_Work()
+    public async Task ConfigurationChangesEndpoints_ListAndGet_ById_Work()
     {
         await using WebApplicationFactory<Program> factory = CreateFactory("Development");
         using HttpClient client = await CreateAuthorizedClientAsync(factory, "integration-user-config-changes");
@@ -31,19 +31,17 @@ public sealed class ApiEndpointsTests
         Guid manifestId = await ImportManifestAsync(client, allowLayerOneOverride: true);
         Guid instanceId = await CreateConfigurationInstanceAsync(client, manifestId, "Instance-A");
 
-        HttpResponseMessage createChangeResponse = await client.PostAsJsonAsync("/api/config-changes", new
+        HttpResponseMessage setValueResponse = await client.PutAsJsonAsync($"/api/configuration/{instanceId}/value", new
         {
-            configurationInstanceId = instanceId,
             settingKey = "FeatureFlag",
             layerIndex = 0,
-            value = "on",
-            changedBy = "tester"
+            value = "on"
         });
 
-        string createChangeBody = await createChangeResponse.Content.ReadAsStringAsync();
-        Assert.Equal(HttpStatusCode.Created, createChangeResponse.StatusCode);
+        string setValueBody = await setValueResponse.Content.ReadAsStringAsync();
+        Assert.Equal(HttpStatusCode.OK, setValueResponse.StatusCode);
 
-        using JsonDocument createdChange = JsonDocument.Parse(createChangeBody);
+        using JsonDocument createdChange = JsonDocument.Parse(setValueBody);
         Guid changeId = createdChange.RootElement.GetProperty("id").GetGuid();
 
         HttpResponseMessage getByIdResponse = await client.GetAsync($"/api/config-changes/{changeId}");
