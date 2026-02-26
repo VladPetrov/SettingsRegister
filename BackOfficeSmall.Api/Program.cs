@@ -57,6 +57,7 @@ builder.Services.AddHealthChecks();
 builder.Services.AddSingleton(appSettings);
 builder.Services.AddSingleton<ICachedManifestRepositorySettings>(appSettings);
 builder.Services.AddSingleton<IConfigurationCachedSettings>(appSettings);
+builder.Services.AddSingleton<IConfigurationChangeCachedSettings>(appSettings);
 builder.Services.AddSingleton(authSettings);
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -94,7 +95,14 @@ builder.Services.AddSingleton<ICacheConfigurationRepository>(serviceProvider =>
 
     return new CachedConfigurationRepository(innerRepository, memoryCache, settings);
 });
-builder.Services.AddSingleton<InMemoryConfigurationChangeRepository>();
+builder.Services.AddSingleton<IConfigurationChangeRepository>(serviceProvider =>
+{
+    var memoryCache = serviceProvider.GetRequiredService<IMemoryCache>();
+    var settings = serviceProvider.GetRequiredService<IConfigurationChangeCachedSettings>();
+    IConfigurationChangeRepository innerRepository = new InMemoryConfigurationChangeRepository();
+
+    return new CachedConfigurationChangeRepository(innerRepository, memoryCache, settings);
+});
 builder.Services.AddSingleton<InMemoryMonitoringNotifierOutboxRepository>();
 builder.Services.AddScoped<IConfigurationWriteUnitOfWork, InMemoryConfigurationWriteUnitOfWork>();
 builder.Services.AddSingleton<IMonitoringNotifier, SimulatedMonitoringNotifier>();

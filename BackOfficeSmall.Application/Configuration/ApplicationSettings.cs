@@ -1,6 +1,6 @@
 namespace BackOfficeSmall.Application.Configuration;
 
-public sealed class ApplicationSettings : ICachedManifestRepositorySettings, IConfigurationCachedSettings
+public sealed class ApplicationSettings : ICachedManifestRepositorySettings, IConfigurationCachedSettings, IConfigurationChangeCachedSettings
 {
     public const string SectionName = "Application";
 
@@ -8,4 +8,5 @@ public sealed class ApplicationSettings : ICachedManifestRepositorySettings, ICo
     public int ManifestImportLockTimeoutSeconds { get; init; } = 30;
     public int ManifestCacheExpirationSeconds { get; init; } = 300;
     public int ConfigurationCacheExpirationSeconds { get; init; } = 300;
+    public int ConfigurationChangeCacheExpirationSeconds { get; init; } = 300;
 }

@@ -9,7 +9,7 @@ public sealed class InMemoryConfigurationWriteUnitOfWork : IConfigurationWriteUn
     public InMemoryConfigurationWriteUnitOfWork(
         ICachedManifestRepository manifestRepository,
         ICacheConfigurationRepository configurationRepository,
-        InMemoryConfigurationChangeRepository configurationChangeRepository,
+        IConfigurationChangeRepository configurationChangeRepository,
         InMemoryMonitoringNotifierOutboxRepository monitoringNotifierOutboxRepository)
     {
         ManifestRepository = manifestRepository ?? throw new ArgumentNullException(nameof(manifestRepository));

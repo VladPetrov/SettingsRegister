@@ -72,6 +72,7 @@ The solution is strict-layered:
 - `Application:ManifestImportLockTimeoutSeconds` configures manifest import lock acquisition timeout (default `30` seconds).
 - `Application:ManifestCacheExpirationSeconds` configures local in-memory sliding expiration for manifest `GetByIdAsync` caching (default `300` seconds).
 - `Application:ConfigurationCacheExpirationSeconds` configures local in-memory sliding expiration for configuration instance `GetByIdAsync` caching (default `300` seconds).
+- `Application:ConfigurationChangeCacheExpirationSeconds` configures local in-memory sliding expiration for configuration change `GetByIdAsync` caching (default `300` seconds).
 - Configuration instance cache isolation uses `ConfigurationInstance.Clone()` so callers never mutate cached references.
 - `/api/auth/exchange` is enabled in `Development` only; in non-development environments it returns `501 Not Implemented`.
 - UTC is required for date filters (`fromUtc`, `toUtc`) when provided.
