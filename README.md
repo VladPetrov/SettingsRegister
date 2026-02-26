@@ -45,7 +45,7 @@ The solution is strict-layered:
 - Manifest uniqueness: (`Name`, `Version`).
 - Configuration instance name is unique.
 - Configuration instance must reference an existing `ManifestId`.
-- Cells are unique per (`ConfigurationInstanceId`, `SettingKey`, `LayerIndex`).
+- Cells are unique per (`ConfigurationId`, `SettingKey`, `LayerIndex`).
 - Layer index must stay in `0..LayerCount-1`.
 - Setting key must exist in the instance manifest.
 - Override is allowed only when instance manifest permission for (`SettingKey`, `LayerIndex`) allows it.

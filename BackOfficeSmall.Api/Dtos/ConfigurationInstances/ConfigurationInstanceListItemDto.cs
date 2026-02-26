@@ -1,7 +1,7 @@
 namespace BackOfficeSmall.Api.Dtos.ConfigurationInstances;
 
 public sealed record ConfigurationInstanceListItemDto(
-    Guid ConfigurationInstanceId,
+    Guid ConfigurationId,
     string Name,
     Guid ManifestId,
     DateTime CreatedAtUtc);

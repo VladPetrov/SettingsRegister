@@ -64,7 +64,7 @@ class ManifestOverridePermission {
 }
 
 class ConfigurationInstance {
-  +Guid ConfigurationInstanceId
+  +Guid ConfigurationId
   +string Name
   +Guid ManifestId
   +ManifestValueObject Manifest
@@ -99,7 +99,7 @@ class ConfigurationSettingValue {
 
 class ConfigurationChange {
   +Guid Id
-  +Guid ConfigurationInstanceId
+  +Guid ConfigurationId
   +ConfigurationChangeEventType EventType
   +string SettingKey
   +int LayerIndex
@@ -115,7 +115,7 @@ class MonitoringNotifierOutboxMessage {
   +Guid Id
   +string DedupeKey
   +Guid ConfigurationChangeId
-  +Guid ConfigurationInstanceId
+  +Guid ConfigurationId
   +string SettingKey
   +int LayerIndex
   +ConfigurationOperation Operation
@@ -138,7 +138,7 @@ class MonitoringNotificationMessage {
   +Guid OutboxMessageId
   +string DedupeKey
   +Guid ConfigurationChangeId
-  +Guid ConfigurationInstanceId
+  +Guid ConfigurationId
   +string SettingKey
   +int LayerIndex
   +ConfigurationOperation Operation

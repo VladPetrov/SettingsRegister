@@ -9,14 +9,14 @@ public sealed class ConfigurationInstance
     private readonly ManifestValueObject _manifest;
 
     public ConfigurationInstance(
-        Guid configInstanceId,
+        Guid configurationId,
         string name,
         ManifestValueObject manifest,
         DateTime createdAtUtc,
         string createdBy,
         IEnumerable<SettingCell>? cells = null)
     {
-        ConfigurationInstanceId = configInstanceId;
+        ConfigurationId = configurationId;
         Name = name;
         _manifest = manifest ?? throw new ArgumentNullException(nameof(manifest));
         CreatedAtUtc = createdAtUtc;
@@ -26,7 +26,7 @@ public sealed class ConfigurationInstance
         Validate();
     }
 
-    public Guid ConfigurationInstanceId { get; }
+    public Guid ConfigurationId { get; }
 
     public string Name { get; }
 
@@ -47,7 +47,7 @@ public sealed class ConfigurationInstance
             .ToList();
 
         return new ConfigurationInstance(
-            ConfigurationInstanceId,
+            ConfigurationId,
             Name,
             _manifest,
             CreatedAtUtc,
@@ -120,9 +120,9 @@ public sealed class ConfigurationInstance
 
     public void Validate()
     {
-        if (ConfigurationInstanceId == Guid.Empty)
+        if (ConfigurationId == Guid.Empty)
         {
-            throw new ArgumentException("ConfigurationInstanceId must be a non-empty GUID.", nameof(ConfigurationInstanceId));
+            throw new ArgumentException("ConfigurationId must be a non-empty GUID.", nameof(ConfigurationId));
         }
 
         if (string.IsNullOrWhiteSpace(Name))

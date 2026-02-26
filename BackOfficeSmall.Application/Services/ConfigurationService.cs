@@ -77,7 +77,7 @@ public sealed class ConfigurationService : IConfigurationService
     {
         if (instanceId == Guid.Empty)
         {
-            throw new ValidationException("ConfigurationInstanceId must be a non-empty GUID.");
+            throw new ValidationException("ConfigurationId must be a non-empty GUID.");
         }
 
         // This guaranties consistent reads
@@ -95,7 +95,7 @@ public sealed class ConfigurationService : IConfigurationService
     {
         if (instanceId == Guid.Empty)
         {
-            throw new ValidationException("ConfigurationInstanceId must be a non-empty GUID.");
+            throw new ValidationException("ConfigurationId must be a non-empty GUID.");
         }
 
         if (request is null)
@@ -139,7 +139,7 @@ public sealed class ConfigurationService : IConfigurationService
     {
         if (instanceId == Guid.Empty)
         {
-            throw new ValidationException("ConfigurationInstanceId must be a non-empty GUID.");
+            throw new ValidationException("ConfigurationId must be a non-empty GUID.");
         }
 
         if (request is null)
@@ -160,7 +160,7 @@ public sealed class ConfigurationService : IConfigurationService
 
         ConfigurationChange change = new(
             Guid.NewGuid(),
-            instance.ConfigurationInstanceId,
+            instance.ConfigurationId,
             request.SettingKey,
             request.LayerIndex,
             operation,
@@ -238,7 +238,7 @@ public sealed class ConfigurationService : IConfigurationService
 
             ConfigurationChange change = new(
                 Guid.NewGuid(),
-                instance.ConfigurationInstanceId,
+                instance.ConfigurationId,
                 cell.SettingKey,
                 cell.LayerIndex,
                 operation,

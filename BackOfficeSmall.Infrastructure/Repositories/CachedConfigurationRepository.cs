@@ -26,7 +26,7 @@ public sealed class CachedConfigurationRepository : ICacheConfigurationRepositor
     public async Task AddAsync(ConfigurationInstance instance, CancellationToken cancellationToken)
     {
         await _innerRepository.AddAsync(instance, cancellationToken);
-        _memoryCache.Remove(instance.ConfigurationInstanceId);
+        _memoryCache.Remove(instance.ConfigurationId);
     }
 
     public async Task<ConfigurationInstance?> GetByIdAsync(Guid instanceId, CancellationToken cancellationToken)
@@ -62,7 +62,7 @@ public sealed class CachedConfigurationRepository : ICacheConfigurationRepositor
 
     public async Task UpdateAsync(ConfigurationInstance instance, CancellationToken cancellationToken)
     {
-        _memoryCache.Remove(instance.ConfigurationInstanceId);
+        _memoryCache.Remove(instance.ConfigurationId);
         await _innerRepository.UpdateAsync(instance, cancellationToken);
     }
 

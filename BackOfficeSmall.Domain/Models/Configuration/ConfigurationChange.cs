@@ -4,7 +4,7 @@ public sealed class ConfigurationChange
 {
     public ConfigurationChange(
         Guid id,
-        Guid configInstanceId,
+        Guid configurationId,
         string settingKey,
         int layerIndex,
         ConfigurationOperation operation,
@@ -15,7 +15,7 @@ public sealed class ConfigurationChange
         ConfigurationChangeEventType eventType = ConfigurationChangeEventType.ConfigurationSetting)
     {
         Id = id;
-        ConfigurationInstanceId = configInstanceId;
+        ConfigurationId = configurationId;
         Name = settingKey;
         LayerIndex = layerIndex;
         Operation = operation;
@@ -30,7 +30,7 @@ public sealed class ConfigurationChange
 
     public Guid Id { get; }
 
-    public Guid ConfigurationInstanceId { get; }
+    public Guid ConfigurationId { get; }
 
     public string Name { get; }
 
@@ -55,9 +55,9 @@ public sealed class ConfigurationChange
             throw new ArgumentException("Id must be a non-empty GUID.", nameof(Id));
         }
 
-        if (ConfigurationInstanceId == Guid.Empty)
+        if (ConfigurationId == Guid.Empty)
         {
-            throw new ArgumentException("ConfigurationInstanceId must be a non-empty GUID.", nameof(ConfigurationInstanceId));
+            throw new ArgumentException("ConfigurationId must be a non-empty GUID.", nameof(ConfigurationId));
         }
 
         if (string.IsNullOrWhiteSpace(Name))

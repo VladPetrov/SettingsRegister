@@ -2,7 +2,7 @@ namespace BackOfficeSmall.Api.Dtos.ConfigurationChanges;
 
 public sealed record ConfigurationChangeResponseDto(
     Guid Id,
-    Guid ConfigurationInstanceId,
+    Guid ConfigurationId,
     string SettingKey,
     int LayerIndex,
     ConfigurationChangeEventTypeDto EventType,

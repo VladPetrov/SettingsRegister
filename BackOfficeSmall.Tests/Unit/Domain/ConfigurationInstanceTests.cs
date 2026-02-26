@@ -70,7 +70,7 @@ public sealed class ConfigurationInstanceTests
         clone.SetValue("FeatureFlag", 0, "off");
 
         Assert.NotSame(original, clone);
-        Assert.Equal(original.ConfigurationInstanceId, clone.ConfigurationInstanceId);
+        Assert.Equal(original.ConfigurationId, clone.ConfigurationId);
         Assert.Equal("on", original.GetValue("FeatureFlag", 0));
         Assert.Equal("off", clone.GetValue("FeatureFlag", 0));
     }

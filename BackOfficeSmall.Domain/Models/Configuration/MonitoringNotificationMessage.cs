@@ -6,7 +6,7 @@ public sealed class MonitoringNotificationMessage
         Guid outboxMessageId,
         string dedupeKey,
         Guid configurationChangeId,
-        Guid configurationInstanceId,
+        Guid configurationId,
         ConfigurationChangeEventType eventType,
         string settingKey,
         int layerIndex,
@@ -19,7 +19,7 @@ public sealed class MonitoringNotificationMessage
         OutboxMessageId = outboxMessageId;
         DedupeKey = dedupeKey;
         ConfigurationChangeId = configurationChangeId;
-        ConfigurationInstanceId = configurationInstanceId;
+        ConfigurationId = configurationId;
         EventType = eventType;
         SettingKey = settingKey;
         LayerIndex = layerIndex;
@@ -38,7 +38,7 @@ public sealed class MonitoringNotificationMessage
 
     public Guid ConfigurationChangeId { get; }
 
-    public Guid ConfigurationInstanceId { get; }
+    public Guid ConfigurationId { get; }
 
     public ConfigurationChangeEventType EventType { get; }
 
@@ -73,9 +73,9 @@ public sealed class MonitoringNotificationMessage
             throw new ArgumentException("ConfigurationChangeId must be a non-empty GUID.", nameof(ConfigurationChangeId));
         }
 
-        if (ConfigurationInstanceId == Guid.Empty)
+        if (ConfigurationId == Guid.Empty)
         {
-            throw new ArgumentException("ConfigurationInstanceId must be a non-empty GUID.", nameof(ConfigurationInstanceId));
+            throw new ArgumentException("ConfigurationId must be a non-empty GUID.", nameof(ConfigurationId));
         }
 
         if (string.IsNullOrWhiteSpace(SettingKey))

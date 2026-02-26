@@ -42,7 +42,7 @@ public sealed class ConfigurationServiceTests
 
         Assert.Single(changes);
         Assert.Equal(ConfigurationOperation.Add, changes[0].Operation);
-        Assert.Equal(instance.ConfigurationInstanceId, changes[0].ConfigurationInstanceId);
+        Assert.Equal(instance.ConfigurationId, changes[0].ConfigurationId);
         Assert.Equal("FeatureFlag", changes[0].Name);
         Assert.Equal("on", changes[0].AfterValue);
 

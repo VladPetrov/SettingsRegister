@@ -211,9 +211,9 @@ public sealed class ApiEndpointsTests
 
         using JsonDocument document = JsonDocument.Parse(body);
         JsonElement entry = document.RootElement.EnumerateArray()
-            .Single(candidate => candidate.GetProperty("configurationInstanceId").GetGuid() == instanceId);
+            .Single(candidate => candidate.GetProperty("ConfigurationId").GetGuid() == instanceId);
 
-        Assert.True(entry.TryGetProperty("configurationInstanceId", out _));
+        Assert.True(entry.TryGetProperty("ConfigurationId", out _));
         Assert.True(entry.TryGetProperty("name", out _));
         Assert.True(entry.TryGetProperty("manifestId", out _));
         Assert.True(entry.TryGetProperty("createdAtUtc", out _));
@@ -417,7 +417,7 @@ public sealed class ApiEndpointsTests
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
 
         using JsonDocument document = JsonDocument.Parse(body);
-        return document.RootElement.GetProperty("configurationInstanceId").GetGuid();
+        return document.RootElement.GetProperty("ConfigurationId").GetGuid();
     }
 }
 

@@ -122,7 +122,7 @@ public static class ApiMappings
             .ToList();
 
         return new ConfigurationInstanceResponseDto(
-            instance.ConfigurationInstanceId,
+            instance.ConfigurationId,
             instance.Name,
             instance.ManifestId,
             instance.CreatedAtUtc,
@@ -133,7 +133,7 @@ public static class ApiMappings
     public static ConfigurationInstanceListItemDto ToListItemDto(this ConfigurationInstance instance)
     {
         return new ConfigurationInstanceListItemDto(
-            instance.ConfigurationInstanceId,
+            instance.ConfigurationId,
             instance.Name,
             instance.ManifestId,
             instance.CreatedAtUtc);
@@ -143,7 +143,7 @@ public static class ApiMappings
     {
         return new ConfigurationChangeResponseDto(
             change.Id,
-            change.ConfigurationInstanceId,
+            change.ConfigurationId,
             change.Name,
             change.LayerIndex,
             change.EventType.ToDto(),

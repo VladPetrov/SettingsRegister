@@ -28,7 +28,7 @@ public sealed class ConfigurationController : AuthenticatedApiControllerBase
     public async Task<ActionResult<ConfigurationInstanceResponseDto>> CreateAsync([FromBody] ConfigurationInstanceCreateRequestDto request, CancellationToken cancellationToken)
     {
         var instance = await _configurationService.CreateInstanceAsync(request.ToApplication(GetUserId()), cancellationToken);
-        return Created($"/api/configuration/{instance.ConfigurationInstanceId}", instance.ToDto());
+        return Created($"/api/configuration/{instance.ConfigurationId}", instance.ToDto());
     }
 
     [HttpGet]

@@ -109,7 +109,7 @@ public sealed class InMemoryConfigurationChangeRepository : IConfigurationChange
     {
         return new ConfigurationChangeRecord(
             change.Id,
-            change.ConfigurationInstanceId,
+            change.ConfigurationId,
             change.Name,
             change.LayerIndex,
             change.Operation,
@@ -124,7 +124,7 @@ public sealed class InMemoryConfigurationChangeRepository : IConfigurationChange
     {
         return new ConfigurationChange(
             record.Id,
-            record.ConfigurationInstanceId,
+            record.ConfigurationId,
             record.SettingKey,
             record.LayerIndex,
             record.Operation,
@@ -137,7 +137,7 @@ public sealed class InMemoryConfigurationChangeRepository : IConfigurationChange
 
     private sealed record ConfigurationChangeRecord(
         Guid Id,
-        Guid ConfigurationInstanceId,
+        Guid ConfigurationId,
         string SettingKey,
         int LayerIndex,
         ConfigurationOperation Operation,

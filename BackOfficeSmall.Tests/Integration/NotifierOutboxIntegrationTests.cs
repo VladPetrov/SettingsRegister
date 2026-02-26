@@ -34,7 +34,7 @@ public sealed class NotifierOutboxIntegrationTests
             CancellationToken.None);
 
         await configurationService.SetValueAsync(
-            instance.ConfigurationInstanceId,
+            instance.ConfigurationId,
             new SetCellValueRequest("FeatureFlag", 0, "on", "integration"),
             CancellationToken.None);
 

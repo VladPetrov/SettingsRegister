@@ -6,7 +6,7 @@ public sealed class MonitoringNotifierOutboxMessage
         Guid id,
         string dedupeKey,
         Guid configurationChangeId,
-        Guid configurationInstanceId,
+        Guid configurationId,
         ConfigurationChangeEventType eventType,
         string settingKey,
         int layerIndex,
@@ -25,7 +25,7 @@ public sealed class MonitoringNotifierOutboxMessage
         Id = id;
         DedupeKey = dedupeKey;
         ConfigurationChangeId = configurationChangeId;
-        ConfigurationInstanceId = configurationInstanceId;
+        ConfigurationId = configurationId;
         EventType = eventType;
         SettingKey = settingKey;
         LayerIndex = layerIndex;
@@ -50,7 +50,7 @@ public sealed class MonitoringNotifierOutboxMessage
 
     public Guid ConfigurationChangeId { get; }
 
-    public Guid ConfigurationInstanceId { get; }
+    public Guid ConfigurationId { get; }
 
     public ConfigurationChangeEventType EventType { get; }
 
@@ -91,7 +91,7 @@ public sealed class MonitoringNotifierOutboxMessage
             Guid.NewGuid(),
             BuildDedupeKey(change.Id),
             change.Id,
-            change.ConfigurationInstanceId,
+            change.ConfigurationId,
             change.EventType,
             change.Name,
             change.LayerIndex,
@@ -124,7 +124,7 @@ public sealed class MonitoringNotifierOutboxMessage
             Id,
             DedupeKey,
             ConfigurationChangeId,
-            ConfigurationInstanceId,
+            ConfigurationId,
             EventType,
             SettingKey,
             LayerIndex,
@@ -173,9 +173,9 @@ public sealed class MonitoringNotifierOutboxMessage
             throw new ArgumentException("ConfigurationChangeId must be a non-empty GUID.", nameof(ConfigurationChangeId));
         }
 
-        if (ConfigurationInstanceId == Guid.Empty)
+        if (ConfigurationId == Guid.Empty)
         {
-            throw new ArgumentException("ConfigurationInstanceId must be a non-empty GUID.", nameof(ConfigurationInstanceId));
+            throw new ArgumentException("ConfigurationId must be a non-empty GUID.", nameof(ConfigurationId));
         }
 
         if (string.IsNullOrWhiteSpace(SettingKey))

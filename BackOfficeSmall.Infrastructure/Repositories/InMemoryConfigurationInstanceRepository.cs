@@ -25,10 +25,10 @@ public sealed class InMemoryConfigurationInstanceRepository : IConfigurationRepo
 
         lock (_syncRoot)
         {
-            if (_instancesById.ContainsKey(instance.ConfigurationInstanceId))
+            if (_instancesById.ContainsKey(instance.ConfigurationId))
             {
                 throw new InvalidOperationException(
-                    $"ConfigurationInstance '{instance.ConfigurationInstanceId}' already exists.");
+                    $"ConfigurationInstance '{instance.ConfigurationId}' already exists.");
             }
 
             if (_instanceNameIndex.ContainsKey(instance.Name))
@@ -37,8 +37,8 @@ public sealed class InMemoryConfigurationInstanceRepository : IConfigurationRepo
                     $"ConfigurationInstance name '{instance.Name}' already exists.");
             }
 
-            _instancesById[instance.ConfigurationInstanceId] = ToRecord(instance);
-            _instanceNameIndex[instance.Name] = instance.ConfigurationInstanceId;
+            _instancesById[instance.ConfigurationId] = ToRecord(instance);
+            _instanceNameIndex[instance.Name] = instance.ConfigurationId;
         }
 
         return Task.CompletedTask;
@@ -88,10 +88,10 @@ public sealed class InMemoryConfigurationInstanceRepository : IConfigurationRepo
 
         lock (_syncRoot)
         {
-            if (!_instancesById.TryGetValue(instance.ConfigurationInstanceId, out ConfigurationInstanceRecord? existing))
+            if (!_instancesById.TryGetValue(instance.ConfigurationId, out ConfigurationInstanceRecord? existing))
             {
                 throw new InvalidOperationException(
-                    $"ConfigurationInstance '{instance.ConfigurationInstanceId}' does not exist.");
+                    $"ConfigurationInstance '{instance.ConfigurationId}' does not exist.");
             }
 
             if (!string.Equals(existing.Name, instance.Name, StringComparison.OrdinalIgnoreCase))
@@ -103,10 +103,10 @@ public sealed class InMemoryConfigurationInstanceRepository : IConfigurationRepo
                 }
 
                 _instanceNameIndex.Remove(existing.Name);
-                _instanceNameIndex[instance.Name] = instance.ConfigurationInstanceId;
+                _instanceNameIndex[instance.Name] = instance.ConfigurationId;
             }
 
-            _instancesById[instance.ConfigurationInstanceId] = ToRecord(instance);
+            _instancesById[instance.ConfigurationId] = ToRecord(instance);
         }
 
         return Task.CompletedTask;
@@ -152,7 +152,7 @@ public sealed class InMemoryConfigurationInstanceRepository : IConfigurationRepo
             .ToList();
 
         return new ConfigurationInstanceRecord(
-            instance.ConfigurationInstanceId,
+            instance.ConfigurationId,
             instance.Name,
             instance.ManifestId,
             ToManifestRecord(instance.Manifest),
@@ -168,7 +168,7 @@ public sealed class InMemoryConfigurationInstanceRepository : IConfigurationRepo
             .ToList();
 
         return new ConfigurationInstance(
-            record.ConfigurationInstanceId,
+            record.ConfigurationId,
             record.Name,
             ToManifest(record.Manifest),
             record.CreatedAtUtc,
@@ -229,7 +229,7 @@ public sealed class InMemoryConfigurationInstanceRepository : IConfigurationRepo
     }
 
     private sealed record ConfigurationInstanceRecord(
-        Guid ConfigurationInstanceId,
+        Guid ConfigurationId,
         string Name,
         Guid ManifestId,
         ManifestRecord Manifest,

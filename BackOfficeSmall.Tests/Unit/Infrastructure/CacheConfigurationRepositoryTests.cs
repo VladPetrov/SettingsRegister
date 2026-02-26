@@ -130,7 +130,7 @@ public sealed class CacheConfigurationRepositoryTests
         {
             if (instance is not null)
             {
-                _instancesById[instance.ConfigurationInstanceId] = instance.Clone();
+                _instancesById[instance.ConfigurationId] = instance.Clone();
             }
         }
 
@@ -141,7 +141,7 @@ public sealed class CacheConfigurationRepositoryTests
         public Task AddAsync(ConfigurationInstance instance, CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            _instancesById.Add(instance.ConfigurationInstanceId, instance.Clone());
+            _instancesById.Add(instance.ConfigurationId, instance.Clone());
             return Task.CompletedTask;
         }
 
@@ -173,7 +173,7 @@ public sealed class CacheConfigurationRepositoryTests
         {
             cancellationToken.ThrowIfCancellationRequested();
             UpdateAsyncCallCount++;
-            _instancesById[instance.ConfigurationInstanceId] = instance.Clone();
+            _instancesById[instance.ConfigurationId] = instance.Clone();
             return Task.CompletedTask;
         }
 
