@@ -153,8 +153,9 @@ public static class ApiMappings
         return new ConfigurationChangeResponseDto(
             change.Id,
             change.ConfigurationInstanceId,
-            change.SettingKey,
+            change.Name,
             change.LayerIndex,
+            change.EventType.ToDto(),
             change.Operation.ToDto(),
             change.BeforeValue,
             change.AfterValue,
@@ -191,6 +192,16 @@ public static class ApiMappings
             ConfigurationOperation.Update => ConfigurationOperationDto.Update,
             ConfigurationOperation.Delete => ConfigurationOperationDto.Delete,
             _ => throw new ArgumentOutOfRangeException(nameof(operation), "Unsupported config operation value.")
+        };
+    }
+
+    private static ConfigurationChangeEventTypeDto ToDto(this ConfigurationChangeEventType eventType)
+    {
+        return eventType switch
+        {
+            ConfigurationChangeEventType.ConfigurationSetting => ConfigurationChangeEventTypeDto.ConfigurationSetting,
+            ConfigurationChangeEventType.ManifestImport => ConfigurationChangeEventTypeDto.ManifestImport,
+            _ => throw new ArgumentOutOfRangeException(nameof(eventType), "Unsupported change event type value.")
         };
     }
 }

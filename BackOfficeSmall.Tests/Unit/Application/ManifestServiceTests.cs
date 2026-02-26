@@ -2,8 +2,8 @@ using BackOfficeSmall.Application.Contracts;
 using BackOfficeSmall.Application.Configuration;
 using BackOfficeSmall.Application.Exceptions;
 using BackOfficeSmall.Application.Services;
+using BackOfficeSmall.Domain.Models.Configuration;
 using BackOfficeSmall.Domain.Models.Manifest;
-using BackOfficeSmall.Domain.Repositories;
 using BackOfficeSmall.Infrastructure.Repositories;
 using BackOfficeSmall.Tests.TestDoubles;
 using Microsoft.Extensions.Caching.Memory;
@@ -19,13 +19,14 @@ public sealed class ManifestServiceTests
     {
         FakeSystemClock clock = new(DateTime.SpecifyKind(new DateTime(2026, 2, 22, 10, 0, 0), DateTimeKind.Utc));
         FakeDomainLock domainLock = new();
+        FakeNotifierService notifierService = new();
         ApplicationSettings applicationSettings = new()
         {
             ManifestImportLockTimeoutSeconds = ImportLockTimeoutSeconds
         };
         using MemoryCache memoryCache = new(new MemoryCacheOptions());
-        IConfigurationWriteUnitOfWork unitOfWork = CreateUnitOfWork(memoryCache, applicationSettings);
-        ManifestService service = new(unitOfWork, domainLock, clock, applicationSettings);
+        InMemoryConfigurationWriteUnitOfWork unitOfWork = CreateUnitOfWork(memoryCache, applicationSettings);
+        ManifestService service = new(unitOfWork, notifierService, domainLock, clock, applicationSettings);
 
         ManifestImportRequest request = CreateManifestRequest("Main", "tester");
 
@@ -42,6 +43,22 @@ public sealed class ManifestServiceTests
         Assert.Equal("Main", domainLock.LastKey);
         Assert.Equal(TimeSpan.FromSeconds(ImportLockTimeoutSeconds), domainLock.LastTimeout);
         Assert.Equal(2, domainLock.DisposeCalls);
+        Assert.Equal(2, notifierService.NotifyChangesCalls);
+
+        IReadOnlyList<ConfigurationChange> changes = await unitOfWork.ConfigurationChangeRepository.ListAsync(
+            null,
+            null,
+            null,
+            CancellationToken.None);
+        Assert.Equal(2, changes.Count);
+        Assert.All(changes, change => Assert.Equal("__manifest_import__", change.Name));
+        Assert.All(changes, change => Assert.Equal(ConfigurationOperation.Add, change.Operation));
+        Assert.All(changes, change => Assert.Equal(ConfigurationChangeEventType.ManifestImport, change.EventType));
+
+        IReadOnlyList<MonitoringNotifierOutboxMessage> outboxMessages = await unitOfWork.MonitoringNotifierOutboxRepository.ListAsync(
+            null,
+            CancellationToken.None);
+        Assert.Equal(2, outboxMessages.Count);
     }
 
     [Fact]
@@ -49,19 +66,21 @@ public sealed class ManifestServiceTests
     {
         FakeSystemClock clock = new(DateTime.SpecifyKind(new DateTime(2026, 2, 22, 10, 0, 0), DateTimeKind.Utc));
         FakeDomainLock domainLock = new(false);
+        FakeNotifierService notifierService = new();
         ApplicationSettings applicationSettings = new()
         {
             ManifestImportLockTimeoutSeconds = ImportLockTimeoutSeconds
         };
         using MemoryCache memoryCache = new(new MemoryCacheOptions());
-        IConfigurationWriteUnitOfWork unitOfWork = CreateUnitOfWork(memoryCache, applicationSettings);
-        ManifestService service = new(unitOfWork, domainLock, clock, applicationSettings);
+        InMemoryConfigurationWriteUnitOfWork unitOfWork = CreateUnitOfWork(memoryCache, applicationSettings);
+        ManifestService service = new(unitOfWork, notifierService, domainLock, clock, applicationSettings);
 
         ManifestImportRequest request = CreateManifestRequest("Main", "tester");
 
         await Assert.ThrowsAsync<ConflictException>(() => service.ImportManifestAsync(request, CancellationToken.None));
         Assert.Equal("Main", domainLock.LastKey);
         Assert.Equal(0, domainLock.DisposeCalls);
+        Assert.Equal(0, notifierService.NotifyChangesCalls);
     }
 
     private static ManifestImportRequest CreateManifestRequest(string name, string createdBy)
@@ -81,7 +100,7 @@ public sealed class ManifestServiceTests
             });
     }
 
-    private static IConfigurationWriteUnitOfWork CreateUnitOfWork(MemoryCache memoryCache, ApplicationSettings settings)
+    private static InMemoryConfigurationWriteUnitOfWork CreateUnitOfWork(MemoryCache memoryCache, ApplicationSettings settings)
     {
         ICachedManifestRepository cachedManifestRepository = new CachedManifestRepository(
             new InMemoryManifestRepository(),

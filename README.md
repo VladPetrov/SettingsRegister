@@ -53,7 +53,8 @@ The solution is strict-layered:
   - `Add`: `AfterValue` required, `BeforeValue` absent
   - `Update`: both values required
   - `Delete`: `BeforeValue` required, `AfterValue` absent
-- `ConfigurationChange` references `ConfigurationInstanceId`; manifest context is derived from the instance.
+- `ConfigurationChange` includes `EventType` to separate `ConfigurationSetting` and `ManifestImport` events in a single change stream.
+- `ManifestImport` events are always critical and emit outbox notification intent.
 - Critical notification is derived from manifest setting definition metadata.
 - Critical notification delivery uses transactional outbox semantics: configuration write, `ConfigurationChange`, and outbox intent are committed together.
 

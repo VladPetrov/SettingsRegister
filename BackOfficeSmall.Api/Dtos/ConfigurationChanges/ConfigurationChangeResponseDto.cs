@@ -5,6 +5,7 @@ public sealed record ConfigurationChangeResponseDto(
     Guid ConfigurationInstanceId,
     string SettingKey,
     int LayerIndex,
+    ConfigurationChangeEventTypeDto EventType,
     ConfigurationOperationDto Operation,
     string? BeforeValue,
     string? AfterValue,

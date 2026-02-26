@@ -88,13 +88,14 @@ public sealed class InMemoryConfigurationChangeRepository : IConfigurationChange
         return new ConfigurationChangeRecord(
             change.Id,
             change.ConfigurationInstanceId,
-            change.SettingKey,
+            change.Name,
             change.LayerIndex,
             change.Operation,
             change.BeforeValue,
             change.AfterValue,
             change.ChangedBy,
-            change.ChangedAtUtc);
+            change.ChangedAtUtc,
+            change.EventType);
     }
 
     private static ConfigurationChange ToDomain(ConfigurationChangeRecord record)
@@ -108,7 +109,8 @@ public sealed class InMemoryConfigurationChangeRepository : IConfigurationChange
             record.BeforeValue,
             record.AfterValue,
             record.ChangedBy,
-            record.ChangedAtUtc);
+            record.ChangedAtUtc,
+            record.EventType);
     }
 
     private sealed record ConfigurationChangeRecord(
@@ -120,5 +122,6 @@ public sealed class InMemoryConfigurationChangeRepository : IConfigurationChange
         string? BeforeValue,
         string? AfterValue,
         string ChangedBy,
-        DateTime ChangedAtUtc);
+        DateTime ChangedAtUtc,
+        ConfigurationChangeEventType EventType);
 }

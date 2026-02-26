@@ -11,17 +11,19 @@ public sealed class ConfigurationChange
         string? beforeValue,
         string? afterValue,
         string changedBy,
-        DateTime changedAtUtc)
+        DateTime changedAtUtc,
+        ConfigurationChangeEventType eventType = ConfigurationChangeEventType.ConfigurationSetting)
     {
         Id = id;
         ConfigurationInstanceId = configInstanceId;
-        SettingKey = settingKey;
+        Name = settingKey;
         LayerIndex = layerIndex;
         Operation = operation;
         BeforeValue = beforeValue;
         AfterValue = afterValue;
         ChangedBy = changedBy;
         ChangedAtUtc = changedAtUtc;
+        EventType = eventType;
 
         Validate();
     }
@@ -30,7 +32,7 @@ public sealed class ConfigurationChange
 
     public Guid ConfigurationInstanceId { get; }
 
-    public string SettingKey { get; }
+    public string Name { get; }
 
     public int LayerIndex { get; }
 
@@ -44,6 +46,8 @@ public sealed class ConfigurationChange
 
     public DateTime ChangedAtUtc { get; }
 
+    public ConfigurationChangeEventType EventType { get; }
+
     public void Validate()
     {
         if (Id == Guid.Empty)
@@ -56,9 +60,9 @@ public sealed class ConfigurationChange
             throw new ArgumentException("ConfigurationInstanceId must be a non-empty GUID.", nameof(ConfigurationInstanceId));
         }
 
-        if (string.IsNullOrWhiteSpace(SettingKey))
+        if (string.IsNullOrWhiteSpace(Name))
         {
-            throw new ArgumentException("Setting key is required.", nameof(SettingKey));
+            throw new ArgumentException("Setting key is required.", nameof(Name));
         }
 
         if (LayerIndex < 0)
@@ -76,11 +80,31 @@ public sealed class ConfigurationChange
             throw new ArgumentOutOfRangeException(nameof(ChangedAtUtc), "ChangedAtUtc must use DateTimeKind.Utc.");
         }
 
-        ValidateOperationValues();
+        ValidateOperationValuesByEventType();
     }
 
-    private void ValidateOperationValues()
+    private void ValidateOperationValuesByEventType()
     {
+        if (EventType == ConfigurationChangeEventType.ManifestImport)
+        {
+            if (Operation != ConfigurationOperation.Add)
+            {
+                throw new ArgumentException("ManifestImport event type supports only Add operation.", nameof(Operation));
+            }
+
+            if (HasValue(BeforeValue))
+            {
+                throw new ArgumentException("ManifestImport event type must not contain BeforeValue.", nameof(BeforeValue));
+            }
+
+            if (!HasValue(AfterValue))
+            {
+                throw new ArgumentException("ManifestImport event type requires AfterValue.", nameof(AfterValue));
+            }
+
+            return;
+        }
+
         if (Operation == ConfigurationOperation.Add)
         {
             if (HasValue(BeforeValue))

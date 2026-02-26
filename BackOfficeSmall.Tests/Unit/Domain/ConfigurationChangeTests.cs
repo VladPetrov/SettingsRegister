@@ -54,4 +54,22 @@ public sealed class ConfigurationChangeTests
             "tester",
             now));
     }
+
+    [Fact]
+    public void Constructor_WhenManifestImportUsesNonAddOperation_Throws()
+    {
+        DateTime now = DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Utc);
+
+        Assert.Throws<ArgumentException>(() => new ConfigurationChange(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            "__manifest_import__",
+            0,
+            ConfigurationOperation.Update,
+            "old",
+            "new",
+            "tester",
+            now,
+            ConfigurationChangeEventType.ManifestImport));
+    }
 }

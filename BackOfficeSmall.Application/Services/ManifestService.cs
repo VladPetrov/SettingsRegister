@@ -3,6 +3,7 @@ using BackOfficeSmall.Application.Configuration;
 using BackOfficeSmall.Application.Contracts;
 using BackOfficeSmall.Application.Exceptions;
 using BackOfficeSmall.Application.Mapping;
+using BackOfficeSmall.Domain.Models.Configuration;
 using BackOfficeSmall.Domain.Models.Manifest;
 using BackOfficeSmall.Domain.Repositories;
 using BackOfficeSmall.Domain.Services;
@@ -12,17 +13,20 @@ namespace BackOfficeSmall.Application.Services;
 public sealed class ManifestService : IManifestService
 {
     private readonly IConfigurationWriteUnitOfWork _configurationWriteUnitOfWork;
+    private readonly INotifierService _notifierService;
     private readonly IDomainLock _domainLock;
     private readonly ISystemClock _clock;
     private readonly TimeSpan _manifestImportLockTimeout;
 
     public ManifestService(
         IConfigurationWriteUnitOfWork configurationWriteUnitOfWork,
+        INotifierService notifierService,
         IDomainLock domainLock,
         ISystemClock clock,
         ApplicationSettings applicationSettings)
     {
         _configurationWriteUnitOfWork = configurationWriteUnitOfWork ?? throw new ArgumentNullException(nameof(configurationWriteUnitOfWork));
+        _notifierService = notifierService ?? throw new ArgumentNullException(nameof(notifierService));
         _domainLock = domainLock ?? throw new ArgumentNullException(nameof(domainLock));
         _clock = clock ?? throw new ArgumentNullException(nameof(clock));
 
@@ -67,15 +71,22 @@ public sealed class ManifestService : IManifestService
         var manifest = request.ToDomainRoot(newVersion, _clock.UtcNow);
         manifest.Validate();
 
+        var manifestImportChange = BuildManifestImportChange(manifest);
+        var outboxMessage = MonitoringNotifierOutboxMessage.CreatePending(manifestImportChange, _clock.UtcNow);
+
         try
         {
             await _configurationWriteUnitOfWork.ManifestRepository.AddAsync(manifest, cancellationToken);
+            await _configurationWriteUnitOfWork.ConfigurationChangeRepository.AddAsync(manifestImportChange, cancellationToken);
+            await _configurationWriteUnitOfWork.MonitoringNotifierOutboxRepository.AddAsync(outboxMessage, cancellationToken);
             await _configurationWriteUnitOfWork.CommitAsync(cancellationToken);
         }
         catch (InvalidOperationException ex)
         {
             throw new ConflictException(ex.Message);
         }
+
+        _notifierService.NotifyChanges();
 
         return ManifestValueObject.FromDomainRoot(manifest);
     }
@@ -99,5 +110,22 @@ public sealed class ManifestService : IManifestService
     public async Task<IReadOnlyList<ManifestValueObject>> ListAsync(string? name, CancellationToken cancellationToken)
     {
         return await _configurationWriteUnitOfWork.ManifestRepository.ListAsync(name, cancellationToken);
+    }
+
+    private ConfigurationChange BuildManifestImportChange(ManifestDomainRoot manifest)
+    {
+        string afterValue = $"{manifest.Name}:v{manifest.Version}";
+
+        return new ConfigurationChange(
+            Guid.NewGuid(),
+            manifest.ManifestId,
+            manifest.Name,
+            0,
+            ConfigurationOperation.Add,
+            null,
+            afterValue,
+            manifest.CreatedBy,
+            _clock.UtcNow,
+            ConfigurationChangeEventType.ManifestImport);
     }
 }

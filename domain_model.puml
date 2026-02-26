@@ -100,6 +100,7 @@ class ConfigurationSettingValue {
 class ConfigurationChange {
   +Guid Id
   +Guid ConfigurationInstanceId
+  +ConfigurationChangeEventType EventType
   +string SettingKey
   +int LayerIndex
   +ConfigurationOperation Operation
@@ -153,6 +154,11 @@ enum ConfigurationOperation {
   Delete
 }
 
+enum ConfigurationChangeEventType {
+  ConfigurationSetting
+  ManifestImport
+}
+
 enum MonitoringNotificationOutboxStatus {
   Pending
   Sent
@@ -181,7 +187,7 @@ class ConfigurationChangeQueryService {
 
 class NotifierService {
   +StartAsync(CancellationToken cancellationToken)
-  +NotifyChangesAsync(CancellationToken cancellationToken)
+  +NotifyChanges()
 }
 
 interface IManifestRepository {
@@ -240,6 +246,9 @@ ManifestEntity --> ManifestValueObject : hydrated to
 ManifestDto --> ManifestDomainRoot : mapped to
 
 ManifestService --> IManifestRepository
+ManifestService --> IConfigurationChangeRepository : writes audit log
+ManifestService --> IMonitoringNotifierOutboxRepository : writes critical outbox intent
+ManifestService --> NotifierService : triggers one-shot signal
 ManifestService --> IDomainLock : import serialization
 ConfigurationInstanceService --> IManifestRepository : resolves manifest for instance creation
 ConfigurationInstanceService --> IConfigurationRepository
@@ -283,10 +292,9 @@ note right of ConfigurationChange
 Invariants:
 1) Id is immutable and unique.
 2) ChangedAtUtc is UTC and immutable.
-3) Operation rules:
-   - Add: AfterValue required, BeforeValue absent.
-   - Update: BeforeValue and AfterValue required.
-   - Delete: BeforeValue required, AfterValue absent.
+3) EventType defines operation/value rules:
+   - ConfigurationSetting: Add/Update/Delete semantics.
+   - ManifestImport: Add only, AfterValue required, BeforeValue absent.
 4) Critical notification is derived from manifest setting definition.
 end note
 

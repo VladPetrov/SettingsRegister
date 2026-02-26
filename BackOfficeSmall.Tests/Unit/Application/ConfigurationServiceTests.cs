@@ -40,7 +40,7 @@ public sealed class ConfigurationServiceTests
         Assert.Single(changes);
         Assert.Equal(ConfigurationOperation.Add, changes[0].Operation);
         Assert.Equal(instance.ConfigurationInstanceId, changes[0].ConfigurationInstanceId);
-        Assert.Equal("FeatureFlag", changes[0].SettingKey);
+        Assert.Equal("FeatureFlag", changes[0].Name);
         Assert.Equal("on", changes[0].AfterValue);
 
         IReadOnlyList<MonitoringNotifierOutboxMessage> outboxMessages = await unitOfWork
@@ -79,7 +79,7 @@ public sealed class ConfigurationServiceTests
             CancellationToken.None);
 
         Assert.Single(changes);
-        Assert.Equal("NonCritical", changes[0].SettingKey);
+        Assert.Equal("NonCritical", changes[0].Name);
         Assert.Equal(ConfigurationOperation.Add, changes[0].Operation);
 
         IReadOnlyList<MonitoringNotifierOutboxMessage> outboxMessages = await unitOfWork

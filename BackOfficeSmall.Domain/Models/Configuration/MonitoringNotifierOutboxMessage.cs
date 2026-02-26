@@ -7,6 +7,7 @@ public sealed class MonitoringNotifierOutboxMessage
         string dedupeKey,
         Guid configurationChangeId,
         Guid configurationInstanceId,
+        ConfigurationChangeEventType eventType,
         string settingKey,
         int layerIndex,
         ConfigurationOperation operation,
@@ -25,6 +26,7 @@ public sealed class MonitoringNotifierOutboxMessage
         DedupeKey = dedupeKey;
         ConfigurationChangeId = configurationChangeId;
         ConfigurationInstanceId = configurationInstanceId;
+        EventType = eventType;
         SettingKey = settingKey;
         LayerIndex = layerIndex;
         Operation = operation;
@@ -49,6 +51,8 @@ public sealed class MonitoringNotifierOutboxMessage
     public Guid ConfigurationChangeId { get; }
 
     public Guid ConfigurationInstanceId { get; }
+
+    public ConfigurationChangeEventType EventType { get; }
 
     public string SettingKey { get; }
 
@@ -88,7 +92,8 @@ public sealed class MonitoringNotifierOutboxMessage
             BuildDedupeKey(change.Id),
             change.Id,
             change.ConfigurationInstanceId,
-            change.SettingKey,
+            change.EventType,
+            change.Name,
             change.LayerIndex,
             change.Operation,
             change.BeforeValue,
@@ -120,6 +125,7 @@ public sealed class MonitoringNotifierOutboxMessage
             DedupeKey,
             ConfigurationChangeId,
             ConfigurationInstanceId,
+            EventType,
             SettingKey,
             LayerIndex,
             Operation,

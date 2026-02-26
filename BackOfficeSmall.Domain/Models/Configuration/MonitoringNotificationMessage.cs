@@ -7,6 +7,7 @@ public sealed class MonitoringNotificationMessage
         string dedupeKey,
         Guid configurationChangeId,
         Guid configurationInstanceId,
+        ConfigurationChangeEventType eventType,
         string settingKey,
         int layerIndex,
         ConfigurationOperation operation,
@@ -19,6 +20,7 @@ public sealed class MonitoringNotificationMessage
         DedupeKey = dedupeKey;
         ConfigurationChangeId = configurationChangeId;
         ConfigurationInstanceId = configurationInstanceId;
+        EventType = eventType;
         SettingKey = settingKey;
         LayerIndex = layerIndex;
         Operation = operation;
@@ -37,6 +39,8 @@ public sealed class MonitoringNotificationMessage
     public Guid ConfigurationChangeId { get; }
 
     public Guid ConfigurationInstanceId { get; }
+
+    public ConfigurationChangeEventType EventType { get; }
 
     public string SettingKey { get; }
 

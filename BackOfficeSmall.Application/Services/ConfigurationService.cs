@@ -312,7 +312,7 @@ public sealed class ConfigurationService : IConfigurationService
 
     private async Task AddOutboxMessageWhenCriticalAsync(ManifestValueObject manifest, ConfigurationChange change, CancellationToken cancellationToken)
     {
-        if (!manifest.RequiresCriticalNotification(change.SettingKey))
+        if (!manifest.RequiresCriticalNotification(change.Name))
         {
             return;
         }
