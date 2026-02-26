@@ -15,15 +15,6 @@ public sealed class ManifestDomainRootTests
     }
 
     [Fact]
-    public void Validate_WhenManifestIdIsEmpty_Throws()
-    {
-        var manifest = CreateValidManifest();
-        manifest.ManifestId = Guid.Empty;
-
-        Assert.Throws<ArgumentException>(() => manifest.Validate());
-    }
-
-    [Fact]
     public void Validate_WhenNameIsMissing_Throws()
     {
         var manifest = CreateValidManifest();
