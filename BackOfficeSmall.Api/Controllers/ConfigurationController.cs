@@ -9,11 +9,11 @@ namespace BackOfficeSmall.Api.Controllers;
 
 [ApiController]
 [Route("api/configuration")]
-public sealed class ConfigurationInstancesController : AuthenticatedApiControllerBase
+public sealed class ConfigurationController : AuthenticatedApiControllerBase
 {
     private readonly IConfigurationService _configurationService;
 
-    public ConfigurationInstancesController(IConfigurationService configurationService)
+    public ConfigurationController(IConfigurationService configurationService)
     {
         _configurationService = configurationService ?? throw new ArgumentNullException(nameof(configurationService));
     }
