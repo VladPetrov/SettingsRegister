@@ -1,6 +1,7 @@
 using BackOfficeSmall.Api.Dtos.ConfigurationChanges;
 using BackOfficeSmall.Api.Mapping;
 using BackOfficeSmall.Application.Abstractions;
+using BackOfficeSmall.Application.Contracts;
 using BackOfficeSmall.Application.Exceptions;
 using BackOfficeSmall.Domain.Models.Configuration;
 using Microsoft.AspNetCore.Mvc;
@@ -19,25 +20,33 @@ public sealed class ConfigurationChangesController : AuthenticatedApiControllerB
     }
 
     [HttpGet]
-    [ProducesResponseType(typeof(IReadOnlyList<ConfigurationChangeResponseDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ConfigurationChangePageResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status422UnprocessableEntity)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<IReadOnlyList<ConfigurationChangeResponseDto>>> ListAsync([FromQuery] DateTimeOffset? fromUtc,
+    public async Task<ActionResult<ConfigurationChangePageResponseDto>> ListAsync(
+        [FromQuery] DateTimeOffset? fromUtc,
         [FromQuery] DateTimeOffset? toUtc,
         [FromQuery] ConfigurationOperationDto? operation,
+        [FromQuery] string? cursor,
+        [FromQuery, System.ComponentModel.DataAnnotations.Range(1, 200)] int pageSize,
         CancellationToken cancellationToken)
     {
         DateTime? normalizedFromUtc = NormalizeUtcQueryDate(fromUtc, nameof(fromUtc));
         DateTime? normalizedToUtc = NormalizeUtcQueryDate(toUtc, nameof(toUtc));
 
-        IReadOnlyList<ConfigurationChange> changes = await _configChangeQueryService.ListChangesAsync(
+        ConfigurationChangePage changesPage = await _configChangeQueryService.ListChangesAsync(
             normalizedFromUtc,
             normalizedToUtc,
             operation.ToDomain(),
+            cursor,
+            pageSize,
             cancellationToken);
 
-        IReadOnlyList<ConfigurationChangeResponseDto> payload = changes.Select(change => change.ToDto()).ToList();
-        return Ok(payload);
+        IReadOnlyList<ConfigurationChangeResponseDto> payload = changesPage.Items.Select(change => change.ToDto()).ToList();
+        ConfigurationChangePageResponseDto pageResponse = new(payload, changesPage.NextCursor);
+
+        return Ok(pageResponse);
     }
 
     [HttpGet("{id:guid}")]

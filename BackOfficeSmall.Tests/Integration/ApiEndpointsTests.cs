@@ -49,12 +49,62 @@ public sealed class ApiEndpointsTests
         Assert.Equal(HttpStatusCode.OK, getByIdResponse.StatusCode);
         Assert.Contains(changeId.ToString(), getByIdBody, StringComparison.OrdinalIgnoreCase);
 
-        HttpResponseMessage listResponse = await client.GetAsync("/api/config-changes?operation=Add");
+        HttpResponseMessage listResponse = await client.GetAsync("/api/config-changes?operation=Add&pageSize=10");
         string listBody = await listResponse.Content.ReadAsStringAsync();
         Assert.Equal(HttpStatusCode.OK, listResponse.StatusCode);
 
         using JsonDocument listDocument = JsonDocument.Parse(listBody);
-        Assert.True(listDocument.RootElement.GetArrayLength() >= 1);
+        JsonElement items = listDocument.RootElement.GetProperty("items");
+        Assert.True(items.GetArrayLength() >= 1);
+    }
+
+    [Fact]
+    public async Task ConfigurationChangesEndpoints_List_WithCursor_PaginatesWithoutDuplicates()
+    {
+        await using WebApplicationFactory<Program> factory = CreateFactory("Development");
+        using HttpClient client = await CreateAuthorizedClientAsync(factory, "integration-user-config-cursor");
+
+        Guid manifestId = await ImportManifestAsync(client, allowLayerOneOverride: true);
+        Guid instanceId = await CreateConfigurationInstanceAsync(client, manifestId, "Instance-Cursor");
+
+        HttpResponseMessage firstMutationResponse = await client.PutAsJsonAsync($"/api/configuration/{instanceId}/value", new
+        {
+            settingKey = "FeatureFlag",
+            layerIndex = 0,
+            value = "on"
+        });
+        Assert.Equal(HttpStatusCode.OK, firstMutationResponse.StatusCode);
+
+        HttpResponseMessage secondMutationResponse = await client.PutAsJsonAsync($"/api/configuration/{instanceId}/value", new
+        {
+            settingKey = "FeatureFlag",
+            layerIndex = 0,
+            value = "off"
+        });
+        Assert.Equal(HttpStatusCode.OK, secondMutationResponse.StatusCode);
+
+        HttpResponseMessage firstPageResponse = await client.GetAsync("/api/config-changes?pageSize=1");
+        string firstPageBody = await firstPageResponse.Content.ReadAsStringAsync();
+        Assert.Equal(HttpStatusCode.OK, firstPageResponse.StatusCode);
+
+        using JsonDocument firstPageDocument = JsonDocument.Parse(firstPageBody);
+        JsonElement firstPageItems = firstPageDocument.RootElement.GetProperty("items");
+        Assert.Equal(1, firstPageItems.GetArrayLength());
+
+        Guid firstPageId = firstPageItems[0].GetProperty("id").GetGuid();
+        string? nextCursor = firstPageDocument.RootElement.GetProperty("nextCursor").GetString();
+        Assert.False(string.IsNullOrWhiteSpace(nextCursor));
+
+        HttpResponseMessage secondPageResponse = await client.GetAsync($"/api/config-changes?pageSize=1&cursor={Uri.EscapeDataString(nextCursor!)}");
+        string secondPageBody = await secondPageResponse.Content.ReadAsStringAsync();
+        Assert.Equal(HttpStatusCode.OK, secondPageResponse.StatusCode);
+
+        using JsonDocument secondPageDocument = JsonDocument.Parse(secondPageBody);
+        JsonElement secondPageItems = secondPageDocument.RootElement.GetProperty("items");
+        Assert.Equal(1, secondPageItems.GetArrayLength());
+
+        Guid secondPageId = secondPageItems[0].GetProperty("id").GetGuid();
+        Assert.NotEqual(firstPageId, secondPageId);
     }
 
     [Fact]

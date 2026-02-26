@@ -182,7 +182,7 @@ class ConfigurationInstanceService {
 
 class ConfigurationChangeQueryService {
   +GetChangeById(Guid id)
-  +ListChanges(DateTime? fromUtc, DateTime? toUtc, ConfigurationOperation? operation)
+  +ListChanges(DateTime? fromUtc, DateTime? toUtc, ConfigurationOperation? operation, string? cursor, int pageSize)
 }
 
 class OutboxDispatchService {
@@ -208,7 +208,7 @@ interface IConfigurationRepository {
 interface IConfigurationChangeRepository {
   +Add(ConfigurationChange change)
   +GetById(Guid id)
-  +List(DateTime? fromUtc, DateTime? toUtc, ConfigurationOperation? operation)
+  +List(DateTime? fromUtc, DateTime? toUtc, ConfigurationOperation? operation, DateTime? afterChangedAtUtc, Guid? afterId, int take)
 }
 
 interface IMonitoringNotifierOutboxRepository {

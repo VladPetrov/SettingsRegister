@@ -51,9 +51,22 @@ public sealed class InMemoryConfigurationChangeRepository : IConfigurationChange
         DateTime? fromUtc,
         DateTime? toUtc,
         ConfigurationOperation? operation,
+        DateTime? afterChangedAtUtc,
+        Guid? afterId,
+        int take,
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
+
+        if (take <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(take), "take must be greater than zero.");
+        }
+
+        if (afterChangedAtUtc.HasValue && !afterId.HasValue)
+        {
+            throw new ArgumentException("afterId is required when afterChangedAtUtc is provided.", nameof(afterId));
+        }
 
         lock (_syncRoot)
         {
@@ -74,8 +87,17 @@ public sealed class InMemoryConfigurationChangeRepository : IConfigurationChange
                 records = records.Where(record => record.Operation == operation.Value);
             }
 
+            if (afterChangedAtUtc.HasValue)
+            {
+                records = records.Where(record =>
+                    record.ChangedAtUtc > afterChangedAtUtc.Value ||
+                    (record.ChangedAtUtc == afterChangedAtUtc.Value && record.Id.CompareTo(afterId!.Value) > 0));
+            }
+
             IReadOnlyList<ConfigurationChange> changes = records
                 .OrderBy(record => record.ChangedAtUtc)
+                .ThenBy(record => record.Id)
+                .Take(take)
                 .Select(ToDomain)
                 .ToList();
 

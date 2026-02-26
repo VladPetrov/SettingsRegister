@@ -12,5 +12,8 @@ public interface IConfigurationChangeRepository
         DateTime? fromUtc,
         DateTime? toUtc,
         ConfigurationOperation? operation,
+        DateTime? afterChangedAtUtc,
+        Guid? afterId,
+        int take,
         CancellationToken cancellationToken);
 }

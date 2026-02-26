@@ -90,7 +90,10 @@ The solution is strict-layered:
 - `PUT /api/config-instances/{instanceId}/cells`
 
 ### Configuration Change
-- `GET /api/config-changes`
+- `GET /api/config-changes?pageSize=<1..200>&cursor=<opaque-cursor>&operation=<Add|Update|Delete>&fromUtc=<utc-z>&toUtc=<utc-z>`
+  - `pageSize` is required.
+  - `cursor` is optional for the first page.
+  - Returns `{ items: [...], nextCursor: "..." }`.
 - `GET /api/config-changes/{id}`
 
 ### Auth

@@ -1,4 +1,5 @@
 using BackOfficeSmall.Application.Abstractions;
+using BackOfficeSmall.Application.Contracts;
 using BackOfficeSmall.Application.Exceptions;
 using BackOfficeSmall.Domain.Models.Configuration;
 using BackOfficeSmall.Domain.Repositories;
@@ -30,14 +31,43 @@ public sealed class ConfigurationChangeQueryService : IConfigurationChangeQueryS
         return change;
     }
 
-    public async Task<IReadOnlyList<ConfigurationChange>> ListChangesAsync(
+    public async Task<ConfigurationChangePage> ListChangesAsync(
         DateTime? fromUtc,
         DateTime? toUtc,
         ConfigurationOperation? operation,
+        string? cursor,
+        int pageSize,
         CancellationToken cancellationToken)
     {
         ValidateDateRange(fromUtc, toUtc);
-        return await _configurationWriteUnitOfWork.ConfigurationChangeRepository.ListAsync(fromUtc, toUtc, operation, cancellationToken);
+
+        if (pageSize <= 0)
+        {
+            throw new ValidationException("pageSize must be greater than zero.");
+        }
+
+        var cursorState = CursorState.DecodeCursor(cursor);
+        var requestedCount = pageSize + 1;
+
+        var changes = await _configurationWriteUnitOfWork.ConfigurationChangeRepository.ListAsync(
+            fromUtc,
+            toUtc,
+            operation,
+            cursorState?.ChangedAtUtc,
+            cursorState?.Id,
+            requestedCount,
+            cancellationToken);
+
+        if (changes.Count <= pageSize)
+        {
+            return new ConfigurationChangePage(changes, null);
+        }
+
+        var pageItems = changes.Take(pageSize).ToList();
+        var lastItem = pageItems.Last();
+        var nextCursor = new CursorState(lastItem.ChangedAtUtc, lastItem.Id).EncodeCursor();
+
+        return new ConfigurationChangePage(pageItems, nextCursor);
     }
 
     private static void ValidateDateRange(DateTime? fromUtc, DateTime? toUtc)

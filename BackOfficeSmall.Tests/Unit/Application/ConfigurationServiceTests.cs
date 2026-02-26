@@ -35,6 +35,9 @@ public sealed class ConfigurationServiceTests
             null,
             null,
             null,
+            null,
+            null,
+            100,
             CancellationToken.None);
 
         Assert.Single(changes);
@@ -76,6 +79,9 @@ public sealed class ConfigurationServiceTests
             null,
             null,
             null,
+            null,
+            null,
+            100,
             CancellationToken.None);
 
         Assert.Single(changes);
