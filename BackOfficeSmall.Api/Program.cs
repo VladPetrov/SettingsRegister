@@ -10,7 +10,6 @@ using BackOfficeSmall.Infrastructure.Monitoring;
 using BackOfficeSmall.Infrastructure.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using System.Text.Json.Serialization;
@@ -109,7 +108,6 @@ builder.Services.AddSingleton<IMonitoringNotifier, SimulatedMonitoringNotifier>(
 builder.Services.AddSingleton<IDomainLock>(appSettings.AppScaling ? new DistributedDomainLock() : new InProcessDomainLock());
 builder.Services.AddSingleton<ISystemClock, SystemClock>();
 builder.Services.AddSingleton<IApplicationEnvironment, HostApplicationEnvironment>();
-
 builder.Services.AddScoped<IManifestService, ManifestService>();
 builder.Services.AddScoped<IConfigurationService, ConfigurationService>();
 builder.Services.AddScoped<IConfigurationChangeQueryService, ConfigurationChangeQueryService>();
@@ -134,20 +132,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-
-//TODO: this does not look good
-app.MapGet("/health", async (HealthCheckService healthCheckService, CancellationToken cancellationToken) =>
-{
-    var report = await healthCheckService.CheckHealthAsync(cancellationToken);
-
-    if (report.Status == HealthStatus.Unhealthy)
-    {
-        return Results.Text(report.Status.ToString(), statusCode: StatusCodes.Status503ServiceUnavailable);
-    }
-
-    return Results.Text(report.Status.ToString(), statusCode: StatusCodes.Status200OK);
-})
-.WithName("Health");
 
 ValidateStartup(app.Services);
 
