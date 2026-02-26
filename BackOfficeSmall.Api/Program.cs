@@ -107,6 +107,7 @@ builder.Services.AddScoped<IConfigurationService, ConfigurationService>();
 builder.Services.AddScoped<IConfigurationChangeQueryService, ConfigurationChangeQueryService>();
 builder.Services.AddScoped<IAuthExchangeService, AuthExchangeService>();
 builder.Services.AddScoped<IOutboxDispatchService, OutboxDispatchService>();
+builder.Services.AddScoped<DevelopmentSeedDataSeeder>();
 builder.Services.AddHostedService<NotifierBackgroundWorker>();
 
 var app = builder.Build();
@@ -116,6 +117,8 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
     app.UseSwagger();
     app.UseSwaggerUI();
+
+    await SeedDevelopmentDataAsync(app.Services);
 }
 
 app.UseMiddleware<ProblemDetailsExceptionHandlingMiddleware>();
@@ -157,6 +160,13 @@ static void ValidateStartup(IServiceProvider services)
     scope.ServiceProvider.GetRequiredService<IDomainLock>();
     scope.ServiceProvider.GetRequiredService<ApplicationSettings>();
     scope.ServiceProvider.GetRequiredService<AuthSettings>();
+}
+
+static async Task SeedDevelopmentDataAsync(IServiceProvider services)
+{
+    using IServiceScope scope = services.CreateScope();
+    DevelopmentSeedDataSeeder seeder = scope.ServiceProvider.GetRequiredService<DevelopmentSeedDataSeeder>();
+    await seeder.SeedAsync(CancellationToken.None);
 }
 
 public partial class Program

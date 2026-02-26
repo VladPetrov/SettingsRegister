@@ -19,4 +19,10 @@
     <ProjectReference Include="..\BackOfficeSmall.Infrastructure\BackOfficeSmall.Infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Update="SeedData\*.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>

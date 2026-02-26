@@ -1,0 +1,172 @@
+[
+  {
+    "name": "Seed-Manifest-Core",
+    "layerCount": 3,
+    "createdBy": "dev-seed",
+    "settingDefinitions": [
+      {
+        "settingKey": "FeatureFlag",
+        "requiresCriticalNotification": true
+      },
+      {
+        "settingKey": "ApiBaseUrl",
+        "requiresCriticalNotification": false
+      },
+      {
+        "settingKey": "MaxRetries",
+        "requiresCriticalNotification": true
+      },
+      {
+        "settingKey": "TimeoutSeconds",
+        "requiresCriticalNotification": false
+      }
+    ],
+    "overridePermissions": [
+      {
+        "settingKey": "FeatureFlag",
+        "layerIndex": 0,
+        "canOverride": true
+      },
+      {
+        "settingKey": "FeatureFlag",
+        "layerIndex": 1,
+        "canOverride": true
+      },
+      {
+        "settingKey": "FeatureFlag",
+        "layerIndex": 2,
+        "canOverride": true
+      },
+      {
+        "settingKey": "ApiBaseUrl",
+        "layerIndex": 0,
+        "canOverride": true
+      },
+      {
+        "settingKey": "ApiBaseUrl",
+        "layerIndex": 1,
+        "canOverride": true
+      },
+      {
+        "settingKey": "ApiBaseUrl",
+        "layerIndex": 2,
+        "canOverride": true
+      },
+      {
+        "settingKey": "MaxRetries",
+        "layerIndex": 0,
+        "canOverride": true
+      },
+      {
+        "settingKey": "MaxRetries",
+        "layerIndex": 1,
+        "canOverride": true
+      },
+      {
+        "settingKey": "MaxRetries",
+        "layerIndex": 2,
+        "canOverride": true
+      },
+      {
+        "settingKey": "TimeoutSeconds",
+        "layerIndex": 0,
+        "canOverride": true
+      },
+      {
+        "settingKey": "TimeoutSeconds",
+        "layerIndex": 1,
+        "canOverride": true
+      },
+      {
+        "settingKey": "TimeoutSeconds",
+        "layerIndex": 2,
+        "canOverride": true
+      }
+    ]
+  },
+  {
+    "name": "Seed-Manifest-Payments",
+    "layerCount": 3,
+    "createdBy": "dev-seed",
+    "settingDefinitions": [
+      {
+        "settingKey": "PaymentEnabled",
+        "requiresCriticalNotification": true
+      },
+      {
+        "settingKey": "Currency",
+        "requiresCriticalNotification": false
+      },
+      {
+        "settingKey": "FraudThreshold",
+        "requiresCriticalNotification": true
+      },
+      {
+        "settingKey": "ReceiptTemplate",
+        "requiresCriticalNotification": false
+      }
+    ],
+    "overridePermissions": [
+      {
+        "settingKey": "PaymentEnabled",
+        "layerIndex": 0,
+        "canOverride": true
+      },
+      {
+        "settingKey": "PaymentEnabled",
+        "layerIndex": 1,
+        "canOverride": true
+      },
+      {
+        "settingKey": "PaymentEnabled",
+        "layerIndex": 2,
+        "canOverride": true
+      },
+      {
+        "settingKey": "Currency",
+        "layerIndex": 0,
+        "canOverride": true
+      },
+      {
+        "settingKey": "Currency",
+        "layerIndex": 1,
+        "canOverride": true
+      },
+      {
+        "settingKey": "Currency",
+        "layerIndex": 2,
+        "canOverride": true
+      },
+      {
+        "settingKey": "FraudThreshold",
+        "layerIndex": 0,
+        "canOverride": true
+      },
+      {
+        "settingKey": "FraudThreshold",
+        "layerIndex": 1,
+        "canOverride": true
+      },
+      {
+        "settingKey": "FraudThreshold",
+        "layerIndex": 2,
+        "canOverride": true
+      },
+      {
+        "settingKey": "ReceiptTemplate",
+        "layerIndex": 0,
+        "canOverride": true
+      },
+      {
+        "settingKey": "ReceiptTemplate",
+        "layerIndex": 1,
+        "canOverride": true
+      },
+      {
+        "settingKey": "ReceiptTemplate",
+        "layerIndex": 2,
+        "canOverride": true
+      }
+    ]
+  }
+]

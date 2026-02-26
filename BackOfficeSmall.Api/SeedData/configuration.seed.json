@@ -1,0 +1,136 @@
+[
+  {
+    "name": "Seed-Config-Core",
+    "manifestName": "Seed-Manifest-Core",
+    "createdBy": "dev-seed",
+    "cells": [
+      {
+        "settingKey": "FeatureFlag",
+        "layerIndex": 0,
+        "value": "on"
+      },
+      {
+        "settingKey": "ApiBaseUrl",
+        "layerIndex": 0,
+        "value": "https://core-l0.dev.local"
+      },
+      {
+        "settingKey": "MaxRetries",
+        "layerIndex": 0,
+        "value": "3"
+      },
+      {
+        "settingKey": "TimeoutSeconds",
+        "layerIndex": 0,
+        "value": "15"
+      },
+      {
+        "settingKey": "FeatureFlag",
+        "layerIndex": 1,
+        "value": "on"
+      },
+      {
+        "settingKey": "ApiBaseUrl",
+        "layerIndex": 1,
+        "value": "https://core-l1.dev.local"
+      },
+      {
+        "settingKey": "MaxRetries",
+        "layerIndex": 1,
+        "value": "4"
+      },
+      {
+        "settingKey": "TimeoutSeconds",
+        "layerIndex": 1,
+        "value": "20"
+      },
+      {
+        "settingKey": "FeatureFlag",
+        "layerIndex": 2,
+        "value": "off"
+      },
+      {
+        "settingKey": "ApiBaseUrl",
+        "layerIndex": 2,
+        "value": "https://core-l2.dev.local"
+      },
+      {
+        "settingKey": "MaxRetries",
+        "layerIndex": 2,
+        "value": "5"
+      },
+      {
+        "settingKey": "TimeoutSeconds",
+        "layerIndex": 2,
+        "value": "25"
+      }
+    ]
+  },
+  {
+    "name": "Seed-Config-Payments",
+    "manifestName": "Seed-Manifest-Payments",
+    "createdBy": "dev-seed",
+    "cells": [
+      {
+        "settingKey": "PaymentEnabled",
+        "layerIndex": 0,
+        "value": "true"
+      },
+      {
+        "settingKey": "Currency",
+        "layerIndex": 0,
+        "value": "USD"
+      },
+      {
+        "settingKey": "FraudThreshold",
+        "layerIndex": 0,
+        "value": "900"
+      },
+      {
+        "settingKey": "ReceiptTemplate",
+        "layerIndex": 0,
+        "value": "default-v1"
+      },
+      {
+        "settingKey": "PaymentEnabled",
+        "layerIndex": 1,
+        "value": "true"
+      },
+      {
+        "settingKey": "Currency",
+        "layerIndex": 1,
+        "value": "EUR"
+      },
+      {
+        "settingKey": "FraudThreshold",
+        "layerIndex": 1,
+        "value": "850"
+      },
+      {
+        "settingKey": "ReceiptTemplate",
+        "layerIndex": 1,
+        "value": "default-v2"
+      },
+      {
+        "settingKey": "PaymentEnabled",
+        "layerIndex": 2,
+        "value": "false"
+      },
+      {
+        "settingKey": "Currency",
+        "layerIndex": 2,
+        "value": "GBP"
+      },
+      {
+        "settingKey": "FraudThreshold",
+        "layerIndex": 2,
+        "value": "800"
+      },
+      {
+        "settingKey": "ReceiptTemplate",
+        "layerIndex": 2,
+        "value": "default-v3"
+      }
+    ]
+  }
+]

@@ -61,6 +61,9 @@ The solution is strict-layered:
 ## Assumptions
 
 - Persistence is in-memory only.
+- In `Development`, startup seeds in-memory storage from JSON files:
+  - `BackOfficeSmall.Api/SeedData/manifests.seed.json`
+  - `BackOfficeSmall.Api/SeedData/configuration.seed.json`
 - Monitoring transport is simulated and at-least-once; delivery reliability is handled by outbox retries.
 - Application runtime settings are bound from `appsettings*.json` into immutable `ApplicationSettings` and `AuthSettings`, then registered in DI.
 - `Application:AppScaling` controls lock strategy:

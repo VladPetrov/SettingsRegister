@@ -23,6 +23,48 @@ public sealed class ApiEndpointsTests
     }
 
     [Fact]
+    public async Task DevelopmentStartup_SeedsDataFromJsonFiles()
+    {
+        await using WebApplicationFactory<Program> factory = CreateFactory("Development");
+        using HttpClient client = await CreateAuthorizedClientAsync(factory, "integration-user-seed-check");
+
+        HttpResponseMessage manifestsCoreResponse = await client.GetAsync("/api/manifests?name=Seed-Manifest-Core");
+        string manifestsCoreBody = await manifestsCoreResponse.Content.ReadAsStringAsync();
+        Assert.Equal(HttpStatusCode.OK, manifestsCoreResponse.StatusCode);
+
+        using JsonDocument coreManifestDocument = JsonDocument.Parse(manifestsCoreBody);
+        Assert.Equal(1, coreManifestDocument.RootElement.GetArrayLength());
+
+        HttpResponseMessage manifestsPaymentsResponse = await client.GetAsync("/api/manifests?name=Seed-Manifest-Payments");
+        string manifestsPaymentsBody = await manifestsPaymentsResponse.Content.ReadAsStringAsync();
+        Assert.Equal(HttpStatusCode.OK, manifestsPaymentsResponse.StatusCode);
+
+        using JsonDocument paymentsManifestDocument = JsonDocument.Parse(manifestsPaymentsBody);
+        Assert.Equal(1, paymentsManifestDocument.RootElement.GetArrayLength());
+
+        HttpResponseMessage instancesResponse = await client.GetAsync("/api/configuration");
+        string instancesBody = await instancesResponse.Content.ReadAsStringAsync();
+        Assert.Equal(HttpStatusCode.OK, instancesResponse.StatusCode);
+
+        using JsonDocument instancesDocument = JsonDocument.Parse(instancesBody);
+        List<string?> instanceNames = instancesDocument.RootElement
+            .EnumerateArray()
+            .Select(item => item.GetProperty("name").GetString())
+            .ToList();
+
+        Assert.Contains("Seed-Config-Core", instanceNames);
+        Assert.Contains("Seed-Config-Payments", instanceNames);
+
+        HttpResponseMessage changesResponse = await client.GetAsync("/api/config-changes?pageSize=200");
+        string changesBody = await changesResponse.Content.ReadAsStringAsync();
+        Assert.Equal(HttpStatusCode.OK, changesResponse.StatusCode);
+
+        using JsonDocument changesDocument = JsonDocument.Parse(changesBody);
+        JsonElement items = changesDocument.RootElement.GetProperty("items");
+        Assert.True(items.GetArrayLength() >= 26);
+    }
+
+    [Fact]
     public async Task ConfigurationChangesEndpoints_ListAndGet_ById_Work()
     {
         await using WebApplicationFactory<Program> factory = CreateFactory("Development");
