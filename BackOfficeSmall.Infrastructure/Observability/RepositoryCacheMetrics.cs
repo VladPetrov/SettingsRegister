@@ -5,12 +5,12 @@ namespace SettingsRegister.Infrastructure.Observability;
 
 public sealed class RepositoryCacheMetrics : IRepositoryCacheMetrics, IDisposable
 {
-    private const string MeterName = "SettingsRegister";
-    private const string CacheHitMetricName = "SettingsRegister.repository.cache_hit_total";
-    private const string CacheMissMetricName = "SettingsRegister.repository.cache_miss_total";
-    private const string GetByIdDurationMetricName = "SettingsRegister.repository.get_by_id_duration_ms";
-    private const string RepositoryTagName = "repo";
-    private const string SourceTagName = "source";
+    public const string MeterName = "SettingsRegister";
+    public const string CacheHitMetricName = "SettingsRegister.repository.cache_hit_total";
+    public const string CacheMissMetricName = "SettingsRegister.repository.cache_miss_total";
+    public const string GetByIdDurationMetricName = "SettingsRegister.repository.get_by_id_duration_ms";
+    public const string RepositoryTagName = "repo";
+    public const string SourceTagName = "source";
 
     private readonly Meter _meter;
     private readonly Counter<long> _cacheHitCounter;

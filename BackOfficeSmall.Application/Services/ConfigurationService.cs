@@ -16,17 +16,20 @@ public sealed class ConfigurationService : IConfigurationService
     private readonly IOutboxDispatchService _notifierService;
     private readonly IDomainLock _domainLock;
     private readonly ISystemClock _clock;
+    private readonly IServiceMetrics _serviceMetrics;
 
     public ConfigurationService(
         IConfigurationWriteUnitOfWork configurationWriteUnitOfWork,
         IOutboxDispatchService notifierService,
         IDomainLock domainLock,
-        ISystemClock clock)
+        ISystemClock clock,
+        IServiceMetrics serviceMetrics)
     {
         _configurationWriteUnitOfWork = configurationWriteUnitOfWork ?? throw new ArgumentNullException(nameof(configurationWriteUnitOfWork));
         _notifierService = notifierService ?? throw new ArgumentNullException(nameof(notifierService));
         _domainLock = domainLock ?? throw new ArgumentNullException(nameof(domainLock));
         _clock = clock ?? throw new ArgumentNullException(nameof(clock));
+        _serviceMetrics = serviceMetrics ?? throw new ArgumentNullException(nameof(serviceMetrics));
     }
 
     public async Task<ConfigurationInstance> CreateInstanceAsync(ConfigurationInstanceCreateRequest request, CancellationToken cancellationToken)
@@ -50,6 +53,7 @@ public sealed class ConfigurationService : IConfigurationService
         }
 
         IReadOnlyList<ConfigurationChange> createChanges = BuildCellChanges(instance, request.CreatedBy, ConfigurationOperation.Add);
+        int criticalChangeCount = 0;
 
         try
         {
@@ -58,7 +62,11 @@ public sealed class ConfigurationService : IConfigurationService
             foreach (ConfigurationChange change in createChanges)
             {
                 await _configurationWriteUnitOfWork.ConfigurationChangeRepository.AddAsync(change, cancellationToken);
-                await AddOutboxMessageWhenCriticalAsync(instance.Manifest, change, cancellationToken);
+                bool isCritical = await AddOutboxMessageWhenCriticalAsync(instance.Manifest, change, cancellationToken);
+                if (isCritical)
+                {
+                    criticalChangeCount++;
+                }
             }
 
             await _configurationWriteUnitOfWork.CommitAsync(cancellationToken);
@@ -68,6 +76,7 @@ public sealed class ConfigurationService : IConfigurationService
             throw new ConflictException(ex.Message);
         }
 
+        RecordCommittedChangeMetrics(createChanges.Count, criticalChangeCount);
         _notifierService.NotifyChanges();
 
         return instance;
@@ -115,13 +124,18 @@ public sealed class ConfigurationService : IConfigurationService
         }
 
         var changes = BuildCellChanges(instance, request.DeletedBy, ConfigurationOperation.Delete);
+        int criticalChangeCount = 0;
 
         try
         {
             foreach (ConfigurationChange change in changes)
             {
                 await _configurationWriteUnitOfWork.ConfigurationChangeRepository.AddAsync(change, cancellationToken);
-                await AddOutboxMessageWhenCriticalAsync(instance.Manifest, change, cancellationToken);
+                bool isCritical = await AddOutboxMessageWhenCriticalAsync(instance.Manifest, change, cancellationToken);
+                if (isCritical)
+                {
+                    criticalChangeCount++;
+                }
             }
 
             await _configurationWriteUnitOfWork.ConfigurationRepository.DeleteAsync(instanceId, cancellationToken);
@@ -132,6 +146,7 @@ public sealed class ConfigurationService : IConfigurationService
             throw new ConflictException(ex.Message);
         }
 
+        RecordCommittedChangeMetrics(changes.Count, criticalChangeCount);
         _notifierService.NotifyChanges();
     }
 
@@ -168,12 +183,13 @@ public sealed class ConfigurationService : IConfigurationService
             afterValue,
             request.ChangedBy,
             _clock.UtcNow);
+        bool isCriticalChange;
 
         try
         {
             await _configurationWriteUnitOfWork.ConfigurationRepository.UpdateAsync(instance, cancellationToken);
             await _configurationWriteUnitOfWork.ConfigurationChangeRepository.AddAsync(change, cancellationToken);
-            await AddOutboxMessageWhenCriticalAsync(instance.Manifest, change, cancellationToken);
+            isCriticalChange = await AddOutboxMessageWhenCriticalAsync(instance.Manifest, change, cancellationToken);
             await _configurationWriteUnitOfWork.CommitAsync(cancellationToken);
         }
         catch (InvalidOperationException ex)
@@ -181,6 +197,7 @@ public sealed class ConfigurationService : IConfigurationService
             throw new ConflictException(ex.Message);
         }
 
+        RecordCommittedChangeMetrics(totalChangeCount: 1, criticalChangeCount: isCriticalChange ? 1 : 0);
         _notifierService.NotifyChanges();
 
         return change;
@@ -310,15 +327,40 @@ public sealed class ConfigurationService : IConfigurationService
         }
     }
 
-    private async Task AddOutboxMessageWhenCriticalAsync(ManifestValueObject manifest, ConfigurationChange change, CancellationToken cancellationToken)
+    private async Task<bool> AddOutboxMessageWhenCriticalAsync(ManifestValueObject manifest, ConfigurationChange change, CancellationToken cancellationToken)
     {
         if (!manifest.RequiresCriticalNotification(change.Name))
         {
-            return;
+            return false;
         }
 
         var outboxMessage = MonitoringNotifierOutboxMessage.CreatePending(change, _clock.UtcNow);
         await _configurationWriteUnitOfWork.MonitoringNotifierOutboxRepository.AddAsync(outboxMessage, cancellationToken);
+        return true;
+    }
+
+    private void RecordCommittedChangeMetrics(int totalChangeCount, int criticalChangeCount)
+    {
+        if (totalChangeCount < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(totalChangeCount), "Total change count must be greater than or equal to zero.");
+        }
+
+        if (criticalChangeCount < 0 || criticalChangeCount > totalChangeCount)
+        {
+            throw new ArgumentOutOfRangeException(nameof(criticalChangeCount), "Critical change count must be in range 0..total change count.");
+        }
+
+        for (int i = 0; i < totalChangeCount; i++)
+        {
+            bool isCritical = i < criticalChangeCount;
+            _serviceMetrics.RecordConfigurationChangeCreated(isCritical);
+        }
+
+        for (int i = 0; i < criticalChangeCount; i++)
+        {
+            _serviceMetrics.RecordOutboxMessageCreated(isCritical: true);
+        }
     }
 }
 

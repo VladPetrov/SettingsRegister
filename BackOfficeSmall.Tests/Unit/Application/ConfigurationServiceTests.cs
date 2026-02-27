@@ -55,6 +55,10 @@ public sealed class ConfigurationServiceTests
         Assert.Equal(MonitoringNotificationOutboxStatus.Pending, outboxMessages[0].Status);
         Assert.Equal(changes[0].Id, outboxMessages[0].ConfigurationChangeId);
         Assert.Equal(MonitoringNotifierOutboxMessage.BuildDedupeKey(changes[0].Id), outboxMessages[0].DedupeKey);
+        Assert.Equal(1, context.ServiceMetrics.ChangeTotalCount);
+        Assert.Equal(1, context.ServiceMetrics.ChangeCriticalCount);
+        Assert.Equal(1, context.ServiceMetrics.OutboxMessageCreatedCount);
+        Assert.Equal(1, context.ServiceMetrics.OutboxCriticalCreatedCount);
     }
 
     [Fact]
@@ -94,6 +98,9 @@ public sealed class ConfigurationServiceTests
             .ListAsync(null, CancellationToken.None);
 
         Assert.Empty(outboxMessages);
+        Assert.Equal(1, context.ServiceMetrics.ChangeTotalCount);
+        Assert.Equal(0, context.ServiceMetrics.ChangeCriticalCount);
+        Assert.Equal(0, context.ServiceMetrics.OutboxMessageCreatedCount);
     }
 
     [Fact]
@@ -330,14 +337,16 @@ public sealed class ConfigurationServiceTests
         FakeOutboxDispatchService notifierService = new();
         FakeDomainLock domainLock = new(domainLockAcquireSequence);
         FakeSystemClock clock = new(DateTime.SpecifyKind(new DateTime(2026, 2, 25, 11, 0, 0), DateTimeKind.Utc));
+        FakeServiceMetrics serviceMetrics = new();
 
         ConfigurationService service = new(
             unitOfWork,
             notifierService,
             domainLock,
-            clock);
+            clock,
+            serviceMetrics);
 
-        return new TestContext(service, unitOfWork, manifest, notifierService, domainLock, clock);
+        return new TestContext(service, unitOfWork, manifest, notifierService, domainLock, clock, serviceMetrics);
     }
 
     private static async Task<IReadOnlyList<ConfigurationChange>> ListAllChangesAsync(InMemoryConfigurationWriteUnitOfWork unitOfWork)
@@ -358,6 +367,7 @@ public sealed class ConfigurationServiceTests
         ManifestValueObject Manifest,
         FakeOutboxDispatchService NotifierService,
         FakeDomainLock DomainLock,
-        FakeSystemClock Clock);
+        FakeSystemClock Clock,
+        FakeServiceMetrics ServiceMetrics);
 }
 

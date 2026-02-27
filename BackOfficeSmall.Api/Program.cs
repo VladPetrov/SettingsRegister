@@ -1,4 +1,4 @@
-﻿using SettingsRegister.Api.Configuration;
+using SettingsRegister.Api.Configuration;
 using SettingsRegister.Api.ErrorHandling;
 using SettingsRegister.Application.Abstractions;
 using SettingsRegister.Application.Configuration;
@@ -13,8 +13,9 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
-using System.Text.Json.Serialization;
+using OpenTelemetry.Metrics;
 using System.Text;
+using System.Text.Json.Serialization;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 ApplicationSettings appSettings = builder.Configuration
@@ -33,6 +34,17 @@ builder.Services
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddOpenApi();
 builder.Services.AddMemoryCache();
+builder.Services
+    .AddOpenTelemetry()
+    .WithMetrics(metrics =>
+    {
+        metrics.AddAspNetCoreInstrumentation();
+        metrics.AddRuntimeInstrumentation();
+        metrics.AddProcessInstrumentation();
+        metrics.AddPrometheusExporter();
+        metrics.AddMeter(ServiceMetrics.MeterName);
+        metrics.AddMeter(RepositoryCacheMetrics.MeterName);
+    });
 builder.Services.AddSwaggerGen(options =>
 {
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
@@ -67,6 +79,7 @@ builder.Services.AddSingleton<IConfigurationCachedSettings>(appSettings);
 builder.Services.AddSingleton<IConfigurationChangeCachedSettings>(appSettings);
 builder.Services.AddSingleton(authSettings);
 builder.Services.AddSingleton<IRepositoryCacheMetrics, RepositoryCacheMetrics>();
+builder.Services.AddSingleton<IServiceMetrics, ServiceMetrics>();
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -87,29 +100,29 @@ builder.Services.AddAuthorization();
 
 builder.Services.AddSingleton<ICachedManifestRepository>(serviceProvider =>
 {
-    //Had to resolve dependencies manually as repos are not registered in IoC 
-    var memoryCache = serviceProvider.GetRequiredService<IMemoryCache>();
-    var settings = serviceProvider.GetRequiredService<ICachedManifestRepositorySettings>();
-    var metrics = serviceProvider.GetRequiredService<IRepositoryCacheMetrics>();
+    // Had to resolve dependencies manually as repos are not registered in IoC.
+    IMemoryCache memoryCache = serviceProvider.GetRequiredService<IMemoryCache>();
+    ICachedManifestRepositorySettings settings = serviceProvider.GetRequiredService<ICachedManifestRepositorySettings>();
+    IRepositoryCacheMetrics metrics = serviceProvider.GetRequiredService<IRepositoryCacheMetrics>();
     IManifestRepository innerRepository = new InMemoryManifestRepository();
 
     return new CachedManifestRepository(innerRepository, memoryCache, settings, metrics);
 });
 builder.Services.AddSingleton<ICacheConfigurationRepository>(serviceProvider =>
 {
-    //Had to resolve dependencies manually as repos are not registered in IoC 
-    var memoryCache = serviceProvider.GetRequiredService<IMemoryCache>();
-    var settings = serviceProvider.GetRequiredService<IConfigurationCachedSettings>();
-    var metrics = serviceProvider.GetRequiredService<IRepositoryCacheMetrics>();
+    // Had to resolve dependencies manually as repos are not registered in IoC.
+    IMemoryCache memoryCache = serviceProvider.GetRequiredService<IMemoryCache>();
+    IConfigurationCachedSettings settings = serviceProvider.GetRequiredService<IConfigurationCachedSettings>();
+    IRepositoryCacheMetrics metrics = serviceProvider.GetRequiredService<IRepositoryCacheMetrics>();
     IConfigurationRepository innerRepository = new InMemoryConfigurationInstanceRepository();
 
     return new CachedConfigurationRepository(innerRepository, memoryCache, settings, metrics);
 });
 builder.Services.AddSingleton<IConfigurationChangeRepository>(serviceProvider =>
 {
-    var memoryCache = serviceProvider.GetRequiredService<IMemoryCache>();
-    var settings = serviceProvider.GetRequiredService<IConfigurationChangeCachedSettings>();
-    var metrics = serviceProvider.GetRequiredService<IRepositoryCacheMetrics>();
+    IMemoryCache memoryCache = serviceProvider.GetRequiredService<IMemoryCache>();
+    IConfigurationChangeCachedSettings settings = serviceProvider.GetRequiredService<IConfigurationChangeCachedSettings>();
+    IRepositoryCacheMetrics metrics = serviceProvider.GetRequiredService<IRepositoryCacheMetrics>();
     IConfigurationChangeRepository innerRepository = new InMemoryConfigurationChangeRepository();
 
     return new CachedConfigurationChangeRepository(innerRepository, memoryCache, settings, metrics);
@@ -144,6 +157,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapPrometheusScrapingEndpoint("/metrics");
 
 ValidateStartup(app.Services);
 
@@ -163,6 +177,7 @@ static void ValidateStartup(IServiceProvider services)
     scope.ServiceProvider.GetRequiredService<IAuthExchangeService>();
     scope.ServiceProvider.GetRequiredService<IDomainLock>();
     scope.ServiceProvider.GetRequiredService<IRepositoryCacheMetrics>();
+    scope.ServiceProvider.GetRequiredService<IServiceMetrics>();
     scope.ServiceProvider.GetRequiredService<ApplicationSettings>();
     scope.ServiceProvider.GetRequiredService<AuthSettings>();
 }
@@ -177,4 +192,3 @@ static async Task SeedDevelopmentDataAsync(IServiceProvider services)
 public partial class Program
 {
 }
-

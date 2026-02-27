@@ -1,4 +1,4 @@
-﻿using SettingsRegister.Application.Contracts;
+using SettingsRegister.Application.Contracts;
 using SettingsRegister.Application.Configuration;
 using SettingsRegister.Application.Exceptions;
 using SettingsRegister.Application.Services;
@@ -28,6 +28,7 @@ public sealed class ManifestServiceTests
             new FakeOutboxDispatchService(),
             new FakeDomainLock(),
             new FakeSystemClock(DateTime.SpecifyKind(new DateTime(2026, 2, 22, 10, 0, 0), DateTimeKind.Utc)),
+            new FakeServiceMetrics(),
             applicationSettings));
     }
 
@@ -43,7 +44,7 @@ public sealed class ManifestServiceTests
         };
         using MemoryCache memoryCache = new(new MemoryCacheOptions());
         InMemoryConfigurationWriteUnitOfWork unitOfWork = CreateUnitOfWork(memoryCache, applicationSettings);
-        ManifestService service = new(unitOfWork, notifierService, domainLock, clock, applicationSettings);
+        ManifestService service = new(unitOfWork, notifierService, domainLock, clock, new FakeServiceMetrics(), applicationSettings);
 
         ManifestImportRequest request = CreateManifestRequest("Main", "tester");
 
@@ -93,7 +94,7 @@ public sealed class ManifestServiceTests
         };
         using MemoryCache memoryCache = new(new MemoryCacheOptions());
         InMemoryConfigurationWriteUnitOfWork unitOfWork = CreateUnitOfWork(memoryCache, applicationSettings);
-        ManifestService service = new(unitOfWork, notifierService, domainLock, clock, applicationSettings);
+        ManifestService service = new(unitOfWork, notifierService, domainLock, clock, new FakeServiceMetrics(), applicationSettings);
 
         await Assert.ThrowsAsync<ArgumentNullException>(() => service.ImportManifestAsync(null!, CancellationToken.None));
     }
@@ -110,7 +111,7 @@ public sealed class ManifestServiceTests
         };
         using MemoryCache memoryCache = new(new MemoryCacheOptions());
         InMemoryConfigurationWriteUnitOfWork unitOfWork = CreateUnitOfWork(memoryCache, applicationSettings);
-        ManifestService service = new(unitOfWork, notifierService, domainLock, clock, applicationSettings);
+        ManifestService service = new(unitOfWork, notifierService, domainLock, clock, new FakeServiceMetrics(), applicationSettings);
 
         ManifestImportRequest request = new(
             "Main",
@@ -138,7 +139,7 @@ public sealed class ManifestServiceTests
         };
         using MemoryCache memoryCache = new(new MemoryCacheOptions());
         InMemoryConfigurationWriteUnitOfWork unitOfWork = CreateUnitOfWork(memoryCache, applicationSettings);
-        ManifestService service = new(unitOfWork, notifierService, domainLock, clock, applicationSettings);
+        ManifestService service = new(unitOfWork, notifierService, domainLock, clock, new FakeServiceMetrics(), applicationSettings);
 
         ManifestImportRequest request = new(
             "Main",
@@ -166,7 +167,7 @@ public sealed class ManifestServiceTests
         };
         using MemoryCache memoryCache = new(new MemoryCacheOptions());
         InMemoryConfigurationWriteUnitOfWork unitOfWork = CreateUnitOfWork(memoryCache, applicationSettings);
-        ManifestService service = new(unitOfWork, notifierService, domainLock, clock, applicationSettings);
+        ManifestService service = new(unitOfWork, notifierService, domainLock, clock, new FakeServiceMetrics(), applicationSettings);
 
         ManifestImportRequest request = CreateManifestRequest("Main", "tester");
 
@@ -188,7 +189,7 @@ public sealed class ManifestServiceTests
         };
         using MemoryCache memoryCache = new(new MemoryCacheOptions());
         InMemoryConfigurationWriteUnitOfWork unitOfWork = CreateUnitOfWork(memoryCache, applicationSettings);
-        ManifestService service = new(unitOfWork, notifierService, domainLock, clock, applicationSettings);
+        ManifestService service = new(unitOfWork, notifierService, domainLock, clock, new FakeServiceMetrics(), applicationSettings);
 
         await Assert.ThrowsAsync<ValidationException>(() => service.GetByIdAsync(Guid.Empty, CancellationToken.None));
     }
@@ -205,7 +206,7 @@ public sealed class ManifestServiceTests
         };
         using MemoryCache memoryCache = new(new MemoryCacheOptions());
         InMemoryConfigurationWriteUnitOfWork unitOfWork = CreateUnitOfWork(memoryCache, applicationSettings);
-        ManifestService service = new(unitOfWork, notifierService, domainLock, clock, applicationSettings);
+        ManifestService service = new(unitOfWork, notifierService, domainLock, clock, new FakeServiceMetrics(), applicationSettings);
 
         await Assert.ThrowsAsync<EntityNotFoundException>(() => service.GetByIdAsync(Guid.NewGuid(), CancellationToken.None));
     }
@@ -222,7 +223,7 @@ public sealed class ManifestServiceTests
         };
         using MemoryCache memoryCache = new(new MemoryCacheOptions());
         InMemoryConfigurationWriteUnitOfWork unitOfWork = CreateUnitOfWork(memoryCache, applicationSettings);
-        ManifestService service = new(unitOfWork, notifierService, domainLock, clock, applicationSettings);
+        ManifestService service = new(unitOfWork, notifierService, domainLock, clock, new FakeServiceMetrics(), applicationSettings);
 
         await service.ImportManifestAsync(CreateManifestRequest("Main", "tester"), CancellationToken.None);
         clock.Set(DateTime.SpecifyKind(new DateTime(2026, 2, 22, 10, 5, 0), DateTimeKind.Utc));
@@ -246,7 +247,7 @@ public sealed class ManifestServiceTests
         };
         using MemoryCache memoryCache = new(new MemoryCacheOptions());
         InMemoryConfigurationWriteUnitOfWork unitOfWork = CreateUnitOfWork(memoryCache, applicationSettings);
-        ManifestService service = new(unitOfWork, notifierService, domainLock, clock, applicationSettings);
+        ManifestService service = new(unitOfWork, notifierService, domainLock, clock, new FakeServiceMetrics(), applicationSettings);
 
         ManifestImportRequest request = CreateManifestRequest("Main", "tester");
         ManifestValueObject imported = await service.ImportManifestAsync(request, CancellationToken.None);
@@ -306,4 +307,5 @@ public sealed class ManifestServiceTests
             outboxRepository);
     }
 }
+
 

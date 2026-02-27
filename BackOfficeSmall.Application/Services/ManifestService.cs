@@ -16,6 +16,7 @@ public sealed class ManifestService : IManifestService
     private readonly IOutboxDispatchService _notifierService;
     private readonly IDomainLock _domainLock;
     private readonly ISystemClock _clock;
+    private readonly IServiceMetrics _serviceMetrics;
     private readonly TimeSpan _manifestImportLockTimeout;
 
     public ManifestService(
@@ -23,12 +24,14 @@ public sealed class ManifestService : IManifestService
         IOutboxDispatchService notifierService,
         IDomainLock domainLock,
         ISystemClock clock,
+        IServiceMetrics serviceMetrics,
         ApplicationSettings applicationSettings)
     {
         _configurationWriteUnitOfWork = configurationWriteUnitOfWork ?? throw new ArgumentNullException(nameof(configurationWriteUnitOfWork));
         _notifierService = notifierService ?? throw new ArgumentNullException(nameof(notifierService));
         _domainLock = domainLock ?? throw new ArgumentNullException(nameof(domainLock));
         _clock = clock ?? throw new ArgumentNullException(nameof(clock));
+        _serviceMetrics = serviceMetrics ?? throw new ArgumentNullException(nameof(serviceMetrics));
 
         if (applicationSettings is null)
         {
@@ -53,12 +56,14 @@ public sealed class ManifestService : IManifestService
         }
 
         request.Validate();
+        _serviceMetrics.RecordManifestImportAttempt();
 
         // lock all manifest versions
         await using var lockHandle = await _domainLock.TryTakeLockAsync(request.Name, _manifestImportLockTimeout, cancellationToken);
         
         if (lockHandle is null)
         {
+            _serviceMetrics.RecordManifestImportConflict();
             throw new ConflictException($"Could not acquire manifest import lock for '{request.Name}'.");
         }
 
@@ -83,9 +88,12 @@ public sealed class ManifestService : IManifestService
         }
         catch (InvalidOperationException ex)
         {
+            _serviceMetrics.RecordManifestImportConflict();
             throw new ConflictException(ex.Message);
         }
 
+        _serviceMetrics.RecordConfigurationChangeCreated(isCritical: true);
+        _serviceMetrics.RecordOutboxMessageCreated(isCritical: true);
         _notifierService.NotifyChanges();
 
         return ManifestValueObject.FromDomainRoot(manifest);

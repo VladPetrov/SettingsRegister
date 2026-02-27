@@ -19,8 +19,9 @@ public sealed class NotifierServiceTests
 
         FakeDomainLock domainLock = new();
         FakeSystemClock clock = new(DateTime.SpecifyKind(new DateTime(2026, 2, 25, 13, 0, 0), DateTimeKind.Utc));
+        FakeServiceMetrics serviceMetrics = new();
         InMemoryConfigurationWriteUnitOfWork unitOfWork = CreateUnitOfWork();
-        OutboxDispatchService service = new(unitOfWork, transport, domainLock, clock);
+        OutboxDispatchService service = new(unitOfWork, transport, domainLock, clock, serviceMetrics);
 
         ConfigurationChange change = CreateChange(Guid.NewGuid());
         MonitoringNotifierOutboxMessage outboxMessage = MonitoringNotifierOutboxMessage.CreatePending(change, clock.UtcNow);
@@ -51,6 +52,9 @@ public sealed class NotifierServiceTests
         Assert.Equal(2, transport.Notifications.Count);
         Assert.Equal("monitoring-notifier-outbox-dispatch", domainLock.LastKey);
         Assert.Equal(TimeSpan.FromSeconds(1), domainLock.LastTimeout);
+        Assert.Equal(2, serviceMetrics.OutboxDispatchAttemptCount);
+        Assert.Equal(2, serviceMetrics.OutboxDispatchFailedCount);
+        Assert.Equal(0, serviceMetrics.OutboxMessageSentCount);
 
         cts.Cancel();
         await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await loopTask);
@@ -62,8 +66,9 @@ public sealed class NotifierServiceTests
         FakeMonitoringNotifier transport = new();
         FakeDomainLock domainLock = new(false);
         FakeSystemClock clock = new(DateTime.SpecifyKind(new DateTime(2026, 2, 25, 13, 0, 0), DateTimeKind.Utc));
+        FakeServiceMetrics serviceMetrics = new();
         InMemoryConfigurationWriteUnitOfWork unitOfWork = CreateUnitOfWork();
-        OutboxDispatchService service = new(unitOfWork, transport, domainLock, clock);
+        OutboxDispatchService service = new(unitOfWork, transport, domainLock, clock, serviceMetrics);
 
         ConfigurationChange change = CreateChange(Guid.NewGuid());
         MonitoringNotifierOutboxMessage outboxMessage = MonitoringNotifierOutboxMessage.CreatePending(change, clock.UtcNow);
@@ -83,6 +88,8 @@ public sealed class NotifierServiceTests
         Assert.Empty(transport.Notifications);
         Assert.Equal("monitoring-notifier-outbox-dispatch", domainLock.LastKey);
         Assert.Equal(TimeSpan.FromSeconds(1), domainLock.LastTimeout);
+        Assert.Equal(0, serviceMetrics.OutboxDispatchAttemptCount);
+        Assert.Equal(0, serviceMetrics.OutboxDispatchFailedCount);
 
         cts.Cancel();
         await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await loopTask);

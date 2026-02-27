@@ -18,18 +18,21 @@ public sealed class OutboxDispatchService : IOutboxDispatchService
     private readonly IMonitoringNotifier _monitoringNotifier;
     private readonly IDomainLock _domainLock;
     private readonly ISystemClock _clock;
+    private readonly IServiceMetrics _serviceMetrics;
     private readonly SemaphoreSlim _dispatchSignal = new(0, 1);
 
     public OutboxDispatchService(
         IConfigurationWriteUnitOfWork configurationWriteUnitOfWork,
         IMonitoringNotifier monitoringNotifier,
         IDomainLock domainLock,
-        ISystemClock clock)
+        ISystemClock clock,
+        IServiceMetrics serviceMetrics)
     {
         _configurationWriteUnitOfWork = configurationWriteUnitOfWork ?? throw new ArgumentNullException(nameof(configurationWriteUnitOfWork));
         _monitoringNotifier = monitoringNotifier ?? throw new ArgumentNullException(nameof(monitoringNotifier));
         _domainLock = domainLock ?? throw new ArgumentNullException(nameof(domainLock));
         _clock = clock ?? throw new ArgumentNullException(nameof(clock));
+        _serviceMetrics = serviceMetrics ?? throw new ArgumentNullException(nameof(serviceMetrics));
     }
 
     public async Task StartAsync(CancellationToken cancellationToken)
@@ -78,6 +81,8 @@ public sealed class OutboxDispatchService : IOutboxDispatchService
 
     private async Task DispatchSingleMessageAsync(MonitoringNotifierOutboxMessage candidate, CancellationToken cancellationToken)
     {
+        _serviceMetrics.RecordOutboxDispatchAttempt();
+
         bool sentSuccessfully;
         string? error = null;
 
@@ -103,10 +108,18 @@ public sealed class OutboxDispatchService : IOutboxDispatchService
         if (sentSuccessfully)
         {
             candidate.MarkSent(nowUtc);
+            TimeSpan deliveryDuration = nowUtc - candidate.CreatedAtUtc;
+            if (deliveryDuration < TimeSpan.Zero)
+            {
+                deliveryDuration = TimeSpan.Zero;
+            }
+
+            _serviceMetrics.RecordOutboxMessageSent(isCritical: true, deliveryDuration);
         }
         else
         {
             candidate.MarkFailed(nowUtc, error);
+            _serviceMetrics.RecordOutboxDispatchFailed();
         }
 
         await _configurationWriteUnitOfWork.MonitoringNotifierOutboxRepository.UpdateAsync(candidate, cancellationToken);
