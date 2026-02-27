@@ -1,7 +1,7 @@
-using BackOfficeSmall.Domain.Models.Configuration;
-using BackOfficeSmall.Application.Contracts;
+﻿using SettingsRegister.Domain.Models.Configuration;
+using SettingsRegister.Application.Contracts;
 
-namespace BackOfficeSmall.Application.Abstractions;
+namespace SettingsRegister.Application.Abstractions;
 
 public interface IConfigurationChangeQueryService
 {
@@ -15,3 +15,4 @@ public interface IConfigurationChangeQueryService
         int? pageSize = null,
         CancellationToken cancellationToken = default);
 }
+

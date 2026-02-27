@@ -1,13 +1,13 @@
-using BackOfficeSmall.Api.Configuration;
-using BackOfficeSmall.Api.ErrorHandling;
-using BackOfficeSmall.Application.Abstractions;
-using BackOfficeSmall.Application.Configuration;
-using BackOfficeSmall.Application.Services;
-using BackOfficeSmall.Domain.Repositories;
-using BackOfficeSmall.Domain.Services;
-using BackOfficeSmall.Infrastructure.Locking;
-using BackOfficeSmall.Infrastructure.Monitoring;
-using BackOfficeSmall.Infrastructure.Repositories;
+﻿using SettingsRegister.Api.Configuration;
+using SettingsRegister.Api.ErrorHandling;
+using SettingsRegister.Application.Abstractions;
+using SettingsRegister.Application.Configuration;
+using SettingsRegister.Application.Services;
+using SettingsRegister.Domain.Repositories;
+using SettingsRegister.Domain.Services;
+using SettingsRegister.Infrastructure.Locking;
+using SettingsRegister.Infrastructure.Monitoring;
+using SettingsRegister.Infrastructure.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.IdentityModel.Tokens;
@@ -171,3 +171,4 @@ static async Task SeedDevelopmentDataAsync(IServiceProvider services)
 public partial class Program
 {
 }
+

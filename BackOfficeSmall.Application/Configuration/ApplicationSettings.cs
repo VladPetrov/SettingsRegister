@@ -1,4 +1,4 @@
-namespace BackOfficeSmall.Application.Configuration;
+﻿namespace SettingsRegister.Application.Configuration;
 
 public sealed class ApplicationSettings : ICachedManifestRepositorySettings, IConfigurationCachedSettings, IConfigurationChangeCachedSettings
 {
@@ -10,3 +10,4 @@ public sealed class ApplicationSettings : ICachedManifestRepositorySettings, ICo
     public int ConfigurationCacheExpirationSeconds { get; init; } = 300;
     public int ConfigurationChangeCacheExpirationSeconds { get; init; } = 300;
 }
+

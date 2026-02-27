@@ -1,10 +1,10 @@
-using BackOfficeSmall.Api.Dtos.Auth;
-using BackOfficeSmall.Api.Mapping;
-using BackOfficeSmall.Application.Abstractions;
-using BackOfficeSmall.Application.Contracts;
+﻿using SettingsRegister.Api.Dtos.Auth;
+using SettingsRegister.Api.Mapping;
+using SettingsRegister.Application.Abstractions;
+using SettingsRegister.Application.Contracts;
 using Microsoft.AspNetCore.Mvc;
 
-namespace BackOfficeSmall.Api.Controllers;
+namespace SettingsRegister.Api.Controllers;
 
 [ApiController]
 [Route("api/auth")]
@@ -29,3 +29,4 @@ public sealed class AuthController : ControllerBase
         return Ok(result.ToDto());
     }
 }
+

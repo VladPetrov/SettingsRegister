@@ -1,6 +1,6 @@
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 
-namespace BackOfficeSmall.Api.Dtos.Manifests;
+namespace SettingsRegister.Api.Dtos.Manifests;
 
 // JSON contract reserved for future file-based manifest import flow.
 public sealed class ManifestFileDto
@@ -43,3 +43,4 @@ public sealed class ManifestFileOverridePermissionDto
     [JsonPropertyName("canOverride")]
     public bool CanOverride { get; init; }
 }
+

@@ -1,6 +1,6 @@
-using BackOfficeSmall.Domain.Models.Manifest;
+﻿using SettingsRegister.Domain.Models.Manifest;
 
-namespace BackOfficeSmall.Domain.Tests;
+namespace SettingsRegister.Domain.Tests;
 
 public sealed class ManifestValueObjectTests
 {
@@ -114,3 +114,4 @@ public sealed class ManifestValueObjectTests
             ]);
     }
 }
+

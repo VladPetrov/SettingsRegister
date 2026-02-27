@@ -1,7 +1,7 @@
-using BackOfficeSmall.Domain.Models.Configuration;
-using BackOfficeSmall.Domain.Models.Manifest;
+﻿using SettingsRegister.Domain.Models.Configuration;
+using SettingsRegister.Domain.Models.Manifest;
 
-namespace BackOfficeSmall.Tests.Unit.Domain;
+namespace SettingsRegister.Tests.Unit.Domain;
 
 public sealed class ConfigurationInstanceTests
 {
@@ -98,5 +98,6 @@ public sealed class ConfigurationInstanceTests
             ]);
     }
 }
+
 
 

@@ -1,13 +1,13 @@
-using System.Security.Cryptography;
+﻿using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
-using BackOfficeSmall.Application.Configuration;
-using BackOfficeSmall.Application.Contracts;
-using BackOfficeSmall.Application.Exceptions;
-using BackOfficeSmall.Application.Services;
-using BackOfficeSmall.Tests.TestDoubles;
+using SettingsRegister.Application.Configuration;
+using SettingsRegister.Application.Contracts;
+using SettingsRegister.Application.Exceptions;
+using SettingsRegister.Application.Services;
+using SettingsRegister.Tests.TestDoubles;
 
-namespace BackOfficeSmall.Tests.Unit.Application;
+namespace SettingsRegister.Tests.Unit.Application;
 
 public sealed class AuthExchangeServiceTests
 {
@@ -75,8 +75,8 @@ public sealed class AuthExchangeServiceTests
         return new AuthSettings
         {
             DevSigningKey = devSigningKey ?? "0123456789abcdef0123456789abcdef",
-            Issuer = "BackOfficeSmall.Tests",
-            Audience = "BackOfficeSmall.Tests.Api",
+            Issuer = "SettingsRegister.Tests",
+            Audience = "SettingsRegister.Tests.Api",
             TokenLifetimeMinutes = tokenLifetimeMinutes
         };
     }
@@ -130,3 +130,4 @@ public sealed class AuthExchangeServiceTests
         return Convert.FromBase64String(padded);
     }
 }
+

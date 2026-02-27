@@ -1,11 +1,11 @@
-using BackOfficeSmall.Api.Dtos.ConfigurationChanges;
-using BackOfficeSmall.Api.Dtos.ConfigurationInstances;
-using BackOfficeSmall.Api.Mapping;
-using BackOfficeSmall.Application.Abstractions;
-using BackOfficeSmall.Application.Contracts;
+﻿using SettingsRegister.Api.Dtos.ConfigurationChanges;
+using SettingsRegister.Api.Dtos.ConfigurationInstances;
+using SettingsRegister.Api.Mapping;
+using SettingsRegister.Application.Abstractions;
+using SettingsRegister.Application.Contracts;
 using Microsoft.AspNetCore.Mvc;
 
-namespace BackOfficeSmall.Api.Controllers;
+namespace SettingsRegister.Api.Controllers;
 
 [ApiController]
 [Route("api/configuration")]
@@ -77,3 +77,4 @@ public sealed class ConfigurationController : AuthenticatedApiControllerBase
         return Ok(change.ToDto());
     }
 }
+

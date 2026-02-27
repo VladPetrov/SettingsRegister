@@ -1,9 +1,9 @@
-using BackOfficeSmall.Application.Configuration;
-using BackOfficeSmall.Domain.Models.Configuration;
-using BackOfficeSmall.Domain.Repositories;
+﻿using SettingsRegister.Application.Configuration;
+using SettingsRegister.Domain.Models.Configuration;
+using SettingsRegister.Domain.Repositories;
 using Microsoft.Extensions.Caching.Memory;
 
-namespace BackOfficeSmall.Infrastructure.Repositories;
+namespace SettingsRegister.Infrastructure.Repositories;
 
 public sealed class CachedConfigurationRepository : ICacheConfigurationRepository
 {
@@ -92,3 +92,4 @@ public sealed class CachedConfigurationRepository : ICacheConfigurationRepositor
         return TimeSpan.FromSeconds(settings.ConfigurationCacheExpirationSeconds);
     }
 }
+

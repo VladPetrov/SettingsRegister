@@ -1,8 +1,9 @@
-using BackOfficeSmall.Application.Abstractions;
+﻿using SettingsRegister.Application.Abstractions;
 
-namespace BackOfficeSmall.Application.Services;
+namespace SettingsRegister.Application.Services;
 
 public sealed class SystemClock : ISystemClock
 {
     public DateTime UtcNow => DateTime.UtcNow;
 }
+

@@ -1,10 +1,10 @@
-using System.Text.Json;
-using BackOfficeSmall.Api.Dtos.Manifests;
-using BackOfficeSmall.Application.Abstractions;
-using BackOfficeSmall.Application.Contracts;
-using BackOfficeSmall.Domain.Models.Manifest;
+﻿using System.Text.Json;
+using SettingsRegister.Api.Dtos.Manifests;
+using SettingsRegister.Application.Abstractions;
+using SettingsRegister.Application.Contracts;
+using SettingsRegister.Domain.Models.Manifest;
 
-namespace BackOfficeSmall.Api.Configuration;
+namespace SettingsRegister.Api.Configuration;
 
 public sealed class DevelopmentSeedDataSeeder
 {
@@ -128,3 +128,4 @@ public sealed class DevelopmentSeedDataSeeder
         public string? Value { get; init; }
     }
 }
+

@@ -1,7 +1,7 @@
-using BackOfficeSmall.Application.Exceptions;
+﻿using SettingsRegister.Application.Exceptions;
 using Microsoft.AspNetCore.Mvc;
 
-namespace BackOfficeSmall.Api.ErrorHandling;
+namespace SettingsRegister.Api.ErrorHandling;
 
 public sealed class ProblemDetailsExceptionHandlingMiddleware
 {
@@ -81,3 +81,4 @@ public sealed class ProblemDetailsExceptionHandlingMiddleware
         return (StatusCodes.Status500InternalServerError, "Internal Server Error");
     }
 }
+

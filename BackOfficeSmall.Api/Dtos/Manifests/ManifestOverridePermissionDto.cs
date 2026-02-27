@@ -1,6 +1,6 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
-namespace BackOfficeSmall.Api.Dtos.Manifests;
+namespace SettingsRegister.Api.Dtos.Manifests;
 
 public sealed class ManifestOverridePermissionDto
 {
@@ -12,3 +12,4 @@ public sealed class ManifestOverridePermissionDto
 
     public bool CanOverride { get; init; }
 }
+

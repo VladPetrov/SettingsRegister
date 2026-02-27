@@ -1,7 +1,7 @@
-using BackOfficeSmall.Application.Contracts;
-using BackOfficeSmall.Domain.Models.Manifest;
+﻿using SettingsRegister.Application.Contracts;
+using SettingsRegister.Domain.Models.Manifest;
 
-namespace BackOfficeSmall.Application.Mapping;
+namespace SettingsRegister.Application.Mapping;
 
 public static class ManifestImportRequestMappingExtensions
 {
@@ -44,3 +44,4 @@ public static class ManifestImportRequestMappingExtensions
         return domainRoot;
     }
 }
+

@@ -1,6 +1,6 @@
-using BackOfficeSmall.Application.Abstractions;
+﻿using SettingsRegister.Application.Abstractions;
 
-namespace BackOfficeSmall.Api.Configuration;
+namespace SettingsRegister.Api.Configuration;
 
 public sealed class NotifierBackgroundWorker : BackgroundService
 {
@@ -19,3 +19,4 @@ public sealed class NotifierBackgroundWorker : BackgroundService
         await notifierService.StartAsync(stoppingToken);
     }
 }
+

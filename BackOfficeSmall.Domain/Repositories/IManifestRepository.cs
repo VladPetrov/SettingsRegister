@@ -1,6 +1,6 @@
-using BackOfficeSmall.Domain.Models.Manifest;
+﻿using SettingsRegister.Domain.Models.Manifest;
 
-namespace BackOfficeSmall.Domain.Repositories;
+namespace SettingsRegister.Domain.Repositories;
 
 public interface IManifestRepository
 {
@@ -14,3 +14,4 @@ public interface IManifestRepository
 
     Task<IReadOnlyList<ManifestValueObject>> ListAsync(string? name, CancellationToken cancellationToken);
 }
+

@@ -1,6 +1,6 @@
-using BackOfficeSmall.Domain.Services;
+﻿using SettingsRegister.Domain.Services;
 
-namespace BackOfficeSmall.Infrastructure.Locking;
+namespace SettingsRegister.Infrastructure.Locking;
 
 public sealed class InProcessDomainLock : IDomainLock
 {
@@ -113,3 +113,4 @@ public sealed class InProcessDomainLock : IDomainLock
 
     private readonly record struct LockEntry(Guid Token, DateTime ExpiresAtUtc);
 }
+

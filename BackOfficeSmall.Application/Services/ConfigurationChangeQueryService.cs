@@ -1,10 +1,10 @@
-using BackOfficeSmall.Application.Abstractions;
-using BackOfficeSmall.Application.Contracts;
-using BackOfficeSmall.Application.Exceptions;
-using BackOfficeSmall.Domain.Models.Configuration;
-using BackOfficeSmall.Domain.Repositories;
+﻿using SettingsRegister.Application.Abstractions;
+using SettingsRegister.Application.Contracts;
+using SettingsRegister.Application.Exceptions;
+using SettingsRegister.Domain.Models.Configuration;
+using SettingsRegister.Domain.Repositories;
 
-namespace BackOfficeSmall.Application.Services;
+namespace SettingsRegister.Application.Services;
 
 public sealed class ConfigurationChangeQueryService : IConfigurationChangeQueryService
 {
@@ -109,3 +109,4 @@ public sealed class ConfigurationChangeQueryService : IConfigurationChangeQueryS
         return pageSize.Value;
     }
 }
+

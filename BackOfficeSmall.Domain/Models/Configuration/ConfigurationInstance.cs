@@ -1,6 +1,6 @@
-using BackOfficeSmall.Domain.Models.Manifest;
+﻿using SettingsRegister.Domain.Models.Manifest;
 
-namespace BackOfficeSmall.Domain.Models.Configuration;
+namespace SettingsRegister.Domain.Models.Configuration;
 
 public sealed class ConfigurationInstance
 {
@@ -230,5 +230,6 @@ public sealed class ConfigurationInstance
         }
     }
 }
+
 
 

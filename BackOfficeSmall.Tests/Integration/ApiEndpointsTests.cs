@@ -1,16 +1,16 @@
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
-using BackOfficeSmall.Domain.Models.Configuration;
-using BackOfficeSmall.Domain.Models.Manifest;
-using BackOfficeSmall.Infrastructure.Repositories;
-using BackOfficeSmall.Domain.Services;
+using SettingsRegister.Domain.Models.Configuration;
+using SettingsRegister.Domain.Models.Manifest;
+using SettingsRegister.Infrastructure.Repositories;
+using SettingsRegister.Domain.Services;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace BackOfficeSmall.Tests.Integration;
+namespace SettingsRegister.Tests.Integration;
 
 public sealed class ApiEndpointsTests
 {
@@ -511,5 +511,6 @@ public sealed class ApiEndpointsTests
         }
     }
 }
+
 
 

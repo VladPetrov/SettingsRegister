@@ -1,6 +1,6 @@
-using BackOfficeSmall.Application.Abstractions;
+﻿using SettingsRegister.Application.Abstractions;
 
-namespace BackOfficeSmall.Tests.TestDoubles;
+namespace SettingsRegister.Tests.TestDoubles;
 
 internal sealed class FakeSystemClock : ISystemClock
 {
@@ -16,3 +16,4 @@ internal sealed class FakeSystemClock : ISystemClock
         UtcNow = utcNow;
     }
 }
+

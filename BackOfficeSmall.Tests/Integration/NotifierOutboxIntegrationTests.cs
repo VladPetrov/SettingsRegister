@@ -1,14 +1,14 @@
-using BackOfficeSmall.Application.Configuration;
-using BackOfficeSmall.Application.Contracts;
-using BackOfficeSmall.Application.Services;
-using BackOfficeSmall.Domain.Models.Configuration;
-using BackOfficeSmall.Domain.Models.Manifest;
-using BackOfficeSmall.Domain.Repositories;
-using BackOfficeSmall.Infrastructure.Repositories;
-using BackOfficeSmall.Tests.TestDoubles;
+﻿using SettingsRegister.Application.Configuration;
+using SettingsRegister.Application.Contracts;
+using SettingsRegister.Application.Services;
+using SettingsRegister.Domain.Models.Configuration;
+using SettingsRegister.Domain.Models.Manifest;
+using SettingsRegister.Domain.Repositories;
+using SettingsRegister.Infrastructure.Repositories;
+using SettingsRegister.Tests.TestDoubles;
 using Microsoft.Extensions.Caching.Memory;
 
-namespace BackOfficeSmall.Tests.Integration;
+namespace SettingsRegister.Tests.Integration;
 
 public sealed class NotifierOutboxIntegrationTests
 {
@@ -138,3 +138,4 @@ public sealed class NotifierOutboxIntegrationTests
         throw new TimeoutException($"Expected outbox status '{expectedStatus}' was not reached in time.");
     }
 }
+

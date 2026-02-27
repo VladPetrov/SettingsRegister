@@ -1,6 +1,6 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
-namespace BackOfficeSmall.Api.Dtos.ConfigurationInstances;
+namespace SettingsRegister.Api.Dtos.ConfigurationInstances;
 
 public sealed class ConfigurationInstanceCreateRequestDto
 {
@@ -12,3 +12,4 @@ public sealed class ConfigurationInstanceCreateRequestDto
 
     public IReadOnlyList<SettingCellInputDto>? Cells { get; init; }
 }
+

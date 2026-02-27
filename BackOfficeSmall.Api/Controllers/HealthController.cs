@@ -1,8 +1,8 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
-namespace BackOfficeSmall.Api.Controllers;
+namespace SettingsRegister.Api.Controllers;
 
 [ApiController]
 [AllowAnonymous]
@@ -34,3 +34,4 @@ public sealed class HealthController : ControllerBase
         };
     }
 }
+

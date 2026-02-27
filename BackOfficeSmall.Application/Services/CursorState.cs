@@ -1,7 +1,7 @@
-using BackOfficeSmall.Application.Exceptions;
+﻿using SettingsRegister.Application.Exceptions;
 using System.Text;
 
-namespace BackOfficeSmall.Application.Services;
+namespace SettingsRegister.Application.Services;
 
 public sealed record CursorState(DateTime ChangedAtUtc, Guid Id)
 {

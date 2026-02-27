@@ -1,4 +1,4 @@
-namespace BackOfficeSmall.Api.Dtos.ConfigurationInstances;
+﻿namespace SettingsRegister.Api.Dtos.ConfigurationInstances;
 
 public sealed record ConfigurationValueDto(
     string SettingKey,
@@ -6,5 +6,6 @@ public sealed record ConfigurationValueDto(
     bool IsExplicitValue,
     bool CanOverride,
     bool RequiresCriticalNotification);
+
 
 

@@ -1,6 +1,6 @@
-using BackOfficeSmall.Application.Abstractions;
+﻿using SettingsRegister.Application.Abstractions;
 
-namespace BackOfficeSmall.Api.Configuration;
+namespace SettingsRegister.Api.Configuration;
 
 public sealed class HostApplicationEnvironment : IApplicationEnvironment
 {
@@ -13,3 +13,4 @@ public sealed class HostApplicationEnvironment : IApplicationEnvironment
 
     public bool IsDevelopment => _webHostEnvironment.IsDevelopment();
 }
+

@@ -1,6 +1,6 @@
-using BackOfficeSmall.Domain.Repositories;
+﻿using SettingsRegister.Domain.Repositories;
 
-namespace BackOfficeSmall.Infrastructure.Repositories;
+namespace SettingsRegister.Infrastructure.Repositories;
 
 public sealed class InMemoryConfigurationWriteUnitOfWork : IConfigurationWriteUnitOfWork
 {
@@ -49,3 +49,4 @@ public sealed class InMemoryConfigurationWriteUnitOfWork : IConfigurationWriteUn
         return ValueTask.CompletedTask;
     }
 }
+

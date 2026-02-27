@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -14,9 +14,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\BackOfficeSmall.Application\BackOfficeSmall.Application.csproj" />
-    <ProjectReference Include="..\BackOfficeSmall.Domain\BackOfficeSmall.Domain.csproj" />
-    <ProjectReference Include="..\BackOfficeSmall.Infrastructure\BackOfficeSmall.Infrastructure.csproj" />
+    <ProjectReference Include="..\BackOfficeSmall.Application\SettingsRegister.Application.csproj" />
+    <ProjectReference Include="..\BackOfficeSmall.Domain\SettingsRegister.Domain.csproj" />
+    <ProjectReference Include="..\BackOfficeSmall.Infrastructure\SettingsRegister.Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -26,3 +26,6 @@
   </ItemGroup>
 
 </Project>
+
+
+

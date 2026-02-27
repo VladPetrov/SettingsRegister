@@ -1,8 +1,8 @@
-using BackOfficeSmall.Domain.Models.Configuration;
-using BackOfficeSmall.Domain.Models.Manifest;
-using BackOfficeSmall.Domain.Repositories;
+﻿using SettingsRegister.Domain.Models.Configuration;
+using SettingsRegister.Domain.Models.Manifest;
+using SettingsRegister.Domain.Repositories;
 
-namespace BackOfficeSmall.Infrastructure.Repositories;
+namespace SettingsRegister.Infrastructure.Repositories;
 
 public sealed class InMemoryConfigurationInstanceRepository : IConfigurationRepository
 {
@@ -264,3 +264,4 @@ public sealed class InMemoryConfigurationInstanceRepository : IConfigurationRepo
 
     private sealed record SettingCellRecord(string SettingKey, int LayerIndex, string? Value);
 }
+

@@ -1,7 +1,7 @@
-using BackOfficeSmall.Domain.Services;
-using BackOfficeSmall.Infrastructure.Locking;
+﻿using SettingsRegister.Domain.Services;
+using SettingsRegister.Infrastructure.Locking;
 
-namespace BackOfficeSmall.Tests.Unit.Infrastructure;
+namespace SettingsRegister.Tests.Unit.Infrastructure;
 
 public sealed class DomainLockTests
 {
@@ -46,3 +46,4 @@ public sealed class DomainLockTests
         Assert.Null(second);
     }
 }
+

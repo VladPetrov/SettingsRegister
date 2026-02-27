@@ -1,7 +1,7 @@
-using BackOfficeSmall.Domain.Models.Configuration;
-using BackOfficeSmall.Domain.Services;
+﻿using SettingsRegister.Domain.Models.Configuration;
+using SettingsRegister.Domain.Services;
 
-namespace BackOfficeSmall.Infrastructure.Monitoring;
+namespace SettingsRegister.Infrastructure.Monitoring;
 
 public sealed class SimulatedMonitoringNotifier : IMonitoringNotifier
 {   
@@ -18,3 +18,4 @@ public sealed class SimulatedMonitoringNotifier : IMonitoringNotifier
         return Task.FromResult(true);
     }
 }
+

@@ -1,14 +1,14 @@
-using BackOfficeSmall.Application.Abstractions;
-using BackOfficeSmall.Application.Configuration;
-using BackOfficeSmall.Application.Contracts;
-using BackOfficeSmall.Application.Exceptions;
-using BackOfficeSmall.Application.Mapping;
-using BackOfficeSmall.Domain.Models.Configuration;
-using BackOfficeSmall.Domain.Models.Manifest;
-using BackOfficeSmall.Domain.Repositories;
-using BackOfficeSmall.Domain.Services;
+﻿using SettingsRegister.Application.Abstractions;
+using SettingsRegister.Application.Configuration;
+using SettingsRegister.Application.Contracts;
+using SettingsRegister.Application.Exceptions;
+using SettingsRegister.Application.Mapping;
+using SettingsRegister.Domain.Models.Configuration;
+using SettingsRegister.Domain.Models.Manifest;
+using SettingsRegister.Domain.Repositories;
+using SettingsRegister.Domain.Services;
 
-namespace BackOfficeSmall.Application.Services;
+namespace SettingsRegister.Application.Services;
 
 public sealed class ManifestService : IManifestService
 {
@@ -129,3 +129,4 @@ public sealed class ManifestService : IManifestService
             ConfigurationChangeEventType.ManifestImport);
     }
 }
+

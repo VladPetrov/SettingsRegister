@@ -1,11 +1,11 @@
-using BackOfficeSmall.Application.Configuration;
-using BackOfficeSmall.Domain.Models.Configuration;
-using BackOfficeSmall.Domain.Models.Manifest;
-using BackOfficeSmall.Domain.Repositories;
-using BackOfficeSmall.Infrastructure.Repositories;
+﻿using SettingsRegister.Application.Configuration;
+using SettingsRegister.Domain.Models.Configuration;
+using SettingsRegister.Domain.Models.Manifest;
+using SettingsRegister.Domain.Repositories;
+using SettingsRegister.Infrastructure.Repositories;
 using Microsoft.Extensions.Caching.Memory;
 
-namespace BackOfficeSmall.Tests.Unit.Infrastructure;
+namespace SettingsRegister.Tests.Unit.Infrastructure;
 
 public sealed class CacheConfigurationRepositoryTests
 {
@@ -222,3 +222,4 @@ public sealed class CacheConfigurationRepositoryTests
         }
     }
 }
+

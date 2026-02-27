@@ -1,4 +1,4 @@
-namespace BackOfficeSmall.Infrastructure.Persistence.Entities;
+﻿namespace SettingsRegister.Infrastructure.Persistence.Entities;
 
 public sealed class ManifestSettingDefinitionEntity
 {
@@ -6,3 +6,4 @@ public sealed class ManifestSettingDefinitionEntity
 
     public bool RequiresCriticalNotification { get; set; }
 }
+

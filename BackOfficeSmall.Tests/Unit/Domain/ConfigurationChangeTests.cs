@@ -1,6 +1,6 @@
-using BackOfficeSmall.Domain.Models.Configuration;
+﻿using SettingsRegister.Domain.Models.Configuration;
 
-namespace BackOfficeSmall.Tests.Unit.Domain;
+namespace SettingsRegister.Tests.Unit.Domain;
 
 public sealed class ConfigurationChangeTests
 {
@@ -73,3 +73,4 @@ public sealed class ConfigurationChangeTests
             ConfigurationChangeEventType.ManifestImport));
     }
 }
+

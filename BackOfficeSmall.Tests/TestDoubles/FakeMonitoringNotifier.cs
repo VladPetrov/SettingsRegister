@@ -1,7 +1,7 @@
-using BackOfficeSmall.Domain.Models.Configuration;
-using BackOfficeSmall.Domain.Services;
+﻿using SettingsRegister.Domain.Models.Configuration;
+using SettingsRegister.Domain.Services;
 
-namespace BackOfficeSmall.Tests.TestDoubles;
+namespace SettingsRegister.Tests.TestDoubles;
 
 internal sealed class FakeMonitoringNotifier : IMonitoringNotifier
 {
@@ -42,3 +42,4 @@ internal sealed class FakeMonitoringNotifier : IMonitoringNotifier
         return Task.FromResult(IsAvailable);
     }
 }
+

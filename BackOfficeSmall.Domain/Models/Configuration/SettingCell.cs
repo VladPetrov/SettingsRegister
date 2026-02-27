@@ -1,4 +1,4 @@
-namespace BackOfficeSmall.Domain.Models.Configuration;
+﻿namespace SettingsRegister.Domain.Models.Configuration;
 
 public sealed class SettingCell
 {
@@ -35,3 +35,4 @@ public sealed class SettingCell
         }
     }
 }
+

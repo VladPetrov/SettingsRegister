@@ -1,4 +1,4 @@
-namespace BackOfficeSmall.Domain.Models.Configuration;
+﻿namespace SettingsRegister.Domain.Models.Configuration;
 
 public sealed class ConfigurationChange
 {
@@ -154,3 +154,4 @@ public sealed class ConfigurationChange
         return !string.IsNullOrWhiteSpace(value);
     }
 }
+

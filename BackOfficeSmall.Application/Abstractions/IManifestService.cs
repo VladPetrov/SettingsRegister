@@ -1,7 +1,7 @@
-using BackOfficeSmall.Application.Contracts;
-using BackOfficeSmall.Domain.Models.Manifest;
+﻿using SettingsRegister.Application.Contracts;
+using SettingsRegister.Domain.Models.Manifest;
 
-namespace BackOfficeSmall.Application.Abstractions;
+namespace SettingsRegister.Application.Abstractions;
 
 public interface IManifestService
 {
@@ -11,3 +11,4 @@ public interface IManifestService
 
     Task<IReadOnlyList<ManifestValueObject>> ListAsync(string? name, CancellationToken cancellationToken);
 }
+

@@ -1,12 +1,12 @@
-using BackOfficeSmall.Application.Configuration;
-using BackOfficeSmall.Application.Exceptions;
-using BackOfficeSmall.Application.Services;
-using BackOfficeSmall.Domain.Models.Configuration;
-using BackOfficeSmall.Domain.Repositories;
-using BackOfficeSmall.Infrastructure.Repositories;
+﻿using SettingsRegister.Application.Configuration;
+using SettingsRegister.Application.Exceptions;
+using SettingsRegister.Application.Services;
+using SettingsRegister.Domain.Models.Configuration;
+using SettingsRegister.Domain.Repositories;
+using SettingsRegister.Infrastructure.Repositories;
 using Microsoft.Extensions.Caching.Memory;
 
-namespace BackOfficeSmall.Tests.Unit.Application;
+namespace SettingsRegister.Tests.Unit.Application;
 
 public sealed class ConfigurationChangeQueryServiceTests
 {
@@ -218,3 +218,4 @@ public sealed class ConfigurationChangeQueryServiceTests
         }
     }
 }
+

@@ -1,7 +1,7 @@
-using BackOfficeSmall.Domain.Services;
+﻿using SettingsRegister.Domain.Services;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
-namespace BackOfficeSmall.Api.Configuration;
+namespace SettingsRegister.Api.Configuration;
 
 public sealed class MonitoringNotifierHealthCheck : IHealthCheck
 {
@@ -34,3 +34,4 @@ public sealed class MonitoringNotifierHealthCheck : IHealthCheck
         }
     }
 }
+

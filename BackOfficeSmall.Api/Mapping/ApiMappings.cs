@@ -1,12 +1,12 @@
-using BackOfficeSmall.Api.Dtos.Auth;
-using BackOfficeSmall.Api.Dtos.ConfigurationChanges;
-using BackOfficeSmall.Api.Dtos.ConfigurationInstances;
-using BackOfficeSmall.Api.Dtos.Manifests;
-using BackOfficeSmall.Application.Contracts;
-using BackOfficeSmall.Domain.Models.Configuration;
-using BackOfficeSmall.Domain.Models.Manifest;
+﻿using SettingsRegister.Api.Dtos.Auth;
+using SettingsRegister.Api.Dtos.ConfigurationChanges;
+using SettingsRegister.Api.Dtos.ConfigurationInstances;
+using SettingsRegister.Api.Dtos.Manifests;
+using SettingsRegister.Application.Contracts;
+using SettingsRegister.Domain.Models.Configuration;
+using SettingsRegister.Domain.Models.Manifest;
 
-namespace BackOfficeSmall.Api.Mapping;
+namespace SettingsRegister.Api.Mapping;
 
 public static class ApiMappings
 {
@@ -196,5 +196,6 @@ public static class ApiMappings
         };
     }
 }
+
 
 

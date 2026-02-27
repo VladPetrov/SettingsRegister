@@ -1,4 +1,4 @@
-namespace BackOfficeSmall.Api.Dtos.ConfigurationInstances;
+﻿namespace SettingsRegister.Api.Dtos.ConfigurationInstances;
 
 public sealed record ConfigurationInstanceResponseDto(
     Guid ConfigurationId,
@@ -7,4 +7,5 @@ public sealed record ConfigurationInstanceResponseDto(
     DateTime CreatedAtUtc,
     IReadOnlyList<ConfigurationSettingColumnDto> Columns,
     IReadOnlyList<ConfigurationSettingsRowDto> Rows);
+
 

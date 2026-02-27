@@ -1,4 +1,4 @@
-namespace BackOfficeSmall.Domain.Models.Manifest;
+﻿namespace SettingsRegister.Domain.Models.Manifest;
 
 public sealed class ManifestSettingDefinition
 {
@@ -20,3 +20,4 @@ public sealed class ManifestSettingDefinition
         }
     }
 }
+

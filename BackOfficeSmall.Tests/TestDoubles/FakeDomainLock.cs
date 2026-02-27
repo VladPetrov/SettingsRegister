@@ -1,6 +1,6 @@
-using BackOfficeSmall.Domain.Services;
+﻿using SettingsRegister.Domain.Services;
 
-namespace BackOfficeSmall.Tests.TestDoubles;
+namespace SettingsRegister.Tests.TestDoubles;
 
 internal sealed class FakeDomainLock : IDomainLock
 {
@@ -64,3 +64,4 @@ internal sealed class FakeDomainLock : IDomainLock
         }
     }
 }
+

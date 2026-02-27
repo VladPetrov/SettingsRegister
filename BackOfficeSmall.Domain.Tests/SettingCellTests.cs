@@ -1,6 +1,6 @@
-using BackOfficeSmall.Domain.Models.Configuration;
+﻿using SettingsRegister.Domain.Models.Configuration;
 
-namespace BackOfficeSmall.Domain.Tests;
+namespace SettingsRegister.Domain.Tests;
 
 public sealed class SettingCellTests
 {
@@ -22,3 +22,4 @@ public sealed class SettingCellTests
         Assert.Throws<ArgumentException>(() => new SettingCell("FeatureFlag", 0, " "));
     }
 }
+

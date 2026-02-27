@@ -1,6 +1,6 @@
-using BackOfficeSmall.Application.Exceptions;
+﻿using SettingsRegister.Application.Exceptions;
 
-namespace BackOfficeSmall.Application.Contracts;
+namespace SettingsRegister.Application.Contracts;
 
 public sealed record ConfigurationInstanceCreateRequest(
     string Name,
@@ -26,3 +26,4 @@ public sealed record ConfigurationInstanceCreateRequest(
         }
     }
 }
+

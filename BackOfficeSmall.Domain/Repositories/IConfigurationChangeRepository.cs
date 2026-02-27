@@ -1,6 +1,6 @@
-using BackOfficeSmall.Domain.Models.Configuration;
+﻿using SettingsRegister.Domain.Models.Configuration;
 
-namespace BackOfficeSmall.Domain.Repositories;
+namespace SettingsRegister.Domain.Repositories;
 
 public interface IConfigurationChangeRepository
 {
@@ -19,3 +19,4 @@ public interface IConfigurationChangeRepository
         int take,
         CancellationToken cancellationToken);
 }
+

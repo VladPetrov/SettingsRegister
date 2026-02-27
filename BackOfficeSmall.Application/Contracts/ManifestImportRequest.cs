@@ -1,4 +1,4 @@
-namespace BackOfficeSmall.Application.Contracts;
+﻿namespace SettingsRegister.Application.Contracts;
 
 public sealed record ManifestImportRequest(
     string Name,
@@ -35,3 +35,4 @@ public sealed record ManifestImportRequest(
         }
     }
 }
+

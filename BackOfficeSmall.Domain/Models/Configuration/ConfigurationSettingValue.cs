@@ -1,4 +1,4 @@
-namespace BackOfficeSmall.Domain.Models.Configuration;
+﻿namespace SettingsRegister.Domain.Models.Configuration;
 
 public sealed record ConfigurationSettingValue(
     string SettingKey,
@@ -6,5 +6,6 @@ public sealed record ConfigurationSettingValue(
     bool IsExplicitValue,
     bool CanOverride,
     bool RequiresCriticalNotification);
+
 
 

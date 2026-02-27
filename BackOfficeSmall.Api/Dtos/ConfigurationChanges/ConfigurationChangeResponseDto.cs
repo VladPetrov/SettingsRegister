@@ -1,4 +1,4 @@
-namespace BackOfficeSmall.Api.Dtos.ConfigurationChanges;
+﻿namespace SettingsRegister.Api.Dtos.ConfigurationChanges;
 
 public sealed record ConfigurationChangeResponseDto(
     Guid Id,
@@ -11,3 +11,4 @@ public sealed record ConfigurationChangeResponseDto(
     string? AfterValue,
     string ChangedBy,
     DateTime ChangedAtUtc);
+

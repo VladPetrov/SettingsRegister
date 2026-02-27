@@ -1,6 +1,6 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
-namespace BackOfficeSmall.Api.Dtos.Manifests;
+namespace SettingsRegister.Api.Dtos.Manifests;
 
 public sealed class ManifestSettingDefinitionDto
 {
@@ -9,3 +9,4 @@ public sealed class ManifestSettingDefinitionDto
 
     public bool RequiresCriticalNotification { get; init; }
 }
+

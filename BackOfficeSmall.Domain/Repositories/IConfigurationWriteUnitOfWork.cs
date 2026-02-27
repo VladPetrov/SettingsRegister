@@ -1,4 +1,4 @@
-namespace BackOfficeSmall.Domain.Repositories;
+﻿namespace SettingsRegister.Domain.Repositories;
 
 public interface IConfigurationWriteUnitOfWork : IDisposable, IAsyncDisposable
 {
@@ -12,3 +12,4 @@ public interface IConfigurationWriteUnitOfWork : IDisposable, IAsyncDisposable
 
     Task CommitAsync(CancellationToken cancellationToken);
 }
+

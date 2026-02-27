@@ -1,4 +1,4 @@
-namespace BackOfficeSmall.Api.Dtos.Manifests;
+﻿namespace SettingsRegister.Api.Dtos.Manifests;
 
 public sealed record ManifestResponseDto(
     Guid ManifestId,
@@ -9,3 +9,4 @@ public sealed record ManifestResponseDto(
     string CreatedBy,
     IReadOnlyList<ManifestSettingDefinitionDto> SettingDefinitions,
     IReadOnlyList<ManifestOverridePermissionDto> OverridePermissions);
+

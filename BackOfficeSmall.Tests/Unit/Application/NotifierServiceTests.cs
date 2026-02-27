@@ -1,12 +1,12 @@
-using BackOfficeSmall.Application.Configuration;
-using BackOfficeSmall.Application.Services;
-using BackOfficeSmall.Domain.Models.Configuration;
-using BackOfficeSmall.Domain.Repositories;
-using BackOfficeSmall.Infrastructure.Repositories;
-using BackOfficeSmall.Tests.TestDoubles;
+﻿using SettingsRegister.Application.Configuration;
+using SettingsRegister.Application.Services;
+using SettingsRegister.Domain.Models.Configuration;
+using SettingsRegister.Domain.Repositories;
+using SettingsRegister.Infrastructure.Repositories;
+using SettingsRegister.Tests.TestDoubles;
 using Microsoft.Extensions.Caching.Memory;
 
-namespace BackOfficeSmall.Tests.Unit.Application;
+namespace SettingsRegister.Tests.Unit.Application;
 
 public sealed class NotifierServiceTests
 {
@@ -160,3 +160,4 @@ public sealed class NotifierServiceTests
         throw new TimeoutException("Expected notifier dispatch lock attempt was not observed in time.");
     }
 }
+

@@ -1,9 +1,9 @@
-using BackOfficeSmall.Application.Abstractions;
-using BackOfficeSmall.Domain.Models.Configuration;
-using BackOfficeSmall.Domain.Repositories;
-using BackOfficeSmall.Domain.Services;
+﻿using SettingsRegister.Application.Abstractions;
+using SettingsRegister.Domain.Models.Configuration;
+using SettingsRegister.Domain.Repositories;
+using SettingsRegister.Domain.Services;
 
-namespace BackOfficeSmall.Application.Services;
+namespace SettingsRegister.Application.Services;
 
 public sealed class OutboxDispatchService : IOutboxDispatchService
 {
@@ -122,3 +122,4 @@ public sealed class OutboxDispatchService : IOutboxDispatchService
         _dispatchSignal.Release();
     }
 }
+

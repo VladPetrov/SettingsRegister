@@ -1,4 +1,4 @@
-namespace BackOfficeSmall.Application.Exceptions;
+﻿namespace SettingsRegister.Application.Exceptions;
 
 public sealed class ConflictException : Exception
 {
@@ -7,3 +7,4 @@ public sealed class ConflictException : Exception
     {
     }
 }
+

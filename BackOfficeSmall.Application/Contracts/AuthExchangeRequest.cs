@@ -1,4 +1,4 @@
-namespace BackOfficeSmall.Application.Contracts;
+﻿namespace SettingsRegister.Application.Contracts;
 
 public sealed record AuthExchangeRequest(string UserId)
 {
@@ -10,3 +10,4 @@ public sealed record AuthExchangeRequest(string UserId)
         }
     }
 }
+

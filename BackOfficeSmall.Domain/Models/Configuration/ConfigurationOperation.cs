@@ -1,4 +1,4 @@
-namespace BackOfficeSmall.Domain.Models.Configuration;
+﻿namespace SettingsRegister.Domain.Models.Configuration;
 
 public enum ConfigurationOperation
 {
@@ -6,3 +6,4 @@ public enum ConfigurationOperation
     Update,
     Delete
 }
+

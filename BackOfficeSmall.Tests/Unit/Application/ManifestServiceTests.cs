@@ -1,14 +1,14 @@
-using BackOfficeSmall.Application.Contracts;
-using BackOfficeSmall.Application.Configuration;
-using BackOfficeSmall.Application.Exceptions;
-using BackOfficeSmall.Application.Services;
-using BackOfficeSmall.Domain.Models.Configuration;
-using BackOfficeSmall.Domain.Models.Manifest;
-using BackOfficeSmall.Infrastructure.Repositories;
-using BackOfficeSmall.Tests.TestDoubles;
+﻿using SettingsRegister.Application.Contracts;
+using SettingsRegister.Application.Configuration;
+using SettingsRegister.Application.Exceptions;
+using SettingsRegister.Application.Services;
+using SettingsRegister.Domain.Models.Configuration;
+using SettingsRegister.Domain.Models.Manifest;
+using SettingsRegister.Infrastructure.Repositories;
+using SettingsRegister.Tests.TestDoubles;
 using Microsoft.Extensions.Caching.Memory;
 
-namespace BackOfficeSmall.Tests.Unit.Application;
+namespace SettingsRegister.Tests.Unit.Application;
 
 public sealed class ManifestServiceTests
 {
@@ -304,3 +304,4 @@ public sealed class ManifestServiceTests
             outboxRepository);
     }
 }
+

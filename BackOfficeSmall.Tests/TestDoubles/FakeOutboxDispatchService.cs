@@ -1,6 +1,6 @@
-using BackOfficeSmall.Application.Abstractions;
+﻿using SettingsRegister.Application.Abstractions;
 
-namespace BackOfficeSmall.Tests.TestDoubles;
+namespace SettingsRegister.Tests.TestDoubles;
 
 internal sealed class FakeOutboxDispatchService : IOutboxDispatchService
 {
@@ -20,3 +20,4 @@ internal sealed class FakeOutboxDispatchService : IOutboxDispatchService
         NotifyChangesCalls++;
     }
 }
+

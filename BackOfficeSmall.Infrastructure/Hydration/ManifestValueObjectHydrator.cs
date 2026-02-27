@@ -1,7 +1,7 @@
-using BackOfficeSmall.Domain.Models.Manifest;
-using BackOfficeSmall.Infrastructure.Persistence.Entities;
+﻿using SettingsRegister.Domain.Models.Manifest;
+using SettingsRegister.Infrastructure.Persistence.Entities;
 
-namespace BackOfficeSmall.Infrastructure.Hydration;
+namespace SettingsRegister.Infrastructure.Hydration;
 
 public sealed class ManifestValueObjectHydrator
 {
@@ -36,3 +36,4 @@ public sealed class ManifestValueObjectHydrator
             overridePermissions);
     }
 }
+

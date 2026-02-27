@@ -1,9 +1,9 @@
-using BackOfficeSmall.Domain.Models.Manifest;
-using BackOfficeSmall.Domain.Repositories;
-using BackOfficeSmall.Infrastructure.Hydration;
-using BackOfficeSmall.Infrastructure.Persistence.Entities;
+﻿using SettingsRegister.Domain.Models.Manifest;
+using SettingsRegister.Domain.Repositories;
+using SettingsRegister.Infrastructure.Hydration;
+using SettingsRegister.Infrastructure.Persistence.Entities;
 
-namespace BackOfficeSmall.Infrastructure.Repositories;
+namespace SettingsRegister.Infrastructure.Repositories;
 
 public sealed class InMemoryManifestRepository : IManifestRepository
 {
@@ -143,3 +143,4 @@ public sealed class InMemoryManifestRepository : IManifestRepository
         };
     }
 }
+

@@ -1,4 +1,4 @@
-namespace BackOfficeSmall.Domain.Models.Manifest;
+﻿namespace SettingsRegister.Domain.Models.Manifest;
 
 public sealed class ManifestValueObject
 {
@@ -118,3 +118,4 @@ public sealed class ManifestValueObject
             domainRoot.OverridePermissions);
     }
 }
+

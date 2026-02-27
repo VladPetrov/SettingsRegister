@@ -1,12 +1,12 @@
-using System.Security.Cryptography;
+﻿using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
-using BackOfficeSmall.Application.Abstractions;
-using BackOfficeSmall.Application.Configuration;
-using BackOfficeSmall.Application.Contracts;
-using BackOfficeSmall.Application.Exceptions;
+using SettingsRegister.Application.Abstractions;
+using SettingsRegister.Application.Configuration;
+using SettingsRegister.Application.Contracts;
+using SettingsRegister.Application.Exceptions;
 
-namespace BackOfficeSmall.Application.Services;
+namespace SettingsRegister.Application.Services;
 
 public sealed class AuthExchangeService : IAuthExchangeService
 {
@@ -144,3 +144,4 @@ public sealed class AuthExchangeService : IAuthExchangeService
             .Replace('/', '_');
     }
 }
+

@@ -1,6 +1,6 @@
-using BackOfficeSmall.Application.Exceptions;
+﻿using SettingsRegister.Application.Exceptions;
 
-namespace BackOfficeSmall.Application.Contracts;
+namespace SettingsRegister.Application.Contracts;
 
 public sealed record DeleteConfigurationInstanceRequest(string DeletedBy)
 {
@@ -12,3 +12,4 @@ public sealed record DeleteConfigurationInstanceRequest(string DeletedBy)
         }
     }
 }
+

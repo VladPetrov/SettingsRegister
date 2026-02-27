@@ -1,6 +1,6 @@
-using BackOfficeSmall.Domain.Models.Manifest;
+﻿using SettingsRegister.Domain.Models.Manifest;
 
-namespace BackOfficeSmall.Domain.Tests;
+namespace SettingsRegister.Domain.Tests;
 
 public sealed class ManifestSettingDefinitionTests
 {
@@ -22,3 +22,4 @@ public sealed class ManifestSettingDefinitionTests
         Assert.Null(exception);
     }
 }
+

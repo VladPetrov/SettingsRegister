@@ -1,4 +1,4 @@
-namespace BackOfficeSmall.Domain.Models.Manifest;
+﻿namespace SettingsRegister.Domain.Models.Manifest;
 
 public sealed class ManifestDomainRoot
 {
@@ -122,3 +122,4 @@ public sealed class ManifestDomainRoot
         }
     }
 }
+

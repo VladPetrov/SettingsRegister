@@ -1,4 +1,4 @@
-namespace BackOfficeSmall.Application.Abstractions;
+﻿namespace SettingsRegister.Application.Abstractions;
 
 public interface IOutboxDispatchService
 {
@@ -6,3 +6,4 @@ public interface IOutboxDispatchService
 
     void NotifyChanges();
 }
+

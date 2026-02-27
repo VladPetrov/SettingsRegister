@@ -1,4 +1,4 @@
-namespace BackOfficeSmall.Application.Exceptions;
+﻿namespace SettingsRegister.Application.Exceptions;
 
 public sealed class EntityNotFoundException : Exception
 {
@@ -13,3 +13,4 @@ public sealed class EntityNotFoundException : Exception
 
     public string EntityIdentifier { get; }
 }
+

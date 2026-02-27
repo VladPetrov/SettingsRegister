@@ -1,7 +1,7 @@
-using BackOfficeSmall.Domain.Models.Configuration;
-using BackOfficeSmall.Domain.Repositories;
+﻿using SettingsRegister.Domain.Models.Configuration;
+using SettingsRegister.Domain.Repositories;
 
-namespace BackOfficeSmall.Infrastructure.Repositories;
+namespace SettingsRegister.Infrastructure.Repositories;
 
 public sealed class InMemoryMonitoringNotifierOutboxRepository : IMonitoringNotifierOutboxRepository
 {
@@ -204,3 +204,4 @@ public sealed class InMemoryMonitoringNotifierOutboxRepository : IMonitoringNoti
         DateTime? SentAtUtc,
         string? LastError);
 }
+

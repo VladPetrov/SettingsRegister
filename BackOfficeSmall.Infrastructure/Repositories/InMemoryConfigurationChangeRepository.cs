@@ -1,7 +1,7 @@
-using BackOfficeSmall.Domain.Models.Configuration;
-using BackOfficeSmall.Domain.Repositories;
+﻿using SettingsRegister.Domain.Models.Configuration;
+using SettingsRegister.Domain.Repositories;
 
-namespace BackOfficeSmall.Infrastructure.Repositories;
+namespace SettingsRegister.Infrastructure.Repositories;
 
 public sealed class InMemoryConfigurationChangeRepository : IConfigurationChangeRepository
 {
@@ -153,3 +153,4 @@ public sealed class InMemoryConfigurationChangeRepository : IConfigurationChange
         DateTime ChangedAtUtc,
         ConfigurationChangeEventType EventType);
 }
+

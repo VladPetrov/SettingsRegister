@@ -1,8 +1,9 @@
-using BackOfficeSmall.Application.Contracts;
+﻿using SettingsRegister.Application.Contracts;
 
-namespace BackOfficeSmall.Application.Abstractions;
+namespace SettingsRegister.Application.Abstractions;
 
 public interface IAuthExchangeService
 {
     Task<AuthExchangeResult> ExchangeAsync(AuthExchangeRequest request, CancellationToken cancellationToken);
 }
+

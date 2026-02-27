@@ -1,7 +1,7 @@
-using BackOfficeSmall.Application.Contracts;
-using BackOfficeSmall.Domain.Models.Configuration;
+﻿using SettingsRegister.Application.Contracts;
+using SettingsRegister.Domain.Models.Configuration;
 
-namespace BackOfficeSmall.Application.Abstractions;
+namespace SettingsRegister.Application.Abstractions;
 
 public interface IConfigurationService
 {
@@ -18,3 +18,4 @@ public interface IConfigurationService
         SetCellValueRequest request,
         CancellationToken cancellationToken);
 }
+

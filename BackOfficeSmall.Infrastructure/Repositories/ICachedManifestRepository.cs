@@ -1,7 +1,8 @@
-using BackOfficeSmall.Domain.Repositories;
+﻿using SettingsRegister.Domain.Repositories;
 
-namespace BackOfficeSmall.Infrastructure.Repositories;
+namespace SettingsRegister.Infrastructure.Repositories;
 
 public interface ICachedManifestRepository : IManifestRepository
 {
 }
+

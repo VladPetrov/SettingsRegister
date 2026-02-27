@@ -1,6 +1,6 @@
-using BackOfficeSmall.Domain.Models.Manifest;
+﻿using SettingsRegister.Domain.Models.Manifest;
 
-namespace BackOfficeSmall.Domain.Tests;
+namespace SettingsRegister.Domain.Tests;
 
 public sealed class ManifestOverridePermissionTests
 {
@@ -38,3 +38,4 @@ public sealed class ManifestOverridePermissionTests
         Assert.Null(exception);
     }
 }
+

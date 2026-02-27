@@ -1,6 +1,6 @@
-using BackOfficeSmall.Domain.Models.Configuration;
+﻿using SettingsRegister.Domain.Models.Configuration;
 
-namespace BackOfficeSmall.Domain.Repositories;
+namespace SettingsRegister.Domain.Repositories;
 
 public interface IConfigurationRepository
 {
@@ -16,3 +16,4 @@ public interface IConfigurationRepository
 
     Task DeleteAsync(Guid instanceId, CancellationToken cancellationToken);
 }
+

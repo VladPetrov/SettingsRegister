@@ -1,4 +1,4 @@
-namespace BackOfficeSmall.Domain.Models.Configuration;
+﻿namespace SettingsRegister.Domain.Models.Configuration;
 
 public sealed class MonitoringNotificationMessage
 {
@@ -99,3 +99,4 @@ public sealed class MonitoringNotificationMessage
         }
     }
 }
+

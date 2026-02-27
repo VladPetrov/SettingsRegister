@@ -1,8 +1,8 @@
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace BackOfficeSmall.Api.Controllers;
+namespace SettingsRegister.Api.Controllers;
 
 [Authorize]
 [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status401Unauthorized)]
@@ -32,3 +32,4 @@ public abstract class AuthenticatedApiControllerBase : ControllerBase
         return userId;
     }
 }
+

@@ -1,6 +1,6 @@
-using BackOfficeSmall.Domain.Models.Configuration;
+﻿using SettingsRegister.Domain.Models.Configuration;
 
-namespace BackOfficeSmall.Domain.Services;
+namespace SettingsRegister.Domain.Services;
 
 public interface IMonitoringNotifier
 {
@@ -8,3 +8,4 @@ public interface IMonitoringNotifier
 
     Task<bool> IsAvailableAsync(CancellationToken cancellationToken);
 }
+

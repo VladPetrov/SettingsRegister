@@ -1,4 +1,4 @@
-namespace BackOfficeSmall.Infrastructure.Persistence.Entities;
+﻿namespace SettingsRegister.Infrastructure.Persistence.Entities;
 
 public sealed class ManifestOverridePermissionEntity
 {
@@ -8,3 +8,4 @@ public sealed class ManifestOverridePermissionEntity
 
     public bool CanOverride { get; set; }
 }
+

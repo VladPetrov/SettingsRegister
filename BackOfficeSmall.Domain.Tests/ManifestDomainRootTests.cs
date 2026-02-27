@@ -1,6 +1,6 @@
-using BackOfficeSmall.Domain.Models.Manifest;
+﻿using SettingsRegister.Domain.Models.Manifest;
 
-namespace BackOfficeSmall.Domain.Tests;
+namespace SettingsRegister.Domain.Tests;
 
 public sealed class ManifestDomainRootTests
 {
@@ -128,3 +128,4 @@ public sealed class ManifestDomainRootTests
         return manifest;
     }
 }
+

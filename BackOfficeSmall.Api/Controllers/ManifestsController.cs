@@ -1,9 +1,9 @@
-using BackOfficeSmall.Api.Dtos.Manifests;
-using BackOfficeSmall.Api.Mapping;
-using BackOfficeSmall.Application.Abstractions;
+﻿using SettingsRegister.Api.Dtos.Manifests;
+using SettingsRegister.Api.Mapping;
+using SettingsRegister.Application.Abstractions;
 using Microsoft.AspNetCore.Mvc;
 
-namespace BackOfficeSmall.Api.Controllers;
+namespace SettingsRegister.Api.Controllers;
 
 [ApiController]
 [Route("api/manifests")]
@@ -51,4 +51,5 @@ public sealed class ManifestsController : AuthenticatedApiControllerBase
         return Ok(payload);
     }
 }
+
 

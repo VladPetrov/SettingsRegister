@@ -1,12 +1,12 @@
-using BackOfficeSmall.Application.Abstractions;
-using BackOfficeSmall.Application.Contracts;
-using BackOfficeSmall.Application.Exceptions;
-using BackOfficeSmall.Domain.Models.Configuration;
-using BackOfficeSmall.Domain.Models.Manifest;
-using BackOfficeSmall.Domain.Repositories;
-using BackOfficeSmall.Domain.Services;
+﻿using SettingsRegister.Application.Abstractions;
+using SettingsRegister.Application.Contracts;
+using SettingsRegister.Application.Exceptions;
+using SettingsRegister.Domain.Models.Configuration;
+using SettingsRegister.Domain.Models.Manifest;
+using SettingsRegister.Domain.Repositories;
+using SettingsRegister.Domain.Services;
 
-namespace BackOfficeSmall.Application.Services;
+namespace SettingsRegister.Application.Services;
 
 public sealed class ConfigurationService : IConfigurationService
 {
@@ -321,3 +321,4 @@ public sealed class ConfigurationService : IConfigurationService
         await _configurationWriteUnitOfWork.MonitoringNotifierOutboxRepository.AddAsync(outboxMessage, cancellationToken);
     }
 }
+

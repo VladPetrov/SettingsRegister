@@ -1,6 +1,6 @@
-using BackOfficeSmall.Domain.Models.Configuration;
+﻿using SettingsRegister.Domain.Models.Configuration;
 
-namespace BackOfficeSmall.Domain.Tests;
+namespace SettingsRegister.Domain.Tests;
 
 public sealed class MonitoringNotificationMessageTests
 {
@@ -73,3 +73,4 @@ public sealed class MonitoringNotificationMessageTests
         Assert.Equal("on", message.AfterValue);
     }
 }
+

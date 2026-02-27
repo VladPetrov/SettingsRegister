@@ -1,12 +1,12 @@
-using BackOfficeSmall.Api.Dtos.ConfigurationChanges;
-using BackOfficeSmall.Api.Mapping;
-using BackOfficeSmall.Application.Abstractions;
-using BackOfficeSmall.Application.Contracts;
-using BackOfficeSmall.Application.Exceptions;
-using BackOfficeSmall.Domain.Models.Configuration;
+﻿using SettingsRegister.Api.Dtos.ConfigurationChanges;
+using SettingsRegister.Api.Mapping;
+using SettingsRegister.Application.Abstractions;
+using SettingsRegister.Application.Contracts;
+using SettingsRegister.Application.Exceptions;
+using SettingsRegister.Domain.Models.Configuration;
 using Microsoft.AspNetCore.Mvc;
 
-namespace BackOfficeSmall.Api.Controllers;
+namespace SettingsRegister.Api.Controllers;
 
 [ApiController]
 [Route("api/config-changes")]
@@ -77,3 +77,4 @@ public sealed class ConfigurationChangesController : AuthenticatedApiControllerB
         return value.Value.UtcDateTime;
     }
 }
+

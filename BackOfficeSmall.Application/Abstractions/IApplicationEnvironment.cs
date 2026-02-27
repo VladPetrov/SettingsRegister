@@ -1,6 +1,7 @@
-namespace BackOfficeSmall.Application.Abstractions;
+﻿namespace SettingsRegister.Application.Abstractions;
 
 public interface IApplicationEnvironment
 {
     bool IsDevelopment { get; }
 }
+
