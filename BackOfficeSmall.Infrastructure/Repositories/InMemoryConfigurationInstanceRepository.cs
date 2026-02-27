@@ -8,25 +8,25 @@ namespace SettingsRegister.Infrastructure.Repositories;
 
 public sealed class InMemoryConfigurationInstanceRepository : IConfigurationRepository
 {
+    private static readonly TimeSpan SimulatedStorageDelay = TimeSpan.FromMilliseconds(5);
     private static readonly StringComparer SettingKeyComparer = StringComparer.OrdinalIgnoreCase;
     private readonly object _syncRoot = new();
     private readonly Dictionary<Guid, ConfigurationInstanceRecord> _instancesById = new();
     private readonly Dictionary<string, Guid> _instanceNameIndex = new(StringComparer.OrdinalIgnoreCase);
 
-    public Task CheckConnectionAsync(CancellationToken cancellationToken)
+    public async Task CheckConnectionAsync(CancellationToken cancellationToken)
     {
         using var activity = StartSimulatedActivity("CheckConnection");
 
-        cancellationToken.ThrowIfCancellationRequested();
-        return Task.CompletedTask;
+        await SimulateStorageDelayAsync(cancellationToken);
     }
 
-    public Task AddAsync(ConfigurationInstance instance, CancellationToken cancellationToken)
+    public async Task AddAsync(ConfigurationInstance instance, CancellationToken cancellationToken)
     {
         using var activity = StartSimulatedActivity("Add");
         activity?.SetTag("repository.item_id", instance?.ConfigurationId.ToString());
 
-        cancellationToken.ThrowIfCancellationRequested();
+        await SimulateStorageDelayAsync(cancellationToken);
 
         if (instance is null)
         {
@@ -53,33 +53,31 @@ public sealed class InMemoryConfigurationInstanceRepository : IConfigurationRepo
             _instancesById[instance.ConfigurationId] = ToRecord(instance);
             _instanceNameIndex[instance.Name] = instance.ConfigurationId;
         }
-
-        return Task.CompletedTask;
     }
 
-    public Task<ConfigurationInstance?> GetByIdAsync(Guid instanceId, CancellationToken cancellationToken)
+    public async Task<ConfigurationInstance?> GetByIdAsync(Guid instanceId, CancellationToken cancellationToken)
     {
         using var activity = StartSimulatedActivity("GetById");
         activity?.SetTag("repository.item_id", instanceId.ToString());
 
-        cancellationToken.ThrowIfCancellationRequested();
+        await SimulateStorageDelayAsync(cancellationToken);
 
         lock (_syncRoot)
         {
             if (!_instancesById.TryGetValue(instanceId, out ConfigurationInstanceRecord? record))
             {
-                return Task.FromResult<ConfigurationInstance?>(null);
+                return null;
             }
 
-            return Task.FromResult<ConfigurationInstance?>(ToDomain(record));
+            return ToDomain(record);
         }
     }
 
-    public Task<IReadOnlyList<ConfigurationInstance>> ListAsync(CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<ConfigurationInstance>> ListAsync(CancellationToken cancellationToken)
     {
         using var activity = StartSimulatedActivity("List");
 
-        cancellationToken.ThrowIfCancellationRequested();
+        await SimulateStorageDelayAsync(cancellationToken);
 
         lock (_syncRoot)
         {
@@ -88,16 +86,16 @@ public sealed class InMemoryConfigurationInstanceRepository : IConfigurationRepo
                 .OrderBy(instance => instance.Name, StringComparer.OrdinalIgnoreCase)
                 .ToList();
 
-            return Task.FromResult(instances);
+            return instances;
         }
     }
 
-    public Task UpdateAsync(ConfigurationInstance instance, CancellationToken cancellationToken)
+    public async Task UpdateAsync(ConfigurationInstance instance, CancellationToken cancellationToken)
     {
         using var activity = StartSimulatedActivity("Update");
         activity?.SetTag("repository.item_id", instance?.ConfigurationId.ToString());
 
-        cancellationToken.ThrowIfCancellationRequested();
+        await SimulateStorageDelayAsync(cancellationToken);
 
         if (instance is null)
         {
@@ -129,16 +127,14 @@ public sealed class InMemoryConfigurationInstanceRepository : IConfigurationRepo
 
             _instancesById[instance.ConfigurationId] = ToRecord(instance);
         }
-
-        return Task.CompletedTask;
     }
 
-    public Task DeleteAsync(Guid instanceId, CancellationToken cancellationToken)
+    public async Task DeleteAsync(Guid instanceId, CancellationToken cancellationToken)
     {
         using var activity = StartSimulatedActivity("Delete");
         activity?.SetTag("repository.item_id", instanceId.ToString());
 
-        cancellationToken.ThrowIfCancellationRequested();
+        await SimulateStorageDelayAsync(cancellationToken);
 
         lock (_syncRoot)
         {
@@ -151,8 +147,6 @@ public sealed class InMemoryConfigurationInstanceRepository : IConfigurationRepo
             _instancesById.Remove(instanceId);
             _instanceNameIndex.Remove(existing.Name);
         }
-
-        return Task.CompletedTask;
     }
 
     private static void ValidateUniqueCells(ConfigurationInstance instance)
@@ -282,12 +276,18 @@ public sealed class InMemoryConfigurationInstanceRepository : IConfigurationRepo
 
     private sealed record SettingCellRecord(string SettingKey, int LayerIndex, string? Value);
 
+    private static Task SimulateStorageDelayAsync(CancellationToken cancellationToken)
+    {
+        return Task.Delay(SimulatedStorageDelay, cancellationToken);
+    }
+
     private static Activity? StartSimulatedActivity(string operation)
     {
         // Simulation span: this repository is in-memory and emits spans to simulate storage access behavior.
-        Activity? activity = RepositoryActivitySource.Source.StartActivity($"InMemoryConfigurationInstanceRepository.{operation}");
+        Activity? activity = RepositoryActivitySource.Source.StartActivity($"InMemoryConfigurationInstanceRepository.{operation}", ActivityKind.Client);
         activity?.SetTag("repository.kind", "in_memory_configuration");
         activity?.SetTag("repository.simulated", true);
+        activity?.SetTag("peer.service", "SettingsRegister.Storage.ConfigurationRepository");
         return activity;
     }
 }

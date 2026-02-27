@@ -99,9 +99,10 @@ public sealed class CachedManifestRepository : ICachedManifestRepository
     private static Activity? StartSimulatedActivity(string operation)
     {
         // Simulation span: this cached in-memory repository emulates cache/storage boundaries for tracing exercises.
-        Activity? activity = RepositoryActivitySource.Source.StartActivity($"CachedManifestRepository.{operation}");
+        Activity? activity = RepositoryActivitySource.Source.StartActivity($"CachedManifestRepository.{operation}", ActivityKind.Client);
         activity?.SetTag("repository.kind", "cached_manifest");
         activity?.SetTag("repository.simulated", true);
+        activity?.SetTag("peer.service", "SettingsRegister.Cache.ManifestRepository");
         return activity;
     }
 

@@ -7,24 +7,24 @@ namespace SettingsRegister.Infrastructure.Repositories;
 
 public sealed class InMemoryMonitoringNotifierOutboxRepository : IMonitoringNotifierOutboxRepository
 {
+    private static readonly TimeSpan SimulatedStorageDelay = TimeSpan.FromMilliseconds(5);
     private readonly object _syncRoot = new();
     private readonly Dictionary<Guid, MonitoringNotifierOutboxRecord> _recordsById = new();
     private readonly Dictionary<string, Guid> _dedupeIndex = new(StringComparer.OrdinalIgnoreCase);
 
-    public Task CheckConnectionAsync(CancellationToken cancellationToken)
+    public async Task CheckConnectionAsync(CancellationToken cancellationToken)
     {
         using var activity = StartSimulatedActivity("CheckConnection");
 
-        cancellationToken.ThrowIfCancellationRequested();
-        return Task.CompletedTask;
+        await SimulateStorageDelayAsync(cancellationToken);
     }
 
-    public Task AddAsync(MonitoringNotifierOutboxMessage outboxMessage, CancellationToken cancellationToken)
+    public async Task AddAsync(MonitoringNotifierOutboxMessage outboxMessage, CancellationToken cancellationToken)
     {
         using var activity = StartSimulatedActivity("Add");
         activity?.SetTag("repository.item_id", outboxMessage?.Id.ToString());
 
-        cancellationToken.ThrowIfCancellationRequested();
+        await SimulateStorageDelayAsync(cancellationToken);
 
         if (outboxMessage is null)
         {
@@ -46,36 +46,34 @@ public sealed class InMemoryMonitoringNotifierOutboxRepository : IMonitoringNoti
             _recordsById[outboxMessage.Id] = ToRecord(outboxMessage);
             _dedupeIndex[outboxMessage.DedupeKey] = outboxMessage.Id;
         }
-
-        return Task.CompletedTask;
     }
 
-    public Task<MonitoringNotifierOutboxMessage?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
+    public async Task<MonitoringNotifierOutboxMessage?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
     {
         using var activity = StartSimulatedActivity("GetById");
         activity?.SetTag("repository.item_id", id.ToString());
 
-        cancellationToken.ThrowIfCancellationRequested();
+        await SimulateStorageDelayAsync(cancellationToken);
 
         lock (_syncRoot)
         {
             if (!_recordsById.TryGetValue(id, out MonitoringNotifierOutboxRecord? record))
             {
-                return Task.FromResult<MonitoringNotifierOutboxMessage?>(null);
+                return null;
             }
 
-            return Task.FromResult<MonitoringNotifierOutboxMessage?>(ToDomain(record));
+            return ToDomain(record);
         }
     }
 
-    public Task<IReadOnlyList<MonitoringNotifierOutboxMessage>> ListAsync(
+    public async Task<IReadOnlyList<MonitoringNotifierOutboxMessage>> ListAsync(
         MonitoringNotificationOutboxStatus? status,
         CancellationToken cancellationToken)
     {
         using var activity = StartSimulatedActivity("List");
         activity?.SetTag("repository.status_filter", status?.ToString());
 
-        cancellationToken.ThrowIfCancellationRequested();
+        await SimulateStorageDelayAsync(cancellationToken);
 
         lock (_syncRoot)
         {
@@ -91,18 +89,18 @@ public sealed class InMemoryMonitoringNotifierOutboxRepository : IMonitoringNoti
                 .Select(ToDomain)
                 .ToList();
 
-            return Task.FromResult(messages);
+            return messages;
         }
     }
 
-    public Task<IReadOnlyList<MonitoringNotifierOutboxMessage>> ListDispatchCandidatesAsync(
+    public async Task<IReadOnlyList<MonitoringNotifierOutboxMessage>> ListDispatchCandidatesAsync(
         int take,
         CancellationToken cancellationToken)
     {
         using var activity = StartSimulatedActivity("ListDispatchCandidates");
         activity?.SetTag("repository.take", take);
 
-        cancellationToken.ThrowIfCancellationRequested();
+        await SimulateStorageDelayAsync(cancellationToken);
 
         if (take <= 0)
         {
@@ -122,16 +120,16 @@ public sealed class InMemoryMonitoringNotifierOutboxRepository : IMonitoringNoti
                 .Select(ToDomain)
                 .ToList();
 
-            return Task.FromResult(candidates);
+            return candidates;
         }
     }
 
-    public Task UpdateAsync(MonitoringNotifierOutboxMessage outboxMessage, CancellationToken cancellationToken)
+    public async Task UpdateAsync(MonitoringNotifierOutboxMessage outboxMessage, CancellationToken cancellationToken)
     {
         using var activity = StartSimulatedActivity("Update");
         activity?.SetTag("repository.item_id", outboxMessage?.Id.ToString());
 
-        cancellationToken.ThrowIfCancellationRequested();
+        await SimulateStorageDelayAsync(cancellationToken);
 
         if (outboxMessage is null)
         {
@@ -153,8 +151,6 @@ public sealed class InMemoryMonitoringNotifierOutboxRepository : IMonitoringNoti
             _recordsById[outboxMessage.Id] = ToRecord(outboxMessage);
             _dedupeIndex[outboxMessage.DedupeKey] = outboxMessage.Id;
         }
-
-        return Task.CompletedTask;
     }
 
     private static MonitoringNotifierOutboxRecord ToRecord(MonitoringNotifierOutboxMessage outboxMessage)
@@ -223,12 +219,18 @@ public sealed class InMemoryMonitoringNotifierOutboxRepository : IMonitoringNoti
         DateTime? SentAtUtc,
         string? LastError);
 
+    private static Task SimulateStorageDelayAsync(CancellationToken cancellationToken)
+    {
+        return Task.Delay(SimulatedStorageDelay, cancellationToken);
+    }
+
     private static Activity? StartSimulatedActivity(string operation)
     {
         // Simulation span: this repository is in-memory and emits spans to simulate storage access behavior.
-        Activity? activity = RepositoryActivitySource.Source.StartActivity($"InMemoryMonitoringNotifierOutboxRepository.{operation}");
+        Activity? activity = RepositoryActivitySource.Source.StartActivity($"InMemoryMonitoringNotifierOutboxRepository.{operation}", ActivityKind.Client);
         activity?.SetTag("repository.kind", "in_memory_outbox");
         activity?.SetTag("repository.simulated", true);
+        activity?.SetTag("peer.service", "SettingsRegister.Storage.OutboxRepository");
         return activity;
     }
 }

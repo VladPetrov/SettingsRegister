@@ -7,23 +7,23 @@ namespace SettingsRegister.Infrastructure.Repositories;
 
 public sealed class InMemoryConfigurationChangeRepository : IConfigurationChangeRepository
 {
+    private static readonly TimeSpan SimulatedStorageDelay = TimeSpan.FromMilliseconds(5);
     private readonly object _syncRoot = new();
     private readonly Dictionary<Guid, ConfigurationChangeRecord> _changesById = new();
 
-    public Task CheckConnectionAsync(CancellationToken cancellationToken)
+    public async Task CheckConnectionAsync(CancellationToken cancellationToken)
     {
         using var activity = StartSimulatedActivity("CheckConnection");
 
-        cancellationToken.ThrowIfCancellationRequested();
-        return Task.CompletedTask;
+        await SimulateStorageDelayAsync(cancellationToken);
     }
 
-    public Task AddAsync(ConfigurationChange change, CancellationToken cancellationToken)
+    public async Task AddAsync(ConfigurationChange change, CancellationToken cancellationToken)
     {
         using var activity = StartSimulatedActivity("Add");
         activity?.SetTag("repository.item_id", change?.Id.ToString());
 
-        cancellationToken.ThrowIfCancellationRequested();
+        await SimulateStorageDelayAsync(cancellationToken);
 
         if (change is null)
         {
@@ -41,29 +41,27 @@ public sealed class InMemoryConfigurationChangeRepository : IConfigurationChange
 
             _changesById[change.Id] = ToRecord(change);
         }
-
-        return Task.CompletedTask;
     }
 
-    public Task<ConfigurationChange?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
+    public async Task<ConfigurationChange?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
     {
         using var activity = StartSimulatedActivity("GetById");
         activity?.SetTag("repository.item_id", id.ToString());
 
-        cancellationToken.ThrowIfCancellationRequested();
+        await SimulateStorageDelayAsync(cancellationToken);
 
         lock (_syncRoot)
         {
             if (!_changesById.TryGetValue(id, out ConfigurationChangeRecord? record))
             {
-                return Task.FromResult<ConfigurationChange?>(null);
+                return null;
             }
 
-            return Task.FromResult<ConfigurationChange?>(ToDomain(record));
+            return ToDomain(record);
         }
     }
 
-    public Task<IReadOnlyList<ConfigurationChange>> ListAsync(
+    public async Task<IReadOnlyList<ConfigurationChange>> ListAsync(
         DateTime? fromUtc,
         DateTime? toUtc,
         ConfigurationOperation? operation,
@@ -75,7 +73,7 @@ public sealed class InMemoryConfigurationChangeRepository : IConfigurationChange
         using var activity = StartSimulatedActivity("List");
         activity?.SetTag("repository.take", take);
 
-        cancellationToken.ThrowIfCancellationRequested();
+        await SimulateStorageDelayAsync(cancellationToken);
 
         if (take <= 0)
         {
@@ -120,7 +118,7 @@ public sealed class InMemoryConfigurationChangeRepository : IConfigurationChange
                 .Select(ToDomain)
                 .ToList();
 
-            return Task.FromResult(changes);
+            return changes;
         }
     }
 
@@ -166,12 +164,18 @@ public sealed class InMemoryConfigurationChangeRepository : IConfigurationChange
         DateTime ChangedAtUtc,
         ConfigurationChangeEventType EventType);
 
+    private static Task SimulateStorageDelayAsync(CancellationToken cancellationToken)
+    {
+        return Task.Delay(SimulatedStorageDelay, cancellationToken);
+    }
+
     private static Activity? StartSimulatedActivity(string operation)
     {
         // Simulation span: this repository is in-memory and emits spans to simulate storage access behavior.
-        Activity? activity = RepositoryActivitySource.Source.StartActivity($"InMemoryConfigurationChangeRepository.{operation}");
+        Activity? activity = RepositoryActivitySource.Source.StartActivity($"InMemoryConfigurationChangeRepository.{operation}", ActivityKind.Client);
         activity?.SetTag("repository.kind", "in_memory_configuration_change");
         activity?.SetTag("repository.simulated", true);
+        activity?.SetTag("peer.service", "SettingsRegister.Storage.ConfigurationChangeRepository");
         return activity;
     }
 }

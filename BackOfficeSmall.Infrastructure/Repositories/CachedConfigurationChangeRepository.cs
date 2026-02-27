@@ -112,9 +112,10 @@ public sealed class CachedConfigurationChangeRepository : IConfigurationChangeRe
     private static Activity? StartSimulatedActivity(string operation)
     {
         // Simulation span: this cached in-memory repository emulates cache/storage boundaries for tracing exercises.
-        Activity? activity = RepositoryActivitySource.Source.StartActivity($"CachedConfigurationChangeRepository.{operation}");
+        Activity? activity = RepositoryActivitySource.Source.StartActivity($"CachedConfigurationChangeRepository.{operation}", ActivityKind.Client);
         activity?.SetTag("repository.kind", "cached_configuration_change");
         activity?.SetTag("repository.simulated", true);
+        activity?.SetTag("peer.service", "SettingsRegister.Cache.ConfigurationChangeRepository");
         return activity;
     }
 

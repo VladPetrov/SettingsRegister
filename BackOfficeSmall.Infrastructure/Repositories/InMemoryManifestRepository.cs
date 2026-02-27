@@ -9,24 +9,24 @@ namespace SettingsRegister.Infrastructure.Repositories;
 
 public sealed class InMemoryManifestRepository : IManifestRepository
 {
+    private static readonly TimeSpan SimulatedStorageDelay = TimeSpan.FromMilliseconds(5);
     private readonly object _syncRoot = new();
     private readonly ManifestValueObjectHydrator _hydrator = new();
     private readonly Dictionary<Guid, ManifestEntity> _manifestsById = new();
     private readonly Dictionary<string, Guid> _manifestKeyIndex = new(StringComparer.OrdinalIgnoreCase);
 
-    public Task CheckConnectionAsync(CancellationToken cancellationToken)
+    public async Task CheckConnectionAsync(CancellationToken cancellationToken)
     {
         using var activity = StartSimulatedActivity("CheckConnection");
 
-        cancellationToken.ThrowIfCancellationRequested();
-        return Task.CompletedTask;
+        await SimulateStorageDelayAsync(cancellationToken);
     }
 
-    public Task AddAsync(ManifestDomainRoot manifest, CancellationToken cancellationToken)
+    public async Task AddAsync(ManifestDomainRoot manifest, CancellationToken cancellationToken)
     {
         using var activity = StartSimulatedActivity("Add");
 
-        cancellationToken.ThrowIfCancellationRequested();
+        await SimulateStorageDelayAsync(cancellationToken);
 
         if (manifest is null)
         {
@@ -47,54 +47,52 @@ public sealed class InMemoryManifestRepository : IManifestRepository
             _manifestsById[manifest.ManifestId] = ToEntity(manifest);
             _manifestKeyIndex[uniqueKey] = manifest.ManifestId;
         }
-
-        return Task.CompletedTask;
     }
 
-    public Task<ManifestValueObject?> GetByIdAsync(Guid manifestId, CancellationToken cancellationToken)
+    public async Task<ManifestValueObject?> GetByIdAsync(Guid manifestId, CancellationToken cancellationToken)
     {
         using var activity = StartSimulatedActivity("GetById");
         activity?.SetTag("repository.item_id", manifestId.ToString());
 
-        cancellationToken.ThrowIfCancellationRequested();
+        await SimulateStorageDelayAsync(cancellationToken);
 
         lock (_syncRoot)
         {
             if (!_manifestsById.TryGetValue(manifestId, out ManifestEntity? entity))
             {
-                return Task.FromResult<ManifestValueObject?>(null);
+                return null;
             }
 
-            return Task.FromResult<ManifestValueObject?>(_hydrator.Hydrate(entity));
+            return _hydrator.Hydrate(entity);
         }
     }
 
-    public Task<IReadOnlyList<ManifestValueObject>> ListAsync(CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<ManifestValueObject>> ListAsync(CancellationToken cancellationToken)
     {
         using var activity = StartSimulatedActivity("List");
 
-        cancellationToken.ThrowIfCancellationRequested();
+        await SimulateStorageDelayAsync(cancellationToken);
 
         lock (_syncRoot)
         {
             IReadOnlyList<ManifestValueObject> manifests = ListCore(null);
 
-            return Task.FromResult(manifests);
+            return manifests;
         }
     }
 
-    public Task<IReadOnlyList<ManifestValueObject>> ListAsync(string? name, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<ManifestValueObject>> ListAsync(string? name, CancellationToken cancellationToken)
     {
         using var activity = StartSimulatedActivity("ListByName");
         activity?.SetTag("repository.name_filter", name);
 
-        cancellationToken.ThrowIfCancellationRequested();
+        await SimulateStorageDelayAsync(cancellationToken);
 
         lock (_syncRoot)
         {
             IReadOnlyList<ManifestValueObject> manifests = ListCore(name);
 
-            return Task.FromResult(manifests);
+            return manifests;
         }
     }
 
@@ -125,12 +123,18 @@ public sealed class InMemoryManifestRepository : IManifestRepository
         return $"{name}:{version}";
     }
 
+    private static Task SimulateStorageDelayAsync(CancellationToken cancellationToken)
+    {
+        return Task.Delay(SimulatedStorageDelay, cancellationToken);
+    }
+
     private static Activity? StartSimulatedActivity(string operation)
     {
         // Simulation span: this repository is in-memory and emits spans to simulate storage access behavior.
-        Activity? activity = RepositoryActivitySource.Source.StartActivity($"InMemoryManifestRepository.{operation}");
+        Activity? activity = RepositoryActivitySource.Source.StartActivity($"InMemoryManifestRepository.{operation}", ActivityKind.Client);
         activity?.SetTag("repository.kind", "in_memory_manifest");
         activity?.SetTag("repository.simulated", true);
+        activity?.SetTag("peer.service", "SettingsRegister.Storage.ManifestRepository");
         return activity;
     }
 
