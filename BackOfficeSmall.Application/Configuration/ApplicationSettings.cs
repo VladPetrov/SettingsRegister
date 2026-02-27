@@ -11,5 +11,7 @@ public sealed class ApplicationSettings : ICachedManifestRepositorySettings, ICo
     public int ConfigurationChangeCacheExpirationSeconds { get; init; } = 300;
     public bool TracingEnabled { get; init; } = true;
     public string TracingOtlpEndpoint { get; init; } = string.Empty;
+    public bool MetricsPushEnabled { get; init; } = false;
+    public string MetricsOtlpEndpoint { get; init; } = string.Empty;
 }
 

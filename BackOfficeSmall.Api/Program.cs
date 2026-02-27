@@ -51,6 +51,14 @@ openTelemetryBuilder.WithMetrics(metrics =>
     metrics.AddPrometheusExporter();
     metrics.AddMeter(ServiceMetrics.MeterName);
     metrics.AddMeter(RepositoryCacheMetrics.MeterName);
+
+    if (appSettings.MetricsPushEnabled && !string.IsNullOrWhiteSpace(appSettings.MetricsOtlpEndpoint))
+    {
+        metrics.AddOtlpExporter(options =>
+        {
+            options.Endpoint = new Uri(appSettings.MetricsOtlpEndpoint);
+        });
+    }
 });
 
 if (appSettings.TracingEnabled)
