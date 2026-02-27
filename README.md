@@ -116,6 +116,34 @@ The solution is strict-layered:
   - Repository probe failures are treated as critical and return overall `Unhealthy` (`503`).
   - Monitoring notifier availability probe failures return `Degraded` unless another critical probe is unhealthy.
 
+## Observability (Metrics)
+
+### Repository Cache Metrics
+
+The cached repository decorators emit `System.Diagnostics.Metrics` instruments for cache efficiency and read latency on `GetByIdAsync`.
+
+Metric | Type | Unit | Tags | Business value
+---|---|---|---|---
+`backofficesmall.repository.cache_hit_total` | Counter | count | `repo` (`manifest`, `configuration`, `configuration_change`) | Confirms caching is reducing inner repository load and improving read performance.
+`backofficesmall.repository.cache_miss_total` | Counter | count | `repo` (`manifest`, `configuration`, `configuration_change`) | Early signal of increased inner repository load (often preceding latency regressions).
+`backofficesmall.repository.get_by_id_duration_ms` | Histogram | ms | `repo` (`manifest`, `configuration`, `configuration_change`), `source` (`cache`, `inner`) | Quantifies read-by-id latency and isolates whether time is spent in cache lookup or inner repository.
+
+### Service Metrics
+
+These metrics align to the primary outcomes: immutable audit stream, manifest versioning/import correctness, and reliable critical notification delivery via outbox.
+
+Metric | Counters / instruments | Formula | Business value
+---|---|---|---
+Critical Change Delivery SLO (%) (within `T`) | `backofficesmall.outbox.critical_created_total`, `backofficesmall.outbox.critical_sent_total`, `backofficesmall.outbox.critical_delivery_duration_ms` (histogram) | `SLO% = (count(delivery_duration_ms <= T) / critical_created_total) * 100` | Validates that critical changes are delivered to monitoring fast enough to prevent incidents.
+Critical notification success rate (%) | `backofficesmall.outbox.critical_created_total`, `backofficesmall.outbox.critical_sent_total` | `success% = (critical_sent_total / critical_created_total) * 100` | Confirms critical-change notifications are actually delivered (not just written to outbox).
+Outbox add rate vs deliver rate (msg/min) | `backofficesmall.outbox.message_created_total`, `backofficesmall.outbox.message_sent_total` | `add_rate = rate(created_total)`, `deliver_rate = rate(sent_total)`, `net_growth = add_rate - deliver_rate` | Shows whether dispatch keeps up with production load (growth vs drain) without tracking backlog directly.
+Outbox dispatch failure rate (%) | `backofficesmall.outbox.dispatch_attempt_total`, `backofficesmall.outbox.dispatch_failed_total` | `failure% = (dispatch_failed_total / dispatch_attempt_total) * 100` | Detects notifier/transport failures early and protects alert reliability.
+Manifest import conflict rate (%) | `backofficesmall.manifest.import_attempt_total`, `backofficesmall.manifest.import_conflict_total` | `conflict% = (import_conflict_total / import_attempt_total) * 100` | Signals contention/versioning workflow issues that block safe configuration publishing.
+Config write latency (p95/p99) | `backofficesmall.api.request_duration_ms` (histogram, tags: `route`, `method`, `status`), `backofficesmall.api.request_total` (counter) | `p95/p99(request_duration_ms{route=\"/api/config-instances/{id}/cells\",method=\"PUT\"})` | Protects operator and automation SLAs for rollouts and emergency response changes.
+Change query latency (p95/p99) | `backofficesmall.api.request_duration_ms` (histogram, tags: `route`, `method`, `status`), `backofficesmall.api.request_total` (counter) | `p95/p99(request_duration_ms{route=\"/api/config-changes\",method=\"GET\"})` | Keeps audit/troubleshooting workflows responsive (compliance and investigations).
+API reliability (5xx rate, availability) | `backofficesmall.api.request_total` (counter, tags: `route`, `method`, `status`) | `5xx_rate = rate(request_total{status=~\"5..\"}) / rate(request_total)`; `availability = 1 - 5xx_rate` | Measures service trustworthiness and catches regressions/infrastructure failures quickly.
+Critical-change mix (%) | `backofficesmall.change.total`, `backofficesmall.change.critical_total` | `critical_mix% = (critical_total / total) * 100` | Forecasts notification load and highlights high-risk/noisy rollout periods.
+
 ## Error Contract
 
 Errors return `ProblemDetails` with consistent status mapping:
