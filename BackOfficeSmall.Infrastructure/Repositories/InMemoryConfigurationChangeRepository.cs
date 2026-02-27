@@ -1,5 +1,7 @@
 ﻿using SettingsRegister.Domain.Models.Configuration;
 using SettingsRegister.Domain.Repositories;
+using SettingsRegister.Infrastructure.Observability;
+using System.Diagnostics;
 
 namespace SettingsRegister.Infrastructure.Repositories;
 
@@ -10,12 +12,17 @@ public sealed class InMemoryConfigurationChangeRepository : IConfigurationChange
 
     public Task CheckConnectionAsync(CancellationToken cancellationToken)
     {
+        using var activity = StartSimulatedActivity("CheckConnection");
+
         cancellationToken.ThrowIfCancellationRequested();
         return Task.CompletedTask;
     }
 
     public Task AddAsync(ConfigurationChange change, CancellationToken cancellationToken)
     {
+        using var activity = StartSimulatedActivity("Add");
+        activity?.SetTag("repository.item_id", change?.Id.ToString());
+
         cancellationToken.ThrowIfCancellationRequested();
 
         if (change is null)
@@ -40,6 +47,9 @@ public sealed class InMemoryConfigurationChangeRepository : IConfigurationChange
 
     public Task<ConfigurationChange?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
     {
+        using var activity = StartSimulatedActivity("GetById");
+        activity?.SetTag("repository.item_id", id.ToString());
+
         cancellationToken.ThrowIfCancellationRequested();
 
         lock (_syncRoot)
@@ -62,6 +72,9 @@ public sealed class InMemoryConfigurationChangeRepository : IConfigurationChange
         int take,
         CancellationToken cancellationToken)
     {
+        using var activity = StartSimulatedActivity("List");
+        activity?.SetTag("repository.take", take);
+
         cancellationToken.ThrowIfCancellationRequested();
 
         if (take <= 0)
@@ -152,5 +165,14 @@ public sealed class InMemoryConfigurationChangeRepository : IConfigurationChange
         string ChangedBy,
         DateTime ChangedAtUtc,
         ConfigurationChangeEventType EventType);
+
+    private static Activity? StartSimulatedActivity(string operation)
+    {
+        // Simulation span: this repository is in-memory and emits spans to simulate storage access behavior.
+        Activity? activity = RepositoryActivitySource.Source.StartActivity($"InMemoryConfigurationChangeRepository.{operation}");
+        activity?.SetTag("repository.kind", "in_memory_configuration_change");
+        activity?.SetTag("repository.simulated", true);
+        return activity;
+    }
 }
 

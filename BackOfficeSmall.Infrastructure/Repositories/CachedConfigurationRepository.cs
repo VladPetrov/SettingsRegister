@@ -30,22 +30,31 @@ public sealed class CachedConfigurationRepository : ICacheConfigurationRepositor
 
     public async Task AddAsync(ConfigurationInstance instance, CancellationToken cancellationToken)
     {
+        using var activity = StartSimulatedActivity("Add");
+        activity?.SetTag("repository.item_id", instance.ConfigurationId.ToString());
+
         await _innerRepository.AddAsync(instance, cancellationToken);
         _memoryCache.Remove(instance.ConfigurationId);
     }
 
-    public Task CheckConnectionAsync(CancellationToken cancellationToken)
+    public async Task CheckConnectionAsync(CancellationToken cancellationToken)
     {
-        return _innerRepository.CheckConnectionAsync(cancellationToken);
+        using var activity = StartSimulatedActivity("CheckConnection");
+
+        await _innerRepository.CheckConnectionAsync(cancellationToken);
     }
 
     public async Task<ConfigurationInstance?> GetByIdAsync(Guid instanceId, CancellationToken cancellationToken)
     {
+        using var activity = StartSimulatedActivity("GetById");
+        activity?.SetTag("repository.item_id", instanceId.ToString());
+
         cancellationToken.ThrowIfCancellationRequested();
 
         long cacheLookupStartedAt = Stopwatch.GetTimestamp();
         if (_memoryCache.TryGetValue<ConfigurationInstance>(instanceId, out var cachedInstance))
         {
+            activity?.SetTag("repository.cache_hit", true);
             _metrics.RecordCacheHit(RepositoryCacheMetricTags.Configuration);
             _metrics.RecordGetByIdDuration(RepositoryCacheMetricTags.Configuration, RepositoryReadMetricSource.Cache, Stopwatch.GetElapsedTime(cacheLookupStartedAt));
 
@@ -57,6 +66,7 @@ public sealed class CachedConfigurationRepository : ICacheConfigurationRepositor
             return cachedInstance.Clone();
         }
 
+        activity?.SetTag("repository.cache_hit", false);
         _metrics.RecordCacheMiss(RepositoryCacheMetricTags.Configuration);
         _metrics.RecordGetByIdDuration(RepositoryCacheMetricTags.Configuration, RepositoryReadMetricSource.Cache, Stopwatch.GetElapsedTime(cacheLookupStartedAt));
 
@@ -77,21 +87,38 @@ public sealed class CachedConfigurationRepository : ICacheConfigurationRepositor
         return instance.Clone();
     }
 
-    public Task<IReadOnlyList<ConfigurationInstance>> ListAsync(CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<ConfigurationInstance>> ListAsync(CancellationToken cancellationToken)
     {
-        return _innerRepository.ListAsync(cancellationToken);
+        using var activity = StartSimulatedActivity("List");
+
+        return await _innerRepository.ListAsync(cancellationToken);
     }
 
     public async Task UpdateAsync(ConfigurationInstance instance, CancellationToken cancellationToken)
     {
+        using var activity = StartSimulatedActivity("Update");
+        activity?.SetTag("repository.item_id", instance.ConfigurationId.ToString());
+
         _memoryCache.Remove(instance.ConfigurationId);
         await _innerRepository.UpdateAsync(instance, cancellationToken);
     }
 
     public async Task DeleteAsync(Guid instanceId, CancellationToken cancellationToken)
     {
+        using var activity = StartSimulatedActivity("Delete");
+        activity?.SetTag("repository.item_id", instanceId.ToString());
+
         _memoryCache.Remove(instanceId);
         await _innerRepository.DeleteAsync(instanceId, cancellationToken);
+    }
+
+    private static Activity? StartSimulatedActivity(string operation)
+    {
+        // Simulation span: this cached in-memory repository emulates cache/storage boundaries for tracing exercises.
+        Activity? activity = RepositoryActivitySource.Source.StartActivity($"CachedConfigurationRepository.{operation}");
+        activity?.SetTag("repository.kind", "cached_configuration");
+        activity?.SetTag("repository.simulated", true);
+        return activity;
     }
 
     private static TimeSpan BuildConfigurationCacheExpiration(IConfigurationCachedSettings settings)

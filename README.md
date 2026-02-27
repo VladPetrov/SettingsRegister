@@ -116,7 +116,30 @@ The solution is strict-layered:
   - Repository probe failures are treated as critical and return overall `Unhealthy` (`503`).
   - Monitoring notifier availability probe failures return `Degraded` unless another critical probe is unhealthy.
 
-## Observability (Metrics)
+## Observability
+
+### Tracing
+
+The API configures OpenTelemetry tracing for incoming ASP.NET Core requests and application-level service spans emitted from `SettingsRegister.Application`.
+
+- Tracing source name: `SettingsRegister.Application`
+- Default behavior: tracing pipeline is enabled, exporter is inactive until endpoint is configured.
+- Configure exporter endpoint with:
+  - `Application:TracingEnabled` (`true` / `false`)
+  - `Application:TracingOtlpEndpoint` (for example `http://localhost:4317`)
+
+Example:
+
+```json
+{
+  "Application": {
+    "TracingEnabled": true,
+    "TracingOtlpEndpoint": "http://localhost:4317"
+  }
+}
+```
+
+### Metrics
 
 ### Repository Cache Metrics
 

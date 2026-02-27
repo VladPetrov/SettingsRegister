@@ -1,5 +1,7 @@
 ﻿using SettingsRegister.Domain.Models.Configuration;
 using SettingsRegister.Domain.Repositories;
+using SettingsRegister.Infrastructure.Observability;
+using System.Diagnostics;
 
 namespace SettingsRegister.Infrastructure.Repositories;
 
@@ -11,12 +13,17 @@ public sealed class InMemoryMonitoringNotifierOutboxRepository : IMonitoringNoti
 
     public Task CheckConnectionAsync(CancellationToken cancellationToken)
     {
+        using var activity = StartSimulatedActivity("CheckConnection");
+
         cancellationToken.ThrowIfCancellationRequested();
         return Task.CompletedTask;
     }
 
     public Task AddAsync(MonitoringNotifierOutboxMessage outboxMessage, CancellationToken cancellationToken)
     {
+        using var activity = StartSimulatedActivity("Add");
+        activity?.SetTag("repository.item_id", outboxMessage?.Id.ToString());
+
         cancellationToken.ThrowIfCancellationRequested();
 
         if (outboxMessage is null)
@@ -45,6 +52,9 @@ public sealed class InMemoryMonitoringNotifierOutboxRepository : IMonitoringNoti
 
     public Task<MonitoringNotifierOutboxMessage?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
     {
+        using var activity = StartSimulatedActivity("GetById");
+        activity?.SetTag("repository.item_id", id.ToString());
+
         cancellationToken.ThrowIfCancellationRequested();
 
         lock (_syncRoot)
@@ -62,6 +72,9 @@ public sealed class InMemoryMonitoringNotifierOutboxRepository : IMonitoringNoti
         MonitoringNotificationOutboxStatus? status,
         CancellationToken cancellationToken)
     {
+        using var activity = StartSimulatedActivity("List");
+        activity?.SetTag("repository.status_filter", status?.ToString());
+
         cancellationToken.ThrowIfCancellationRequested();
 
         lock (_syncRoot)
@@ -86,6 +99,9 @@ public sealed class InMemoryMonitoringNotifierOutboxRepository : IMonitoringNoti
         int take,
         CancellationToken cancellationToken)
     {
+        using var activity = StartSimulatedActivity("ListDispatchCandidates");
+        activity?.SetTag("repository.take", take);
+
         cancellationToken.ThrowIfCancellationRequested();
 
         if (take <= 0)
@@ -112,6 +128,9 @@ public sealed class InMemoryMonitoringNotifierOutboxRepository : IMonitoringNoti
 
     public Task UpdateAsync(MonitoringNotifierOutboxMessage outboxMessage, CancellationToken cancellationToken)
     {
+        using var activity = StartSimulatedActivity("Update");
+        activity?.SetTag("repository.item_id", outboxMessage?.Id.ToString());
+
         cancellationToken.ThrowIfCancellationRequested();
 
         if (outboxMessage is null)
@@ -203,5 +222,14 @@ public sealed class InMemoryMonitoringNotifierOutboxRepository : IMonitoringNoti
         DateTime? LastAttemptAtUtc,
         DateTime? SentAtUtc,
         string? LastError);
+
+    private static Activity? StartSimulatedActivity(string operation)
+    {
+        // Simulation span: this repository is in-memory and emits spans to simulate storage access behavior.
+        Activity? activity = RepositoryActivitySource.Source.StartActivity($"InMemoryMonitoringNotifierOutboxRepository.{operation}");
+        activity?.SetTag("repository.kind", "in_memory_outbox");
+        activity?.SetTag("repository.simulated", true);
+        return activity;
+    }
 }
 

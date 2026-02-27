@@ -1,10 +1,12 @@
 ﻿using SettingsRegister.Application.Abstractions;
 using SettingsRegister.Application.Contracts;
 using SettingsRegister.Application.Exceptions;
+using SettingsRegister.Application.Observability;
 using SettingsRegister.Domain.Models.Configuration;
 using SettingsRegister.Domain.Models.Manifest;
 using SettingsRegister.Domain.Repositories;
 using SettingsRegister.Domain.Services;
+using System.Diagnostics;
 
 namespace SettingsRegister.Application.Services;
 
@@ -38,6 +40,10 @@ public sealed class ConfigurationService : IConfigurationService
         {
             throw new ArgumentNullException(nameof(request));
         }
+
+        using var activity = ApplicationActivitySource.Source.StartActivity("ConfigurationService.CreateInstance");
+        activity?.SetTag("configuration.name", request.Name);
+        activity?.SetTag("manifest.id", request.ManifestId.ToString());
 
         request.Validate();
 
@@ -78,6 +84,9 @@ public sealed class ConfigurationService : IConfigurationService
 
         RecordCommittedChangeMetrics(createChanges.Count, criticalChangeCount);
         _notifierService.NotifyChanges();
+        activity?.SetTag("configuration.id", instance.ConfigurationId.ToString());
+        activity?.SetTag("change.total", createChanges.Count);
+        activity?.SetTag("change.critical", criticalChangeCount);
 
         return instance;
     }
@@ -89,6 +98,9 @@ public sealed class ConfigurationService : IConfigurationService
             throw new ValidationException("ConfigurationId must be a non-empty GUID.");
         }
 
+        using var activity = ApplicationActivitySource.Source.StartActivity("ConfigurationService.GetById");
+        activity?.SetTag("configuration.id", instanceId.ToString());
+
         // This guaranties consistent reads
         await using var instanceLock = await AcquireInstanceLockOrThrowAsync(instanceId, cancellationToken);
 
@@ -97,7 +109,11 @@ public sealed class ConfigurationService : IConfigurationService
 
     public async Task<IReadOnlyList<ConfigurationInstance>> ListAsync(CancellationToken cancellationToken)
     {
-        return await _configurationWriteUnitOfWork.ConfigurationRepository.ListAsync(cancellationToken);
+        using var activity = ApplicationActivitySource.Source.StartActivity("ConfigurationService.List");
+
+        var instances = await _configurationWriteUnitOfWork.ConfigurationRepository.ListAsync(cancellationToken);
+        activity?.SetTag("configuration.count", instances.Count);
+        return instances;
     }
 
     public async Task DeleteAsync(Guid instanceId, DeleteConfigurationInstanceRequest request, CancellationToken cancellationToken)
@@ -112,6 +128,9 @@ public sealed class ConfigurationService : IConfigurationService
             throw new ArgumentNullException(nameof(request));
         }
 
+        using var activity = ApplicationActivitySource.Source.StartActivity("ConfigurationService.Delete");
+        activity?.SetTag("configuration.id", instanceId.ToString());
+
         request.Validate();
 
         await using var instanceLock = await AcquireInstanceLockOrThrowAsync(instanceId, cancellationToken);
@@ -120,6 +139,7 @@ public sealed class ConfigurationService : IConfigurationService
 
         if (instance is null)
         {
+            activity?.SetTag("configuration.deleted", false);
             return;
         }
 
@@ -148,6 +168,9 @@ public sealed class ConfigurationService : IConfigurationService
 
         RecordCommittedChangeMetrics(changes.Count, criticalChangeCount);
         _notifierService.NotifyChanges();
+        activity?.SetTag("configuration.deleted", true);
+        activity?.SetTag("change.total", changes.Count);
+        activity?.SetTag("change.critical", criticalChangeCount);
     }
 
     public async Task<ConfigurationChange> SetValueAsync(Guid instanceId, SetCellValueRequest request, CancellationToken cancellationToken)
@@ -161,6 +184,11 @@ public sealed class ConfigurationService : IConfigurationService
         {
             throw new ArgumentNullException(nameof(request));
         }
+
+        using var activity = ApplicationActivitySource.Source.StartActivity("ConfigurationService.SetValue");
+        activity?.SetTag("configuration.id", instanceId.ToString());
+        activity?.SetTag("setting.key", request.SettingKey);
+        activity?.SetTag("setting.layer", request.LayerIndex);
 
         request.Validate();
 
@@ -199,6 +227,9 @@ public sealed class ConfigurationService : IConfigurationService
 
         RecordCommittedChangeMetrics(totalChangeCount: 1, criticalChangeCount: isCriticalChange ? 1 : 0);
         _notifierService.NotifyChanges();
+        activity?.SetTag("change.id", change.Id.ToString());
+        activity?.SetTag("change.operation", change.Operation.ToString());
+        activity?.SetTag("change.critical", isCriticalChange);
 
         return change;
     }

@@ -1,6 +1,8 @@
 ﻿using SettingsRegister.Domain.Models.Configuration;
 using SettingsRegister.Domain.Models.Manifest;
 using SettingsRegister.Domain.Repositories;
+using SettingsRegister.Infrastructure.Observability;
+using System.Diagnostics;
 
 namespace SettingsRegister.Infrastructure.Repositories;
 
@@ -13,12 +15,17 @@ public sealed class InMemoryConfigurationInstanceRepository : IConfigurationRepo
 
     public Task CheckConnectionAsync(CancellationToken cancellationToken)
     {
+        using var activity = StartSimulatedActivity("CheckConnection");
+
         cancellationToken.ThrowIfCancellationRequested();
         return Task.CompletedTask;
     }
 
     public Task AddAsync(ConfigurationInstance instance, CancellationToken cancellationToken)
     {
+        using var activity = StartSimulatedActivity("Add");
+        activity?.SetTag("repository.item_id", instance?.ConfigurationId.ToString());
+
         cancellationToken.ThrowIfCancellationRequested();
 
         if (instance is null)
@@ -52,6 +59,9 @@ public sealed class InMemoryConfigurationInstanceRepository : IConfigurationRepo
 
     public Task<ConfigurationInstance?> GetByIdAsync(Guid instanceId, CancellationToken cancellationToken)
     {
+        using var activity = StartSimulatedActivity("GetById");
+        activity?.SetTag("repository.item_id", instanceId.ToString());
+
         cancellationToken.ThrowIfCancellationRequested();
 
         lock (_syncRoot)
@@ -67,6 +77,8 @@ public sealed class InMemoryConfigurationInstanceRepository : IConfigurationRepo
 
     public Task<IReadOnlyList<ConfigurationInstance>> ListAsync(CancellationToken cancellationToken)
     {
+        using var activity = StartSimulatedActivity("List");
+
         cancellationToken.ThrowIfCancellationRequested();
 
         lock (_syncRoot)
@@ -82,6 +94,9 @@ public sealed class InMemoryConfigurationInstanceRepository : IConfigurationRepo
 
     public Task UpdateAsync(ConfigurationInstance instance, CancellationToken cancellationToken)
     {
+        using var activity = StartSimulatedActivity("Update");
+        activity?.SetTag("repository.item_id", instance?.ConfigurationId.ToString());
+
         cancellationToken.ThrowIfCancellationRequested();
 
         if (instance is null)
@@ -120,6 +135,9 @@ public sealed class InMemoryConfigurationInstanceRepository : IConfigurationRepo
 
     public Task DeleteAsync(Guid instanceId, CancellationToken cancellationToken)
     {
+        using var activity = StartSimulatedActivity("Delete");
+        activity?.SetTag("repository.item_id", instanceId.ToString());
+
         cancellationToken.ThrowIfCancellationRequested();
 
         lock (_syncRoot)
@@ -263,5 +281,14 @@ public sealed class InMemoryConfigurationInstanceRepository : IConfigurationRepo
         bool CanOverride);
 
     private sealed record SettingCellRecord(string SettingKey, int LayerIndex, string? Value);
+
+    private static Activity? StartSimulatedActivity(string operation)
+    {
+        // Simulation span: this repository is in-memory and emits spans to simulate storage access behavior.
+        Activity? activity = RepositoryActivitySource.Source.StartActivity($"InMemoryConfigurationInstanceRepository.{operation}");
+        activity?.SetTag("repository.kind", "in_memory_configuration");
+        activity?.SetTag("repository.simulated", true);
+        return activity;
+    }
 }
 

@@ -9,5 +9,7 @@ public sealed class ApplicationSettings : ICachedManifestRepositorySettings, ICo
     public int ManifestCacheExpirationSeconds { get; init; } = 300;
     public int ConfigurationCacheExpirationSeconds { get; init; } = 300;
     public int ConfigurationChangeCacheExpirationSeconds { get; init; } = 300;
+    public bool TracingEnabled { get; init; } = true;
+    public string TracingOtlpEndpoint { get; init; } = string.Empty;
 }
 

@@ -5,6 +5,8 @@ using SettingsRegister.Application.Abstractions;
 using SettingsRegister.Application.Configuration;
 using SettingsRegister.Application.Contracts;
 using SettingsRegister.Application.Exceptions;
+using SettingsRegister.Application.Observability;
+using System.Diagnostics;
 
 namespace SettingsRegister.Application.Services;
 
@@ -33,10 +35,14 @@ public sealed class AuthExchangeService : IAuthExchangeService
             throw new ArgumentNullException(nameof(request));
         }
 
+        using var activity = ApplicationActivitySource.Source.StartActivity("AuthExchangeService.Exchange");
+        activity?.SetTag("auth.user_id", request.UserId);
+
         request.Validate();
 
         if (!_applicationEnvironment.IsDevelopment)
         {
+            activity?.SetStatus(ActivityStatusCode.Error, "Auth exchange is unavailable in current environment.");
             throw new FeatureNotAvailableException("Auth exchange is not available outside Development environment.");
         }
 
@@ -53,6 +59,7 @@ public sealed class AuthExchangeService : IAuthExchangeService
             expiresAtUtc);
 
         AuthExchangeResult result = new(token, "Bearer", expiresAtUtc);
+        activity?.SetTag("auth.expires_at_utc", expiresAtUtc);
         return Task.FromResult(result);
     }
 

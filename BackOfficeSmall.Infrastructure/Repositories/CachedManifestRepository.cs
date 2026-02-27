@@ -28,29 +28,38 @@ public sealed class CachedManifestRepository : ICachedManifestRepository
         _manifestCacheExpiration = BuildManifestCacheExpiration(settings);
     }
 
-    public Task AddAsync(ManifestDomainRoot manifest, CancellationToken cancellationToken)
+    public async Task AddAsync(ManifestDomainRoot manifest, CancellationToken cancellationToken)
     {
-        return _innerRepository.AddAsync(manifest, cancellationToken);
+        using var activity = StartSimulatedActivity("Add");
+
+        await _innerRepository.AddAsync(manifest, cancellationToken);
     }
 
-    public Task CheckConnectionAsync(CancellationToken cancellationToken)
+    public async Task CheckConnectionAsync(CancellationToken cancellationToken)
     {
-        return _innerRepository.CheckConnectionAsync(cancellationToken);
+        using var activity = StartSimulatedActivity("CheckConnection");
+
+        await _innerRepository.CheckConnectionAsync(cancellationToken);
     }
 
     public async Task<ManifestValueObject?> GetByIdAsync(Guid manifestId, CancellationToken cancellationToken)
     {
+        using var activity = StartSimulatedActivity("GetById");
+        activity?.SetTag("repository.item_id", manifestId.ToString());
+
         cancellationToken.ThrowIfCancellationRequested();
 
         long cacheLookupStartedAt = Stopwatch.GetTimestamp();
         if (_memoryCache.TryGetValue<ManifestValueObject>(manifestId, out var cachedManifest))
         {
+            activity?.SetTag("repository.cache_hit", true);
             _metrics.RecordCacheHit(RepositoryCacheMetricTags.Manifest);
             _metrics.RecordGetByIdDuration(RepositoryCacheMetricTags.Manifest, RepositoryReadMetricSource.Cache, Stopwatch.GetElapsedTime(cacheLookupStartedAt));
 
             return cachedManifest;
         }
 
+        activity?.SetTag("repository.cache_hit", false);
         _metrics.RecordCacheMiss(RepositoryCacheMetricTags.Manifest);
         _metrics.RecordGetByIdDuration(RepositoryCacheMetricTags.Manifest, RepositoryReadMetricSource.Cache, Stopwatch.GetElapsedTime(cacheLookupStartedAt));
 
@@ -72,14 +81,28 @@ public sealed class CachedManifestRepository : ICachedManifestRepository
         return manifest;
     }
 
-    public Task<IReadOnlyList<ManifestValueObject>> ListAsync(CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<ManifestValueObject>> ListAsync(CancellationToken cancellationToken)
     {
-        return _innerRepository.ListAsync(cancellationToken);
+        using var activity = StartSimulatedActivity("List");
+
+        return await _innerRepository.ListAsync(cancellationToken);
     }
 
-    public Task<IReadOnlyList<ManifestValueObject>> ListAsync(string? name, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<ManifestValueObject>> ListAsync(string? name, CancellationToken cancellationToken)
     {
-        return _innerRepository.ListAsync(name, cancellationToken);
+        using var activity = StartSimulatedActivity("ListByName");
+        activity?.SetTag("repository.name_filter", name);
+
+        return await _innerRepository.ListAsync(name, cancellationToken);
+    }
+
+    private static Activity? StartSimulatedActivity(string operation)
+    {
+        // Simulation span: this cached in-memory repository emulates cache/storage boundaries for tracing exercises.
+        Activity? activity = RepositoryActivitySource.Source.StartActivity($"CachedManifestRepository.{operation}");
+        activity?.SetTag("repository.kind", "cached_manifest");
+        activity?.SetTag("repository.simulated", true);
+        return activity;
     }
 
     private static TimeSpan BuildManifestCacheExpiration(ICachedManifestRepositorySettings settings)

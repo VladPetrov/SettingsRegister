@@ -2,6 +2,7 @@ using SettingsRegister.Api.Configuration;
 using SettingsRegister.Api.ErrorHandling;
 using SettingsRegister.Application.Abstractions;
 using SettingsRegister.Application.Configuration;
+using SettingsRegister.Application.Observability;
 using SettingsRegister.Application.Services;
 using SettingsRegister.Domain.Repositories;
 using SettingsRegister.Domain.Services;
@@ -14,6 +15,8 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 using System.Text;
 using System.Text.Json.Serialization;
 
@@ -34,17 +37,42 @@ builder.Services
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddOpenApi();
 builder.Services.AddMemoryCache();
-builder.Services
+var openTelemetryBuilder = builder.Services
     .AddOpenTelemetry()
-    .WithMetrics(metrics =>
+    .ConfigureResource(resource =>
     {
-        metrics.AddAspNetCoreInstrumentation();
-        metrics.AddRuntimeInstrumentation();
-        metrics.AddProcessInstrumentation();
-        metrics.AddPrometheusExporter();
-        metrics.AddMeter(ServiceMetrics.MeterName);
-        metrics.AddMeter(RepositoryCacheMetrics.MeterName);
+        resource.AddService(serviceName: builder.Environment.ApplicationName);
     });
+openTelemetryBuilder.WithMetrics(metrics =>
+{
+    metrics.AddAspNetCoreInstrumentation();
+    metrics.AddRuntimeInstrumentation();
+    metrics.AddProcessInstrumentation();
+    metrics.AddPrometheusExporter();
+    metrics.AddMeter(ServiceMetrics.MeterName);
+    metrics.AddMeter(RepositoryCacheMetrics.MeterName);
+});
+
+if (appSettings.TracingEnabled)
+{
+    openTelemetryBuilder.WithTracing(tracing =>
+    {
+        tracing.AddAspNetCoreInstrumentation(options =>
+        {
+            options.RecordException = true;
+        });
+        tracing.AddSource(ApplicationActivitySource.SourceName);
+        tracing.AddSource(RepositoryActivitySource.SourceName);
+
+        if (!string.IsNullOrWhiteSpace(appSettings.TracingOtlpEndpoint))
+        {
+            tracing.AddOtlpExporter(options =>
+            {
+                options.Endpoint = new Uri(appSettings.TracingOtlpEndpoint);
+            });
+        }
+    });
+}
 builder.Services.AddSwaggerGen(options =>
 {
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme

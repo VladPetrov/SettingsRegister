@@ -3,6 +3,8 @@ using SettingsRegister.Application.Contracts;
 using SettingsRegister.Application.Exceptions;
 using SettingsRegister.Domain.Models.Configuration;
 using SettingsRegister.Domain.Repositories;
+using SettingsRegister.Application.Observability;
+using System.Diagnostics;
 
 namespace SettingsRegister.Application.Services;
 
@@ -26,9 +28,13 @@ public sealed class ConfigurationChangeQueryService : IConfigurationChangeQueryS
             throw new ValidationException("ConfigurationChange Id must be a non-empty GUID.");
         }
 
+        using var activity = ApplicationActivitySource.Source.StartActivity("ConfigurationChangeQueryService.GetById");
+        activity?.SetTag("change.id", id.ToString());
+
         ConfigurationChange? change = await _configurationWriteUnitOfWork.ConfigurationChangeRepository.GetByIdAsync(id, cancellationToken);
         if (change is null)
         {
+            activity?.SetStatus(ActivityStatusCode.Error, "Configuration change not found.");
             throw new EntityNotFoundException("ConfigurationChange", id.ToString());
         }
 
@@ -43,6 +49,11 @@ public sealed class ConfigurationChangeQueryService : IConfigurationChangeQueryS
         int? pageSize = null,
         CancellationToken cancellationToken = default)
     {
+        using var activity = ApplicationActivitySource.Source.StartActivity("ConfigurationChangeQueryService.List");
+        activity?.SetTag("change.operation.filter", operation?.ToString());
+        activity?.SetTag("change.page_size.requested", pageSize);
+        activity?.SetTag("change.cursor", cursor);
+
         ValidateDateRange(fromUtc, toUtc);
 
         var resolvedPageSize = ResolvePageSize(pageSize);
@@ -61,12 +72,18 @@ public sealed class ConfigurationChangeQueryService : IConfigurationChangeQueryS
 
         if (changes.Count <= resolvedPageSize)
         {
+            activity?.SetTag("change.page_size.resolved", resolvedPageSize);
+            activity?.SetTag("change.result_count", changes.Count);
+            activity?.SetTag("change.has_next", false);
             return new ConfigurationChangePage(changes, null);
         }
 
         var pageItems = changes.Take(resolvedPageSize).ToList();
         var lastItem = pageItems.Last();
         var nextCursor = new CursorState(lastItem.ChangedAtUtc, lastItem.Id).EncodeCursor();
+        activity?.SetTag("change.page_size.resolved", resolvedPageSize);
+        activity?.SetTag("change.result_count", pageItems.Count);
+        activity?.SetTag("change.has_next", true);
 
         return new ConfigurationChangePage(pageItems, nextCursor);
     }

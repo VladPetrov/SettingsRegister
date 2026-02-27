@@ -3,10 +3,12 @@ using SettingsRegister.Application.Configuration;
 using SettingsRegister.Application.Contracts;
 using SettingsRegister.Application.Exceptions;
 using SettingsRegister.Application.Mapping;
+using SettingsRegister.Application.Observability;
 using SettingsRegister.Domain.Models.Configuration;
 using SettingsRegister.Domain.Models.Manifest;
 using SettingsRegister.Domain.Repositories;
 using SettingsRegister.Domain.Services;
+using System.Diagnostics;
 
 namespace SettingsRegister.Application.Services;
 
@@ -55,6 +57,9 @@ public sealed class ManifestService : IManifestService
             throw new ArgumentNullException(nameof(request));
         }
 
+        using var activity = ApplicationActivitySource.Source.StartActivity("ManifestService.ImportManifest");
+        activity?.SetTag("manifest.name", request.Name);
+
         request.Validate();
         _serviceMetrics.RecordManifestImportAttempt();
 
@@ -64,6 +69,7 @@ public sealed class ManifestService : IManifestService
         if (lockHandle is null)
         {
             _serviceMetrics.RecordManifestImportConflict();
+            activity?.SetStatus(ActivityStatusCode.Error, "Manifest import lock acquisition failed.");
             throw new ConflictException($"Could not acquire manifest import lock for '{request.Name}'.");
         }
 
@@ -72,6 +78,7 @@ public sealed class ManifestService : IManifestService
         var latestVersion = manifests.OrderByDescending(manifest => manifest.Version).FirstOrDefault();
 
         var newVersion = latestVersion is null ? 1 : latestVersion.Version + 1;
+        activity?.SetTag("manifest.version", newVersion);
 
         var manifest = request.ToDomainRoot(newVersion, _clock.UtcNow);
         manifest.Validate();
@@ -89,12 +96,14 @@ public sealed class ManifestService : IManifestService
         catch (InvalidOperationException ex)
         {
             _serviceMetrics.RecordManifestImportConflict();
+            activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
             throw new ConflictException(ex.Message);
         }
 
         _serviceMetrics.RecordConfigurationChangeCreated(isCritical: true);
         _serviceMetrics.RecordOutboxMessageCreated(isCritical: true);
         _notifierService.NotifyChanges();
+        activity?.SetTag("manifest.id", manifest.ManifestId.ToString());
 
         return ManifestValueObject.FromDomainRoot(manifest);
     }
@@ -106,9 +115,13 @@ public sealed class ManifestService : IManifestService
             throw new ValidationException("ManifestId must be a non-empty GUID.");
         }
 
+        using var activity = ApplicationActivitySource.Source.StartActivity("ManifestService.GetById");
+        activity?.SetTag("manifest.id", manifestId.ToString());
+
         ManifestValueObject? manifest = await _configurationWriteUnitOfWork.ManifestRepository.GetByIdAsync(manifestId, cancellationToken);
         if (manifest is null)
         {
+            activity?.SetStatus(ActivityStatusCode.Error, "Manifest not found.");
             throw new EntityNotFoundException("Manifest", manifestId.ToString());
         }
 
@@ -117,7 +130,12 @@ public sealed class ManifestService : IManifestService
 
     public async Task<IReadOnlyList<ManifestValueObject>> ListAsync(string? name, CancellationToken cancellationToken)
     {
-        return await _configurationWriteUnitOfWork.ManifestRepository.ListAsync(name, cancellationToken);
+        using var activity = ApplicationActivitySource.Source.StartActivity("ManifestService.List");
+        activity?.SetTag("manifest.name.filter", name);
+
+        var manifests = await _configurationWriteUnitOfWork.ManifestRepository.ListAsync(name, cancellationToken);
+        activity?.SetTag("manifest.count", manifests.Count);
+        return manifests;
     }
 
     private ConfigurationChange BuildManifestImportChange(ManifestDomainRoot manifest)
