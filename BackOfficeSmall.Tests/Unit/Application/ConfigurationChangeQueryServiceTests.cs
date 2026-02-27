@@ -4,6 +4,7 @@ using SettingsRegister.Application.Services;
 using SettingsRegister.Domain.Models.Configuration;
 using SettingsRegister.Domain.Repositories;
 using SettingsRegister.Infrastructure.Repositories;
+using SettingsRegister.Tests.TestDoubles;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace SettingsRegister.Tests.Unit.Application;
@@ -188,11 +189,13 @@ public sealed class ConfigurationChangeQueryServiceTests
         ICachedManifestRepository cachedManifestRepository = new CachedManifestRepository(
             new InMemoryManifestRepository(),
             memoryCache,
-            settings);
+            settings,
+            new FakeRepositoryCacheMetrics());
         ICacheConfigurationRepository cachedConfigurationRepository = new CachedConfigurationRepository(
             new InMemoryConfigurationInstanceRepository(),
             memoryCache,
-            settings);
+            settings,
+            new FakeRepositoryCacheMetrics());
         InMemoryConfigurationChangeRepository configurationChangeRepository = new();
         InMemoryMonitoringNotifierOutboxRepository outboxRepository = new();
 

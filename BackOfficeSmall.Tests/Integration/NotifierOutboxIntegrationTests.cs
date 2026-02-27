@@ -76,11 +76,13 @@ public sealed class NotifierOutboxIntegrationTests
         ICachedManifestRepository cachedManifestRepository = new CachedManifestRepository(
             new InMemoryManifestRepository(),
             memoryCache,
-            settings);
+            settings,
+            new FakeRepositoryCacheMetrics());
         ICacheConfigurationRepository cachedConfigurationRepository = new CachedConfigurationRepository(
             new InMemoryConfigurationInstanceRepository(),
             memoryCache,
-            settings);
+            settings,
+            new FakeRepositoryCacheMetrics());
         InMemoryConfigurationChangeRepository configurationChangeRepository = new();
         InMemoryMonitoringNotifierOutboxRepository outboxRepository = new();
 

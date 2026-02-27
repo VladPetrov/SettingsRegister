@@ -7,6 +7,7 @@ using SettingsRegister.Domain.Repositories;
 using SettingsRegister.Domain.Services;
 using SettingsRegister.Infrastructure.Locking;
 using SettingsRegister.Infrastructure.Monitoring;
+using SettingsRegister.Infrastructure.Observability;
 using SettingsRegister.Infrastructure.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Caching.Memory;
@@ -65,6 +66,7 @@ builder.Services.AddSingleton<ICachedManifestRepositorySettings>(appSettings);
 builder.Services.AddSingleton<IConfigurationCachedSettings>(appSettings);
 builder.Services.AddSingleton<IConfigurationChangeCachedSettings>(appSettings);
 builder.Services.AddSingleton(authSettings);
+builder.Services.AddSingleton<IRepositoryCacheMetrics, RepositoryCacheMetrics>();
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -88,26 +90,29 @@ builder.Services.AddSingleton<ICachedManifestRepository>(serviceProvider =>
     //Had to resolve dependencies manually as repos are not registered in IoC 
     var memoryCache = serviceProvider.GetRequiredService<IMemoryCache>();
     var settings = serviceProvider.GetRequiredService<ICachedManifestRepositorySettings>();
+    var metrics = serviceProvider.GetRequiredService<IRepositoryCacheMetrics>();
     IManifestRepository innerRepository = new InMemoryManifestRepository();
 
-    return new CachedManifestRepository(innerRepository, memoryCache, settings);
+    return new CachedManifestRepository(innerRepository, memoryCache, settings, metrics);
 });
 builder.Services.AddSingleton<ICacheConfigurationRepository>(serviceProvider =>
 {
     //Had to resolve dependencies manually as repos are not registered in IoC 
     var memoryCache = serviceProvider.GetRequiredService<IMemoryCache>();
     var settings = serviceProvider.GetRequiredService<IConfigurationCachedSettings>();
+    var metrics = serviceProvider.GetRequiredService<IRepositoryCacheMetrics>();
     IConfigurationRepository innerRepository = new InMemoryConfigurationInstanceRepository();
 
-    return new CachedConfigurationRepository(innerRepository, memoryCache, settings);
+    return new CachedConfigurationRepository(innerRepository, memoryCache, settings, metrics);
 });
 builder.Services.AddSingleton<IConfigurationChangeRepository>(serviceProvider =>
 {
     var memoryCache = serviceProvider.GetRequiredService<IMemoryCache>();
     var settings = serviceProvider.GetRequiredService<IConfigurationChangeCachedSettings>();
+    var metrics = serviceProvider.GetRequiredService<IRepositoryCacheMetrics>();
     IConfigurationChangeRepository innerRepository = new InMemoryConfigurationChangeRepository();
 
-    return new CachedConfigurationChangeRepository(innerRepository, memoryCache, settings);
+    return new CachedConfigurationChangeRepository(innerRepository, memoryCache, settings, metrics);
 });
 builder.Services.AddSingleton<InMemoryMonitoringNotifierOutboxRepository>();
 builder.Services.AddScoped<IConfigurationWriteUnitOfWork, InMemoryConfigurationWriteUnitOfWork>();
@@ -157,6 +162,7 @@ static void ValidateStartup(IServiceProvider services)
     scope.ServiceProvider.GetRequiredService<ICacheConfigurationRepository>();
     scope.ServiceProvider.GetRequiredService<IAuthExchangeService>();
     scope.ServiceProvider.GetRequiredService<IDomainLock>();
+    scope.ServiceProvider.GetRequiredService<IRepositoryCacheMetrics>();
     scope.ServiceProvider.GetRequiredService<ApplicationSettings>();
     scope.ServiceProvider.GetRequiredService<AuthSettings>();
 }

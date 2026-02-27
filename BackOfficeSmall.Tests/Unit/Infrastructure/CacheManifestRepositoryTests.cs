@@ -1,7 +1,9 @@
 ﻿using SettingsRegister.Application.Configuration;
 using SettingsRegister.Domain.Models.Manifest;
 using SettingsRegister.Domain.Repositories;
+using SettingsRegister.Infrastructure.Observability;
 using SettingsRegister.Infrastructure.Repositories;
+using SettingsRegister.Tests.TestDoubles;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace SettingsRegister.Tests.Unit.Infrastructure;
@@ -21,6 +23,11 @@ public sealed class CacheManifestRepositoryTests
         Assert.NotNull(first);
         Assert.Same(first, second);
         Assert.Equal(1, context.InnerRepository.GetByIdAsyncCallCount);
+        Assert.Equal(1, context.Metrics.GetCacheMissCount(RepositoryCacheMetricTags.Manifest));
+        Assert.Equal(1, context.Metrics.GetCacheHitCount(RepositoryCacheMetricTags.Manifest));
+        Assert.Equal(3, context.Metrics.DurationRecords.Count);
+        Assert.Equal(2, context.Metrics.DurationRecords.Count(record => record.Source == RepositoryReadMetricSource.Cache));
+        Assert.Equal(1, context.Metrics.DurationRecords.Count(record => record.Source == RepositoryReadMetricSource.Storage));
     }
 
     [Fact]
@@ -36,6 +43,11 @@ public sealed class CacheManifestRepositoryTests
         Assert.Null(first);
         Assert.Null(second);
         Assert.Equal(2, context.InnerRepository.GetByIdAsyncCallCount);
+        Assert.Equal(2, context.Metrics.GetCacheMissCount(RepositoryCacheMetricTags.Manifest));
+        Assert.Equal(0, context.Metrics.GetCacheHitCount(RepositoryCacheMetricTags.Manifest));
+        Assert.Equal(4, context.Metrics.DurationRecords.Count);
+        Assert.Equal(2, context.Metrics.DurationRecords.Count(record => record.Source == RepositoryReadMetricSource.Cache));
+        Assert.Equal(2, context.Metrics.DurationRecords.Count(record => record.Source == RepositoryReadMetricSource.Storage));
     }
 
     [Fact]
@@ -118,6 +130,7 @@ public sealed class CacheManifestRepositoryTests
         {
             InnerRepository = new CountingManifestRepository(manifest);
             MemoryCache = new MemoryCache(new MemoryCacheOptions());
+            Metrics = new FakeRepositoryCacheMetrics();
             Settings = new ApplicationSettings
             {
                 ManifestCacheExpirationSeconds = slidingExpirationSeconds
@@ -128,11 +141,13 @@ public sealed class CacheManifestRepositoryTests
 
         public MemoryCache MemoryCache { get; }
 
+        public FakeRepositoryCacheMetrics Metrics { get; }
+
         public ICachedManifestRepositorySettings Settings { get; }
 
         public CachedManifestRepository CreateRepository()
         {
-            return new CachedManifestRepository(InnerRepository, MemoryCache, Settings);
+            return new CachedManifestRepository(InnerRepository, MemoryCache, Settings, Metrics);
         }
 
         public void Dispose()

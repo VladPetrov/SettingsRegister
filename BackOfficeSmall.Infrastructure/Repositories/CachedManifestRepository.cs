@@ -1,25 +1,30 @@
-﻿using SettingsRegister.Application.Configuration;
+using SettingsRegister.Application.Configuration;
 using SettingsRegister.Domain.Models.Manifest;
 using SettingsRegister.Domain.Repositories;
+using SettingsRegister.Infrastructure.Observability;
 using Microsoft.Extensions.Caching.Memory;
+using System.Diagnostics;
 
 namespace SettingsRegister.Infrastructure.Repositories;
 
 public sealed class CachedManifestRepository : ICachedManifestRepository
 {
     public const string InnerManifestRepositoryKey = "inner-manifest-repository";
-    
+
     private readonly IManifestRepository _innerRepository;
     private readonly IMemoryCache _memoryCache;
+    private readonly IRepositoryCacheMetrics _metrics;
     private readonly TimeSpan _manifestCacheExpiration;
 
     public CachedManifestRepository(
         IManifestRepository innerRepository,
         IMemoryCache memoryCache,
-        ICachedManifestRepositorySettings settings)
+        ICachedManifestRepositorySettings settings,
+        IRepositoryCacheMetrics metrics)
     {
         _innerRepository = innerRepository ?? throw new ArgumentNullException(nameof(innerRepository));
         _memoryCache = memoryCache ?? throw new ArgumentNullException(nameof(memoryCache));
+        _metrics = metrics ?? throw new ArgumentNullException(nameof(metrics));
         _manifestCacheExpiration = BuildManifestCacheExpiration(settings);
     }
 
@@ -37,21 +42,28 @@ public sealed class CachedManifestRepository : ICachedManifestRepository
     {
         cancellationToken.ThrowIfCancellationRequested();
 
+        long cacheLookupStartedAt = Stopwatch.GetTimestamp();
         if (_memoryCache.TryGetValue<ManifestValueObject>(manifestId, out var cachedManifest))
         {
+            _metrics.RecordCacheHit(RepositoryCacheMetricTags.Manifest);
+            _metrics.RecordGetByIdDuration(RepositoryCacheMetricTags.Manifest, RepositoryReadMetricSource.Cache, Stopwatch.GetElapsedTime(cacheLookupStartedAt));
+
             return cachedManifest;
         }
 
+        _metrics.RecordCacheMiss(RepositoryCacheMetricTags.Manifest);
+        _metrics.RecordGetByIdDuration(RepositoryCacheMetricTags.Manifest, RepositoryReadMetricSource.Cache, Stopwatch.GetElapsedTime(cacheLookupStartedAt));
+
+        long innerLookupStartedAt = Stopwatch.GetTimestamp();
         var manifest = await _innerRepository.GetByIdAsync(manifestId, cancellationToken);
+        _metrics.RecordGetByIdDuration(RepositoryCacheMetricTags.Manifest, RepositoryReadMetricSource.Storage, Stopwatch.GetElapsedTime(innerLookupStartedAt));
 
         if (manifest is null)
         {
             return null;
         }
 
-        _memoryCache.Set(
-            manifestId,
-            manifest,
+        _memoryCache.Set(manifestId, manifest,
             new MemoryCacheEntryOptions
             {
                 SlidingExpiration = _manifestCacheExpiration
@@ -87,4 +99,3 @@ public sealed class CachedManifestRepository : ICachedManifestRepository
         return TimeSpan.FromSeconds(settings.ManifestCacheExpirationSeconds);
     }
 }
-

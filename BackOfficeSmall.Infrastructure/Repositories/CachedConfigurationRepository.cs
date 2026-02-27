@@ -1,7 +1,9 @@
-﻿using SettingsRegister.Application.Configuration;
+using SettingsRegister.Application.Configuration;
 using SettingsRegister.Domain.Models.Configuration;
 using SettingsRegister.Domain.Repositories;
+using SettingsRegister.Infrastructure.Observability;
 using Microsoft.Extensions.Caching.Memory;
+using System.Diagnostics;
 
 namespace SettingsRegister.Infrastructure.Repositories;
 
@@ -11,15 +13,18 @@ public sealed class CachedConfigurationRepository : ICacheConfigurationRepositor
 
     private readonly IConfigurationRepository _innerRepository;
     private readonly IMemoryCache _memoryCache;
+    private readonly IRepositoryCacheMetrics _metrics;
     private readonly TimeSpan _configurationCacheExpiration;
 
     public CachedConfigurationRepository(
         IConfigurationRepository innerRepository,
         IMemoryCache memoryCache,
-        IConfigurationCachedSettings settings)
+        IConfigurationCachedSettings settings,
+        IRepositoryCacheMetrics metrics)
     {
         _innerRepository = innerRepository ?? throw new ArgumentNullException(nameof(innerRepository));
         _memoryCache = memoryCache ?? throw new ArgumentNullException(nameof(memoryCache));
+        _metrics = metrics ?? throw new ArgumentNullException(nameof(metrics));
         _configurationCacheExpiration = BuildConfigurationCacheExpiration(settings);
     }
 
@@ -38,8 +43,12 @@ public sealed class CachedConfigurationRepository : ICacheConfigurationRepositor
     {
         cancellationToken.ThrowIfCancellationRequested();
 
+        long cacheLookupStartedAt = Stopwatch.GetTimestamp();
         if (_memoryCache.TryGetValue<ConfigurationInstance>(instanceId, out var cachedInstance))
         {
+            _metrics.RecordCacheHit(RepositoryCacheMetricTags.Configuration);
+            _metrics.RecordGetByIdDuration(RepositoryCacheMetricTags.Configuration, RepositoryReadMetricSource.Cache, Stopwatch.GetElapsedTime(cacheLookupStartedAt));
+
             if (cachedInstance is null)
             {
                 return null;
@@ -48,14 +57,22 @@ public sealed class CachedConfigurationRepository : ICacheConfigurationRepositor
             return cachedInstance.Clone();
         }
 
+        _metrics.RecordCacheMiss(RepositoryCacheMetricTags.Configuration);
+        _metrics.RecordGetByIdDuration(RepositoryCacheMetricTags.Configuration, RepositoryReadMetricSource.Cache, Stopwatch.GetElapsedTime(cacheLookupStartedAt));
+
+        long innerLookupStartedAt = Stopwatch.GetTimestamp();
         var instance = await _innerRepository.GetByIdAsync(instanceId, cancellationToken);
-        
+        _metrics.RecordGetByIdDuration(RepositoryCacheMetricTags.Configuration, RepositoryReadMetricSource.Storage, Stopwatch.GetElapsedTime(innerLookupStartedAt));
+
         if (instance is null)
         {
             return null;
         }
 
-        _memoryCache.Set(instanceId, instance.Clone(), new MemoryCacheEntryOptions { SlidingExpiration = _configurationCacheExpiration });
+        _memoryCache.Set(instanceId, instance.Clone(), new MemoryCacheEntryOptions
+            {
+                SlidingExpiration = _configurationCacheExpiration
+            });
 
         return instance.Clone();
     }
@@ -92,4 +109,3 @@ public sealed class CachedConfigurationRepository : ICacheConfigurationRepositor
         return TimeSpan.FromSeconds(settings.ConfigurationCacheExpirationSeconds);
     }
 }
-

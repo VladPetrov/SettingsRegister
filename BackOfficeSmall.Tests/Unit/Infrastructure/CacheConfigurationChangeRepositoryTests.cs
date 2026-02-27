@@ -1,7 +1,9 @@
-﻿using SettingsRegister.Application.Configuration;
+using SettingsRegister.Application.Configuration;
 using SettingsRegister.Domain.Models.Configuration;
 using SettingsRegister.Domain.Repositories;
+using SettingsRegister.Infrastructure.Observability;
 using SettingsRegister.Infrastructure.Repositories;
+using SettingsRegister.Tests.TestDoubles;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace SettingsRegister.Tests.Unit.Infrastructure;
@@ -21,6 +23,11 @@ public sealed class CacheConfigurationChangeRepositoryTests
         Assert.NotNull(first);
         Assert.Same(first, second);
         Assert.Equal(1, context.InnerRepository.GetByIdAsyncCallCount);
+        Assert.Equal(1, context.Metrics.GetCacheMissCount(RepositoryCacheMetricTags.ConfigurationChange));
+        Assert.Equal(1, context.Metrics.GetCacheHitCount(RepositoryCacheMetricTags.ConfigurationChange));
+        Assert.Equal(3, context.Metrics.DurationRecords.Count);
+        Assert.Equal(2, context.Metrics.DurationRecords.Count(record => record.Source == RepositoryReadMetricSource.Cache));
+        Assert.Equal(1, context.Metrics.DurationRecords.Count(record => record.Source == RepositoryReadMetricSource.Storage));
     }
 
     [Fact]
@@ -36,6 +43,11 @@ public sealed class CacheConfigurationChangeRepositoryTests
         Assert.Null(first);
         Assert.Null(second);
         Assert.Equal(2, context.InnerRepository.GetByIdAsyncCallCount);
+        Assert.Equal(2, context.Metrics.GetCacheMissCount(RepositoryCacheMetricTags.ConfigurationChange));
+        Assert.Equal(0, context.Metrics.GetCacheHitCount(RepositoryCacheMetricTags.ConfigurationChange));
+        Assert.Equal(4, context.Metrics.DurationRecords.Count);
+        Assert.Equal(2, context.Metrics.DurationRecords.Count(record => record.Source == RepositoryReadMetricSource.Cache));
+        Assert.Equal(2, context.Metrics.DurationRecords.Count(record => record.Source == RepositoryReadMetricSource.Storage));
     }
 
     [Fact]
@@ -143,6 +155,7 @@ public sealed class CacheConfigurationChangeRepositoryTests
         {
             InnerRepository = new CountingConfigurationChangeRepository(change);
             MemoryCache = new MemoryCache(new MemoryCacheOptions());
+            Metrics = new FakeRepositoryCacheMetrics();
             Settings = new ApplicationSettings
             {
                 ConfigurationChangeCacheExpirationSeconds = slidingExpirationSeconds
@@ -153,11 +166,13 @@ public sealed class CacheConfigurationChangeRepositoryTests
 
         public MemoryCache MemoryCache { get; }
 
+        public FakeRepositoryCacheMetrics Metrics { get; }
+
         public IConfigurationChangeCachedSettings Settings { get; }
 
         public CachedConfigurationChangeRepository CreateRepository()
         {
-            return new CachedConfigurationChangeRepository(InnerRepository, MemoryCache, Settings);
+            return new CachedConfigurationChangeRepository(InnerRepository, MemoryCache, Settings, Metrics);
         }
 
         public void Dispose()
@@ -166,4 +181,3 @@ public sealed class CacheConfigurationChangeRepositoryTests
         }
     }
 }
-
