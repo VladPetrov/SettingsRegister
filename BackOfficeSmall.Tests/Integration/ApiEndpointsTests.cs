@@ -197,6 +197,48 @@ public sealed class ApiEndpointsTests
     }
 
     [Fact]
+    public async Task ConfigurationChangesEndpoints_List_CanFilterBySettingKeyAndEventType()
+    {
+        await using WebApplicationFactory<Program> factory = CreateFactory("Development");
+        using HttpClient client = await CreateAuthorizedClientAsync(factory, "integration-user-config-change-filters");
+
+        string manifestName = $"Manifest-Filter-{Guid.NewGuid():N}";
+        Guid manifestId = await ImportManifestAsync(client, allowLayerOneOverride: true, manifestName: manifestName);
+        Guid instanceId = await CreateConfigurationInstanceAsync(client, manifestId, "Instance-Filter");
+
+        HttpResponseMessage setValueResponse = await client.PutAsJsonAsync($"/api/configuration/{instanceId}/value", new
+        {
+            settingKey = "FeatureFlag",
+            layerIndex = 0,
+            value = "on"
+        });
+        Assert.Equal(HttpStatusCode.OK, setValueResponse.StatusCode);
+
+        HttpResponseMessage configChangesResponse = await client.GetAsync("/api/config-changes?settingKey=FeatureFlag&eventType=ConfigurationSetting&pageSize=200");
+        string configChangesBody = await configChangesResponse.Content.ReadAsStringAsync();
+        Assert.Equal(HttpStatusCode.OK, configChangesResponse.StatusCode);
+
+        using JsonDocument configChangesDocument = JsonDocument.Parse(configChangesBody);
+        JsonElement configChangeItems = configChangesDocument.RootElement.GetProperty("items");
+        Assert.True(configChangeItems.GetArrayLength() >= 1);
+        Assert.All(configChangeItems.EnumerateArray(), item =>
+        {
+            Assert.Equal("FeatureFlag", item.GetProperty("settingKey").GetString());
+            Assert.Equal("ConfigurationSetting", item.GetProperty("eventType").GetString());
+        });
+
+        HttpResponseMessage manifestImportResponse = await client.GetAsync($"/api/config-changes?settingKey={Uri.EscapeDataString(manifestName)}&eventType=ManifestImport&pageSize=200");
+        string manifestImportBody = await manifestImportResponse.Content.ReadAsStringAsync();
+        Assert.Equal(HttpStatusCode.OK, manifestImportResponse.StatusCode);
+
+        using JsonDocument manifestImportDocument = JsonDocument.Parse(manifestImportBody);
+        JsonElement manifestImportItems = manifestImportDocument.RootElement.GetProperty("items");
+        Assert.Equal(1, manifestImportItems.GetArrayLength());
+        Assert.Equal(manifestName, manifestImportItems[0].GetProperty("settingKey").GetString());
+        Assert.Equal("ManifestImport", manifestImportItems[0].GetProperty("eventType").GetString());
+    }
+
+    [Fact]
     public async Task ManifestsEndpoint_List_ReturnsSummaryItems()
     {
         await using WebApplicationFactory<Program> factory = CreateFactory("Development");

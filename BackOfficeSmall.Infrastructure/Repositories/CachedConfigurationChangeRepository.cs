@@ -91,6 +91,8 @@ public sealed class CachedConfigurationChangeRepository : IConfigurationChangeRe
         DateTime? fromUtc,
         DateTime? toUtc,
         ConfigurationOperation? operation,
+        string? settingKey,
+        ConfigurationChangeEventType? eventType,
         DateTime? afterChangedAtUtc,
         Guid? afterId,
         int take,
@@ -98,11 +100,15 @@ public sealed class CachedConfigurationChangeRepository : IConfigurationChangeRe
     {
         using var activity = StartSimulatedActivity("List");
         activity?.SetTag("repository.take", take);
+        activity?.SetTag("repository.setting_key.filter", settingKey);
+        activity?.SetTag("repository.event_type.filter", eventType?.ToString());
 
         return await _innerRepository.ListAsync(
             fromUtc,
             toUtc,
             operation,
+            settingKey,
+            eventType,
             afterChangedAtUtc,
             afterId,
             take,

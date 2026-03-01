@@ -175,6 +175,21 @@ public static class ApiMappings
         };
     }
 
+    public static ConfigurationChangeEventType? ToDomain(this ConfigurationChangeEventTypeDto? dto)
+    {
+        if (!dto.HasValue)
+        {
+            return null;
+        }
+
+        return dto.Value switch
+        {
+            ConfigurationChangeEventTypeDto.ConfigurationSetting => ConfigurationChangeEventType.ConfigurationSetting,
+            ConfigurationChangeEventTypeDto.ManifestImport => ConfigurationChangeEventType.ManifestImport,
+            _ => throw new ArgumentOutOfRangeException(nameof(dto), "Unsupported config change event type value.")
+        };
+    }
+
     private static ConfigurationOperationDto ToDto(this ConfigurationOperation operation)
     {
         return operation switch

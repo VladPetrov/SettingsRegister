@@ -69,6 +69,8 @@ public sealed class ManifestServiceTests
             null,
             null,
             null,
+            null,
+            null,
             100,
             CancellationToken.None);
         Assert.Equal(2, changes.Count);
@@ -253,6 +255,8 @@ public sealed class ManifestServiceTests
         ManifestValueObject imported = await service.ImportManifestAsync(request, CancellationToken.None);
 
         IReadOnlyList<ConfigurationChange> changes = await unitOfWork.ConfigurationChangeRepository.ListAsync(
+            null,
+            null,
             null,
             null,
             null,

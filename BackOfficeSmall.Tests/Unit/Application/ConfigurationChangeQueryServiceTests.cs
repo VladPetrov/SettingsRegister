@@ -122,6 +122,47 @@ public sealed class ConfigurationChangeQueryServiceTests
     }
 
     [Fact]
+    public async Task ListChangesAsync_WhenSettingKeyFilterIsProvided_ReturnsOnlyMatchingItems()
+    {
+        using TestContext context = CreateContext();
+        await context.UnitOfWork.ConfigurationChangeRepository.AddAsync(
+            CreateAddChange(Guid.NewGuid(), DateTime.SpecifyKind(new DateTime(2026, 2, 26, 14, 0, 0), DateTimeKind.Utc)),
+            CancellationToken.None);
+        await context.UnitOfWork.ConfigurationChangeRepository.AddAsync(
+            CreateChange(Guid.NewGuid(), "OtherSetting", ConfigurationOperation.Add, DateTime.SpecifyKind(new DateTime(2026, 2, 26, 14, 1, 0), DateTimeKind.Utc)),
+            CancellationToken.None);
+
+        var result = await context.Service.ListChangesAsync(
+            settingKey: "featureflag",
+            pageSize: 10,
+            cancellationToken: CancellationToken.None);
+
+        Assert.Single(result.Items);
+        Assert.Equal("FeatureFlag", result.Items[0].Name);
+    }
+
+    [Fact]
+    public async Task ListChangesAsync_WhenEventTypeFilterIsProvided_ReturnsOnlyMatchingItems()
+    {
+        using TestContext context = CreateContext();
+        await context.UnitOfWork.ConfigurationChangeRepository.AddAsync(
+            CreateAddChange(Guid.NewGuid(), DateTime.SpecifyKind(new DateTime(2026, 2, 26, 14, 0, 0), DateTimeKind.Utc)),
+            CancellationToken.None);
+        await context.UnitOfWork.ConfigurationChangeRepository.AddAsync(
+            CreateManifestImportChange(Guid.NewGuid(), "Main", DateTime.SpecifyKind(new DateTime(2026, 2, 26, 14, 1, 0), DateTimeKind.Utc)),
+            CancellationToken.None);
+
+        var result = await context.Service.ListChangesAsync(
+            eventType: ConfigurationChangeEventType.ManifestImport,
+            pageSize: 10,
+            cancellationToken: CancellationToken.None);
+
+        Assert.Single(result.Items);
+        Assert.Equal(ConfigurationChangeEventType.ManifestImport, result.Items[0].EventType);
+        Assert.Equal("Main", result.Items[0].Name);
+    }
+
+    [Fact]
     public async Task ListChangesAsync_WithCursorPagination_IsDeterministicAndHasNoDuplicates()
     {
         using TestContext context = CreateContext();
@@ -156,30 +197,44 @@ public sealed class ConfigurationChangeQueryServiceTests
 
     private static ConfigurationChange CreateAddChange(Guid id, DateTime changedAtUtc)
     {
-        return new ConfigurationChange(
-            id,
-            Guid.NewGuid(),
-            "FeatureFlag",
-            0,
-            ConfigurationOperation.Add,
-            null,
-            "on",
-            "tester",
-            changedAtUtc);
+        return CreateChange(id, "FeatureFlag", ConfigurationOperation.Add, changedAtUtc);
     }
 
     private static ConfigurationChange CreateDeleteChange(Guid id, DateTime changedAtUtc)
     {
+        return CreateChange(id, "FeatureFlag", ConfigurationOperation.Delete, changedAtUtc);
+    }
+
+    private static ConfigurationChange CreateChange(Guid id, string settingKey, ConfigurationOperation operation, DateTime changedAtUtc)
+    {
+        string? beforeValue = operation == ConfigurationOperation.Delete ? "on" : null;
+        string? afterValue = operation == ConfigurationOperation.Delete ? null : "on";
+
         return new ConfigurationChange(
             id,
             Guid.NewGuid(),
-            "FeatureFlag",
+            settingKey,
             0,
-            ConfigurationOperation.Delete,
-            "on",
-            null,
+            operation,
+            beforeValue,
+            afterValue,
             "tester",
             changedAtUtc);
+    }
+
+    private static ConfigurationChange CreateManifestImportChange(Guid id, string manifestName, DateTime changedAtUtc)
+    {
+        return new ConfigurationChange(
+            id,
+            Guid.NewGuid(),
+            manifestName,
+            0,
+            ConfigurationOperation.Add,
+            null,
+            $"{manifestName}:v1",
+            "tester",
+            changedAtUtc,
+            ConfigurationChangeEventType.ManifestImport);
     }
 
     private static TestContext CreateContext()

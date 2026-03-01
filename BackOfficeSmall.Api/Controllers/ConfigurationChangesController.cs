@@ -28,6 +28,8 @@ public sealed class ConfigurationChangesController : AuthenticatedApiControllerB
         [FromQuery] DateTimeOffset? fromUtc,
         [FromQuery] DateTimeOffset? toUtc,
         [FromQuery] ConfigurationOperationDto? operation,
+        [FromQuery] string? settingKey,
+        [FromQuery] ConfigurationChangeEventTypeDto? eventType,
         [FromQuery] string? cursor,
         [FromQuery] int? pageSize,
         CancellationToken cancellationToken)
@@ -36,12 +38,14 @@ public sealed class ConfigurationChangesController : AuthenticatedApiControllerB
         DateTime? normalizedToUtc = NormalizeUtcQueryDate(toUtc, nameof(toUtc));
 
         ConfigurationChangePage changesPage = await _configChangeQueryService.ListChangesAsync(
-            normalizedFromUtc,
-            normalizedToUtc,
-            operation.ToDomain(),
-            cursor,
-            pageSize,
-            cancellationToken);
+            fromUtc: normalizedFromUtc,
+            toUtc: normalizedToUtc,
+            operation: operation.ToDomain(),
+            settingKey: settingKey,
+            eventType: eventType.ToDomain(),
+            cursor: cursor,
+            pageSize: pageSize,
+            cancellationToken: cancellationToken);
 
         IReadOnlyList<ConfigurationChangeResponseDto> payload = changesPage.Items.Select(change => change.ToDto()).ToList();
         ConfigurationChangePageResponseDto pageResponse = new(payload, changesPage.NextCursor);

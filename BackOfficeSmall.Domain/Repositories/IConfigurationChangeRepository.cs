@@ -14,6 +14,8 @@ public interface IConfigurationChangeRepository
         DateTime? fromUtc,
         DateTime? toUtc,
         ConfigurationOperation? operation,
+        string? settingKey,
+        ConfigurationChangeEventType? eventType,
         DateTime? afterChangedAtUtc,
         Guid? afterId,
         int take,

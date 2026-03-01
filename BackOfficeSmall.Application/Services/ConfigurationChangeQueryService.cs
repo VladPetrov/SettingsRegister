@@ -45,12 +45,16 @@ public sealed class ConfigurationChangeQueryService : IConfigurationChangeQueryS
         DateTime? fromUtc = null,
         DateTime? toUtc = null,
         ConfigurationOperation? operation = null,
+        string? settingKey = null,
+        ConfigurationChangeEventType? eventType = null,
         string? cursor = null,
         int? pageSize = null,
         CancellationToken cancellationToken = default)
     {
         using var activity = ApplicationActivitySource.Source.StartActivity("ConfigurationChangeQueryService.List");
         activity?.SetTag("change.operation.filter", operation?.ToString());
+        activity?.SetTag("change.setting_key.filter", settingKey);
+        activity?.SetTag("change.event_type.filter", eventType?.ToString());
         activity?.SetTag("change.page_size.requested", pageSize);
         activity?.SetTag("change.cursor", cursor);
 
@@ -65,6 +69,8 @@ public sealed class ConfigurationChangeQueryService : IConfigurationChangeQueryS
             fromUtc,
             toUtc,
             operation,
+            settingKey,
+            eventType,
             cursorState?.ChangedAtUtc,
             cursorState?.Id,
             requestedCount,

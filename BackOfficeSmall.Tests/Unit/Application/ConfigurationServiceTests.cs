@@ -38,6 +38,8 @@ public sealed class ConfigurationServiceTests
             null,
             null,
             null,
+            null,
+            null,
             100,
             CancellationToken.None);
 
@@ -81,6 +83,8 @@ public sealed class ConfigurationServiceTests
             CancellationToken.None);
 
         IReadOnlyList<ConfigurationChange> changes = await unitOfWork.ConfigurationChangeRepository.ListAsync(
+            null,
+            null,
             null,
             null,
             null,
@@ -352,6 +356,8 @@ public sealed class ConfigurationServiceTests
     private static async Task<IReadOnlyList<ConfigurationChange>> ListAllChangesAsync(InMemoryConfigurationWriteUnitOfWork unitOfWork)
     {
         return await unitOfWork.ConfigurationChangeRepository.ListAsync(
+            null,
+            null,
             null,
             null,
             null,

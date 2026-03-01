@@ -11,6 +11,8 @@ public interface IConfigurationChangeQueryService
         DateTime? fromUtc = null,
         DateTime? toUtc = null,
         ConfigurationOperation? operation = null,
+        string? settingKey = null,
+        ConfigurationChangeEventType? eventType = null,
         string? cursor = null,
         int? pageSize = null,
         CancellationToken cancellationToken = default);

@@ -65,6 +65,8 @@ public sealed class InMemoryConfigurationChangeRepository : IConfigurationChange
         DateTime? fromUtc,
         DateTime? toUtc,
         ConfigurationOperation? operation,
+        string? settingKey,
+        ConfigurationChangeEventType? eventType,
         DateTime? afterChangedAtUtc,
         Guid? afterId,
         int take,
@@ -102,6 +104,16 @@ public sealed class InMemoryConfigurationChangeRepository : IConfigurationChange
             if (operation.HasValue)
             {
                 records = records.Where(record => record.Operation == operation.Value);
+            }
+
+            if (!string.IsNullOrWhiteSpace(settingKey))
+            {
+                records = records.Where(record => string.Equals(record.SettingKey, settingKey, StringComparison.OrdinalIgnoreCase));
+            }
+
+            if (eventType.HasValue)
+            {
+                records = records.Where(record => record.EventType == eventType.Value);
             }
 
             if (afterChangedAtUtc.HasValue)

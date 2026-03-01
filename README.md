@@ -94,9 +94,11 @@ The solution is strict-layered:
 - `PUT /api/config-instances/{instanceId}/cells`
 
 ### Configuration Change
-- `GET /api/config-changes?pageSize=<1..200>&cursor=<opaque-cursor>&operation=<Add|Update|Delete>&fromUtc=<utc-z>&toUtc=<utc-z>`
+- `GET /api/config-changes?pageSize=<1..200>&cursor=<opaque-cursor>&operation=<Add|Update|Delete>&settingKey=<setting-or-manifest-name>&eventType=<ConfigurationSetting|ManifestImport>&fromUtc=<utc-z>&toUtc=<utc-z>`
   - `pageSize` is optional; default is `50`.
   - `cursor` is optional for the first page.
+  - `settingKey` is optional; exact match, case-insensitive.
+  - `eventType` is optional.
   - Returns `{ items: [...], nextCursor: "..." }`.
 - `GET /api/config-changes/{id}`
 
