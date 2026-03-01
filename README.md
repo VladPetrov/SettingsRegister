@@ -2,6 +2,12 @@
 
 Settings Register & Change Tracker is a .NET microservice for managing domain configuration in a controlled and observable way. It allows clients to define configuration structure through manifests, create and modify configuration instances that comply with manifest rules, and record every change as an immutable audit event. Critical updates are detected from domain metadata and propagated to an external monitoring integration through an outbox-driven background process. The service also exposes health checks, metrics, and tracing for operational visibility.
 
+## Screenshots
+
+![Application screenshot 1](./image.png)
+
+![Application screenshot 2](./image-1.png)
+
 ## Assignment Coverage
 
 The solution covers all mandatory requirements and several optional ones, while staying within the time-boxed scope of the exercise.
