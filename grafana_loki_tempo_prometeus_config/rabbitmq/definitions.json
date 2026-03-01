@@ -1,0 +1,9 @@
+{
+  "vhosts": [{ "name": "NEO" }],
+  "users": [
+    { "name": "admin", "password": "admin", "tags": "management" }
+  ],
+  "permissions": [
+    { "user": "admin", "vhost": "NEO", "configure": ".*", "write": ".*", "read": ".*" }
+  ]
+}

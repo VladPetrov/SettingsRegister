@@ -1,0 +1,106 @@
+version: '3.8'
+
+services:
+  loki:
+    image: grafana/loki:3.5
+    container_name: loki
+    restart: always
+    ports: ["3100:3100"]
+    volumes:
+      - ./loki/loki-config.yaml:/etc/loki/local-config.yaml
+      - ./loki/wal:/loki/wal
+      - loki_data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    restart: always
+    ports: ["9090:9090"]
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus/config:/etc/prometheus/config
+      - prometheus_data:/prometheus
+    command:
+      - '--web.enable-remote-write-receiver'
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.retention.time=90d'
+      - '--enable-feature=exemplar-storage'
+      - '--enable-feature=native-histograms'
+      # - '--storage.tsdb.retention.size=1GB'
+    depends_on: [ otelcol ]
+
+  memcached:
+    image: memcached:1.6.38
+    container_name: memcached
+    ports:
+      - "11211:11211"
+    environment:
+      - MEMCACHED_MAX_MEMORY=64m
+      - MEMCACHED_THREADS=4
+
+  tempo:
+    image: grafana/tempo:2.9.0
+    container_name: tempo
+    command: ["-config.file=/etc/tempo.yaml"]
+    volumes:
+      - ./tempo/tempo.yaml:/etc/tempo.yaml
+      - tempo_data:/var/tempo
+    depends_on:
+      - memcached
+
+  otelcol:
+    image: otel/opentelemetry-collector-contrib:0.128.0
+    container_name: otelcol
+    restart: always
+    ports:
+      - "4318:4318"   	# OTLP/HTTP
+      - "4317:4317"   	# OTLP/gRPC
+      - "9464:9464"   	# Prometheus exporter
+      - "13133:13133" 	# /healthcheck
+      - "8889:8889"    # Metrics (optional)
+    volumes:
+      - ./otel-collector/otelcol.yaml:/etc/otelcol.yaml
+    command:
+      - "--config=/etc/otelcol.yaml"
+    depends_on:
+      - tempo
+      - loki
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    restart: always
+    ports: [ "3000:3000" ]
+    volumes:
+      - ./grafana/grafana-datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml:ro
+      - ./grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - grafana_data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_AUTH_DISABLE_LOGIN_FORM=false
+      - GF_FEATURE_TOGGLES_ENABLE=traceqlEditor metricsSummary
+    depends_on: [prometheus, tempo, loki]
+
+  rabbitmq:
+    image: rabbitmq:4.1-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+      - ./rabbitmq/definitions.json:/etc/rabbitmq/definitions.json:ro
+      - ./rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+
+volumes:
+  prometheus_data:
+  loki_data:
+  grafana_data:
+  rabbitmq_data:
+  tempo_data:
+  # rabbitmq_data_backplane:
