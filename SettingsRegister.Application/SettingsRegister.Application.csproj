@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\BackOfficeSmall.Domain\SettingsRegister.Domain.csproj" />
+    <ProjectReference Include="..\SettingsRegister.Domain\SettingsRegister.Domain.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

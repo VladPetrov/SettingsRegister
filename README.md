@@ -62,8 +62,8 @@ The solution is strict-layered:
 
 - Persistence is in-memory only.
 - In `Development`, startup seeds in-memory storage from JSON files:
-  - `BackOfficeSmall.Api/SeedData/manifests.seed.json`
-  - `BackOfficeSmall.Api/SeedData/configuration.seed.json`
+  - `SettingsRegister.Api/SeedData/manifests.seed.json`
+  - `SettingsRegister.Api/SeedData/configuration.seed.json`
 - Monitoring transport is simulated and at-least-once; delivery reliability is handled by outbox retries.
 - Application runtime settings are bound from `appsettings*.json` into immutable `ApplicationSettings` and `AuthSettings`, then registered in DI.
 - `Application:AppScaling` controls lock strategy:
@@ -198,7 +198,7 @@ Errors return `ProblemDetails` with consistent status mapping:
 ```bash
 dotnet restore
 dotnet build SettingsRegister.sln
-dotnet run --project BackOfficeSmall.Api/SettingsRegister.Api.csproj
+dotnet run --project SettingsRegister.Api/SettingsRegister.Api.csproj
 ```
 
 ## Test

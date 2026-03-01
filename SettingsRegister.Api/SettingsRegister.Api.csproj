@@ -20,9 +20,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\BackOfficeSmall.Application\SettingsRegister.Application.csproj" />
-    <ProjectReference Include="..\BackOfficeSmall.Domain\SettingsRegister.Domain.csproj" />
-    <ProjectReference Include="..\BackOfficeSmall.Infrastructure\SettingsRegister.Infrastructure.csproj" />
+    <ProjectReference Include="..\SettingsRegister.Application\SettingsRegister.Application.csproj" />
+    <ProjectReference Include="..\SettingsRegister.Domain\SettingsRegister.Domain.csproj" />
+    <ProjectReference Include="..\SettingsRegister.Infrastructure\SettingsRegister.Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>
